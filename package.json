@@ -1,0 +1,23 @@
+{
+  "name": "hotel-reservations-backend",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/bun": "latest",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/pg": "^8.15.4",
+    "@types/winston": "^2.4.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.0",
+    "winston": "^3.17.0"
+  }
+}
