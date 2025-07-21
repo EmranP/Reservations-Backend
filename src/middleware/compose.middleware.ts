@@ -11,6 +11,7 @@ export function compose<T>(middleware: Middleware[]) {
 		async function dispatch(i: number): Promise<void> {
 			if (i <= index)
 				return logAndThrowInternalServer('next() called multiple times')
+
 			index = i
 
 			const fn = middleware[i]

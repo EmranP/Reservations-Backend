@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 	room_id INTEGER UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
 	status VARCHAR(50) NOT NULL,
 	total_price NUMERIC(10, 2) NOT NULL,
+	residenceTime TIMESTAMP NOT NULL,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
