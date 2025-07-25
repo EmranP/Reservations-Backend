@@ -27,13 +27,13 @@ export class App {
 			appHandler(ctx).catch(err => {
 				logger.error(err)
 				res.statusCode = 500
-				res.end('❌ Ошибка запуска сервера: ${error}')
+				res.end(`❌ Ошибка запуска сервера : ${err}`)
 			})
 
 			appRouter(ctx).catch(err => {
 				logger.error(err)
 				res.statusCode = 500
-				res.end('❌ Ошибка маршрутизатор: ${error}')
+				res.end(`❌ Ошибка маршрутизатор: ${err}`)
 			})
 		})
 
