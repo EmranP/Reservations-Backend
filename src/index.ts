@@ -6,6 +6,7 @@ import { cookieParser } from './middleware/cookie-parser.middleware'
 import { cors } from './middleware/cors.middleware'
 import { helmetMiddleware } from './middleware/helmet.middleware'
 import { json } from './middleware/json.middleware'
+import { routerApp } from './routes/routes.router'
 
 dotenv.config()
 
@@ -20,6 +21,7 @@ app.use(json)
 app.use(cookieParser)
 app.use(cors)
 // Routes
+app.router(routerApp)
 
 // Start app
 const startApp = async (): Promise<void> => {
