@@ -1,5 +1,5 @@
 -- ========================
--- 2. TABLES
+-- 3. TABLES
 -- ========================
 
 -- USERS
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS public.rooms (
 	price NUMERIC(10,2) NOT NULL,
 	quality VARCHAR(35) NOT NULL,
 	description VARCHAR(500) NOT NULL,
-	status VARCHAR(50) NOT NULL,
+	status status_mood NOT NULL  DEFAULT 'FREE',
 	image_url TEXT,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 	id SERIAL PRIMARY KEY,
 	user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
 	room_id INTEGER UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
-	status VARCHAR(50) NOT NULL,
+	status status_mood NOT NULL DEFAULT 'BUYS',
 	total_price NUMERIC(10, 2) NOT NULL,
 	residenceTime TIMESTAMP NOT NULL,
 	created_at TIMESTAMP DEFAULT now(),

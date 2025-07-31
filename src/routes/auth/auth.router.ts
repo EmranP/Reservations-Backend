@@ -22,8 +22,10 @@ export const authRouter = async (
 	} else if (path === AUTH_REGISTRATION_API_URL && req.method === 'POST') {
 		await authRegistrationController(req, res)
 	} else if (path === AUTH_LOGOUT_API_URL && req.method === 'GET') {
+		//! Add before controller middleware for check auth and roles user
 		await authLogoutController(req, res)
 	} else if (path === AUTH_REFRESH_TOKEN_API_URL && req.method === 'POST') {
+		//! Add before controller middleware for check auth and roles user
 		await authRefreshTokenController(req, res)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')
