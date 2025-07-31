@@ -8,7 +8,7 @@ import { helmetMiddleware } from './middleware/helmet.middleware'
 import { json } from './middleware/json.middleware'
 import { routerApp } from './routes/routes.router'
 
-dotenv.config()
+dotenv.config({ path: '../.env' })
 
 const app = new App()
 
