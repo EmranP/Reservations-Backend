@@ -1,6 +1,6 @@
 export const globalPrefixUrl = 'api'
 
-// Auth
+// Auth ============
 export const AUTH_LOGIN_API_URL = `${globalPrefixUrl}/auth/login`
 export const AUTH_REGISTRATION_API_URL = `${globalPrefixUrl}/auth/registration`
 export const AUTH_LOGOUT_API_URL = `${globalPrefixUrl}/auth/logout`
