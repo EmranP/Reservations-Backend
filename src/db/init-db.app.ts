@@ -9,6 +9,10 @@ export const initDB = async (): Promise<void> => {
 			path.join(__dirname, './migrations/handler.db.sql'),
 			'utf-8'
 		)
+		const initTypeSqlDB = await readFile(
+			path.join(__dirname, './migrations/type.db.sql'),
+			'utf-8'
+		)
 		const initTablesSqlDB = await readFile(
 			path.join(__dirname, './migrations/tables.db.sql'),
 			'utf-8'
@@ -17,11 +21,17 @@ export const initDB = async (): Promise<void> => {
 			path.join(__dirname, './migrations/trigger.db.sql'),
 			'utf-8'
 		)
+		const initEditMigrate = await readFile(
+			path.join(__dirname, './migrations/edit.db.sql'),
+			'utf-8'
+		)
 
 		const queries = [
 			pool.query(initHandlerSqlDB),
+			pool.query(initTypeSqlDB),
 			pool.query(initTablesSqlDB),
 			pool.query(initTriggerSqlDB),
+			pool.query(initEditMigrate),
 		]
 
 		Promise.all(queries)
