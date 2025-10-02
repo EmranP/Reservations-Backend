@@ -1,5 +1,5 @@
 import { URL } from 'url'
-import { rootAuthRouter } from '../app/constant'
+import { rootAuthRouter } from '../shared/constants/api.constant'
 import type { Middleware } from '../shared/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../utils/app/errorResponse.utils'
 import { authRouter } from './auth/auth.router'
