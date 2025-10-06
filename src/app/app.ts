@@ -20,7 +20,7 @@ export class App {
 
 	listen(port: number, hostname: string) {
 		const server = createServer((req, res) => {
-			const ctx: IContext<null> = { req, res }
+			const ctx: IContext = { req, res }
 			const appHandler = compose(this.middlewares)
 			const appRouter = compose(this.routers)
 

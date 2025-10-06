@@ -15,13 +15,10 @@ export const json: Middleware = async (ctx, next): Promise<void> => {
 
 			for await (const chunk of req) {
 				chunks.push(chunk)
-				console.log(chunk)
 			}
 
 			const raw = Buffer.concat(chunks).toString('utf-8')
 
-			console.log(chunks)
-			console.log(raw)
 			try {
 				ctx.body = JSON.parse(raw)
 			} catch (err) {

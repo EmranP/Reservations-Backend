@@ -1,11 +1,13 @@
 import type { IncomingMessage, ServerResponse } from 'http'
+import { writeHeadData } from './writeHeadData.utils'
 
 export const responseBadRequest = async (
 	message: string,
 	res: ServerResponse<IncomingMessage>,
 	statusCode: number = 400
 ): Promise<void> => {
-	res.writeHead(statusCode, { 'Content-Type': 'application/json' })
+	const { status, contentData } = writeHeadData(statusCode)
+	res.writeHead(status, contentData)
 
 	const errorMessage = { message }
 	const jsonData = JSON.stringify(errorMessage)
@@ -18,7 +20,8 @@ export const responseNotFoundApi = async (
 	res: ServerResponse<IncomingMessage>,
 	statusCode: number = 404
 ): Promise<void> => {
-	res.writeHead(statusCode, { 'Content-Type': 'application/json' })
+	const { status, contentData } = writeHeadData(statusCode)
+	res.writeHead(status, contentData)
 
 	const errorMessage = { message }
 	const jsonData = JSON.stringify(errorMessage)

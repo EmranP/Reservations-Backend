@@ -9,7 +9,7 @@
 		"build": "npm run clean && tsc"
 	},
 	"devDependencies": {
-		"@types/bcryptjs": "^3.0.0",
+		"@types/bcrypt": "^6.0.0",
 		"@types/bun": "1.2.18",
 		"@types/jsonwebtoken": "^9.0.9",
 		"@types/node": "^24.0.14",
@@ -22,7 +22,7 @@
 		"typescript": "^5"
 	},
 	"dependencies": {
-		"bcryptjs": "^3.0.2",
+		"bcrypt": "^6.0.0",
 		"dotenv": "^16.5.0",
 		"helmet": "^8.1.0",
 		"jsonwebtoken": "^9.0.2",

@@ -7,9 +7,13 @@ CREATE TABLE IF NOT EXISTS public.users (
 	id SERIAL PRIMARY KEY,
 	first_name VARCHAR(100) NOT NULL,
 	last_name VARCHAR(100) NOT NULL,
+	email VARCHAR(100) NOT NULL,
 	phone VARCHAR(20) NOT NULL,
+	password TEXT NOT NULL,
+	avatar TEXT,
 	role INTEGER NOT NULL DEFAULT 1 CHECK (role in (0, 1)),
 	activation_link TEXT,
+	is_verify BOOLEAN NOT NULL DEFAULT FALSE,
  	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
@@ -41,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 	room_id INTEGER UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
 	status status_mood NOT NULL DEFAULT 'BUYS',
 	total_price NUMERIC(10, 2) NOT NULL,
-	residenceTime TIMESTAMP NOT NULL,
+	residence_time TIMESTAMP NOT NULL,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );

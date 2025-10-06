@@ -7,7 +7,10 @@ export const cookieParser: Middleware = async (ctx, next): Promise<void> => {
 	cookieHeader.split(';').forEach(pair => {
 		const [key, val] = pair.trim().split('=')
 
-		if (key && val) decodeURIComponent(pair)
+		if (key && val) {
+			decodeURIComponent(pair)
+			console.log(key, val)
+		}
 	})
 
 	ctx.cookies = cookie
