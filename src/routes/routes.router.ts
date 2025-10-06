@@ -6,7 +6,6 @@ import { authRouter } from './auth/auth.router'
 
 export const routerApp: Middleware = async (ctx, next): Promise<void> => {
 	const { req, res, body } = ctx
-
 	if (!req.url) return
 
 	const parserURL = new URL(req.url, `http://${req.headers.host}`)
