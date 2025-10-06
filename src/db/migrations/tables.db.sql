@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 	avatar TEXT,
 	role INTEGER NOT NULL DEFAULT 1 CHECK (role in (0, 1)),
 	activation_link TEXT,
-	is_verify BOOLEAN DEFAULT false,
+	is_verify BOOLEAN NOT NULL DEFAULT FALSE,
  	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
