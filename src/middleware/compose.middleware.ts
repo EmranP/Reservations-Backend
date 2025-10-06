@@ -4,8 +4,8 @@ import type {
 } from '../shared/types/middlewares/app.types-middleware'
 import { logAndThrowInternalServer } from '../utils/log/throw-error.log'
 
-export function compose<T>(middleware: Middleware[]) {
-	return async function (ctx: IContext<T>) {
+export function compose(middleware: Middleware[]) {
+	return async function (ctx: IContext) {
 		let index = -1
 
 		async function dispatch(i: number): Promise<void> {

@@ -1,13 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { TypeContextBody } from './body-parser.type'
 
-export interface IContext<T> {
-	cookies?: Record<string, string>
+export interface IContext {
 	req: IncomingMessage
 	res: ServerResponse
-	body?: T | { error: string }
+	cookies?: Record<string, string>
+	body?: TypeContextBody
 }
 
-export type Middleware = <T>(
-	ctx: IContext<T>,
+export type Middleware = (
+	ctx: IContext,
 	next: () => Promise<void>
 ) => Promise<void>
