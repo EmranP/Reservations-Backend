@@ -3,4 +3,4 @@
 
 // }
 
-export type TypeContextBody = [] | { error: 'Invalid JSON' }
+export type TypeContextBody<T> = T | { error: 'Invalid JSON' }

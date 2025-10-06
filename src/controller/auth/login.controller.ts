@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http'
+import type { TypeContextBody } from '../../shared/types/middlewares/body-parser.type'
 import { responseBadRequest } from '../../utils/app/errorResponse.utils'
 import { writeHeadData } from '../../utils/app/writeHeadData.utils'
 import { ApiError } from '../../utils/log/exists-error.log'
@@ -12,14 +13,12 @@ export interface ILoginController {
 export const authLoginController = async (
 	req: IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
-	body?: ILoginController
+	body?: TypeContextBody
 ): Promise<void> => {
 	const headDataSuccess = writeHeadData(200)
 	const headDataBad = writeHeadData(400)
 	try {
-		if (!body) return
 		console.log(body)
-
 		const data = { message: 'Login has success' }
 		const jsonData = JSON.stringify(data)
 		res.writeHead(headDataSuccess.status, headDataSuccess.contentData)
