@@ -11,14 +11,16 @@ import {
 } from '../../shared/constants/api.constant'
 import { responseBadRequest } from '../../utils/app/errorResponse.utils'
 import { ApiError } from '../../utils/log/exists-error.log'
+import type { TypeContextBody } from '../../shared/types/middlewares/body-parser.type'
 
 export const authRouter = async (
 	path: string,
 	req: IncomingMessage,
-	res: ServerResponse<IncomingMessage>
+	res: ServerResponse<IncomingMessage>,
+	body?: TypeContextBody
 ): Promise<void> => {
 	if (path === AUTH_LOGIN_API_URL && req.method === 'POST') {
-		await authLoginController(req, res)
+		await authLoginController(req, res, body)
 	} else if (path === AUTH_REGISTRATION_API_URL && req.method === 'POST') {
 		await authRegistrationController(req, res)
 	} else if (path === AUTH_LOGOUT_API_URL && req.method === 'GET') {

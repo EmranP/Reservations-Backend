@@ -41,18 +41,39 @@ export const authRegistrationModel = async (
 // Get Activation Link
 export const authGetUserByActivationLink = async (
 	activationLink: string | null
-): Promise<Omit<IUser, 'created_at' | 'updated_at'> | null> => {
-	const query = `SELECT id, first_name, last_name, email, phone, role, avatar, activation_link, is_verify FROM ${DB_TABLE_USERS} WHERE activation_link = $1`
-	const queryResult = await pool.query<
-		Omit<IUser, 'created_at' | 'updated_at'>
-	>(query, [activationLink])
+): Promise<Pick<IUser, 'activation_link'> | null> => {
+	// Query DB
+	const query = `SELECT activation_link FROM ${DB_TABLE_USERS} WHERE activation_link = $1`
+
+	const queryResult = await pool.query<Pick<IUser, 'activation_link'>>(query, [
+		activationLink,
+	])
 
 	return queryResult.rows[0] ?? null
 }
 
 // Updated Verify
-export const authVerifyModel = async (dtoVerifyLink: VerifyLinkDto) => {
-	const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE activation_link`
+export const authVerifyModel = async (
+	dtoVerifyLink: VerifyLinkDto
+): Promise<boolean> => {
+	const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE activation_link = $1`
+	const queryUpdatedVerify =
+		'UPDATE users SET is_verify = true WHERE id = $1 RETURNING is_verify'
+
+	const queryResult = await pool.query<IUser>(query, [
+		dtoVerifyLink.activationLink,
+	])
+
+	const userData = queryResult.rows[0]
+
+	if (!userData || !userData.id) return false
+
+	const isUserVerify = await pool.query<Pick<IUser, 'is_verify'>>(
+		queryUpdatedVerify,
+		[userData.id]
+	)
+
+	return isUserVerify.rows[0]?.is_verify || false
 }
 
 // Logout

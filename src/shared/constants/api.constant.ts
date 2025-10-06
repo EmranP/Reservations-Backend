@@ -1,4 +1,4 @@
-export const globalPrefixUrl = 'api'
+export const globalPrefixUrl = '/api'
 
 // Auth ============
 export const AUTH_LOGIN_API_URL = `${globalPrefixUrl}/auth/login`

@@ -17,11 +17,11 @@ const hostname = process.env.HOSTNAME || 'localhost'
 
 // Middlewares
 app.use(helmetMiddleware)
-app.use(json)
 app.use(cookieParser)
 app.use(cors)
+app.use(json)
 // Routes
-app.router(routerApp)
+app.use(routerApp)
 
 // Start app
 const startApp = async (): Promise<void> => {
