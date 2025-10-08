@@ -4,7 +4,10 @@ import type { Middleware } from '../shared/types/middlewares/app.types-middlewar
 import { responseNotFoundApi } from '../utils/app/errorResponse.utils'
 import { authRouter } from './auth/auth.router'
 
-export const routerApp: Middleware = async (ctx, next): Promise<void> => {
+export const routerApp: Middleware<unknown> = async (
+	ctx,
+	next
+): Promise<void> => {
 	const { req, res, body } = ctx
 	if (!req.url) return
 

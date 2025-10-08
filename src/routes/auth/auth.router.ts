@@ -3,6 +3,7 @@ import { authLoginController } from '../../controller/auth/login.controller'
 import { authLogoutController } from '../../controller/auth/logout.controller'
 import { authRefreshTokenController } from '../../controller/auth/refresh.controller'
 import { authRegistrationController } from '../../controller/auth/registration.controller'
+import { isAuthLoginDto } from '../../dto/auth/login.dto'
 import {
 	AUTH_LOGIN_API_URL,
 	AUTH_LOGOUT_API_URL,
@@ -11,15 +12,19 @@ import {
 } from '../../shared/constants/api.constant'
 import { responseBadRequest } from '../../utils/app/errorResponse.utils'
 import { ApiError } from '../../utils/log/exists-error.log'
-import type { TypeContextBody } from '../../shared/types/middlewares/body-parser.type'
 
 export const authRouter = async (
 	path: string,
 	req: IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
-	body?: TypeContextBody
+	body?: unknown
 ): Promise<void> => {
 	if (path === AUTH_LOGIN_API_URL && req.method === 'POST') {
+		if (!isAuthLoginDto(body)) {
+			await responseBadRequest('Invalid data: email or password', res)
+
+			return
+		}
 		await authLoginController(req, res, body)
 	} else if (path === AUTH_REGISTRATION_API_URL && req.method === 'POST') {
 		await authRegistrationController(req, res)

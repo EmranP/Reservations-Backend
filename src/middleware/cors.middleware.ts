@@ -1,6 +1,6 @@
 import type { Middleware } from '../shared/types/middlewares/app.types-middleware'
 
-export const cors: Middleware = async (ctx, next): Promise<void> => {
+export const cors: Middleware<unknown> = async (ctx, next): Promise<void> => {
 	const { req, res } = ctx
 	const clientUrl = process.env.CLIENT_URL
 

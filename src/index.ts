@@ -7,6 +7,7 @@ import { cors } from './middleware/cors.middleware'
 import { helmetMiddleware } from './middleware/helmet.middleware'
 import { json } from './middleware/json.middleware'
 import { routerApp } from './routes/routes.router'
+import { genJwks } from './service/auth/token/jwks.service'
 
 dotenv.config({ path: '../.env' })
 
@@ -29,6 +30,9 @@ const startApp = async (): Promise<void> => {
 		// Checking DB
 		await checkDB()
 		await initDB()
+
+		// Generate Jwks
+		await genJwks()
 
 		app.listen(port, hostname)
 	} catch (error) {
