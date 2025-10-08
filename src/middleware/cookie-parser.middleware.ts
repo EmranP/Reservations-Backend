@@ -1,6 +1,9 @@
 import type { Middleware } from '../shared/types/middlewares/app.types-middleware'
 
-export const cookieParser: Middleware = async (ctx, next): Promise<void> => {
+export const cookieParser: Middleware<unknown> = async (
+	ctx,
+	next
+): Promise<void> => {
 	const cookieHeader = ctx.req.headers.cookie || ''
 	const cookie: Record<string, string> = {}
 

@@ -6,16 +6,16 @@ import type {
 } from '../shared/types/middlewares/app.types-middleware'
 import { logger } from '../utils/log/logger.log'
 
-export class App {
-	private middlewares: Middleware[] = []
+export class App<T> {
+	private middlewares: Middleware<T>[] = []
 
-	use(mw: Middleware) {
+	use(mw: Middleware<T>) {
 		this.middlewares.push(mw)
 	}
 
 	listen(port: number, hostname: string) {
 		const server = createServer((req, res) => {
-			const ctx: IContext = { req, res }
+			const ctx: IContext<T> = { req, res }
 			const appHandler = compose(this.middlewares)
 
 			appHandler(ctx).catch(err => {

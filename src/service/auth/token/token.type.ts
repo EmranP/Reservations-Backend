@@ -1,8 +1,8 @@
 import { ROLES } from '../../../app/roles'
 
 export interface ITokenPayload {
-	userId: string
-	role: typeof ROLES.ADMIN | typeof ROLES.CUSTOMER
+	id: number
+	role: typeof ROLES
 }
 
 export interface IGenerateToken {

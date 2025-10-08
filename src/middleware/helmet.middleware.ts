@@ -1,7 +1,7 @@
 import helmet from 'helmet'
 import type { Middleware } from '../shared/types/middlewares/app.types-middleware'
 
-export const helmetMiddleware: Middleware = async (
+export const helmetMiddleware: Middleware<unknown> = async (
 	ctx,
 	next
 ): Promise<void> => {

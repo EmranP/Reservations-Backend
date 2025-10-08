@@ -1,6 +1,9 @@
-import type { Middleware } from '../shared/types/middlewares/app.types-middleware'
+import type {
+	Middleware,
+	TypeErrorContextBody,
+} from '../shared/types/middlewares/app.types-middleware'
 
-export const json: Middleware = async (ctx, next): Promise<void> => {
+export const json: Middleware<unknown> = async (ctx, next): Promise<void> => {
 	const { req } = ctx
 	const contentType = req.headers['content-type'] || ''
 
@@ -22,9 +25,9 @@ export const json: Middleware = async (ctx, next): Promise<void> => {
 			try {
 				ctx.body = JSON.parse(raw)
 			} catch (err) {
-				ctx.body = { error: 'Invalid JSON' }
+				const data: TypeErrorContextBody = { error: 'Invalid JSON' }
 				ctx.res.statusCode = 400
-				ctx.res.end(JSON.stringify(ctx.body))
+				ctx.res.end(JSON.stringify(data))
 				return
 			}
 		}

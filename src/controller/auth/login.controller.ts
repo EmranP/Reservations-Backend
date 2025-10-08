@@ -1,31 +1,38 @@
 import type { IncomingMessage, ServerResponse } from 'http'
-import type { TypeContextBody } from '../../shared/types/middlewares/body-parser.type'
+import type { LoginDto } from '../../dto/auth/login.dto'
+import { authService } from '../../service/auth/auth.service'
 import { responseBadRequest } from '../../utils/app/errorResponse.utils'
 import { writeHeadData } from '../../utils/app/writeHeadData.utils'
 import { ApiError } from '../../utils/log/exists-error.log'
 
-export interface ILoginController {
-	email: string
-	password: string
-}
-
-//! Add validate && validate type write special decorator and put to service places
 export const authLoginController = async (
 	req: IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
-	body?: TypeContextBody
+	body: LoginDto
 ): Promise<void> => {
-	const headDataSuccess = writeHeadData(200)
-	const headDataBad = writeHeadData(400)
 	try {
-		console.log(body)
-		const data = { message: 'Login has success' }
-		const jsonData = JSON.stringify(data)
-		res.writeHead(headDataSuccess.status, headDataSuccess.contentData)
+		const headData = writeHeadData(200)
+		const user = await authService.login(body)
+
+		if (user.status === 404) {
+			res.writeHead(user.status, headData.contentData)
+		} else if (user.status === 400) {
+			res.writeHead(user.status, headData.contentData)
+		} else {
+			res.writeHead(headData.status, headData.contentData)
+		}
+
+		const jsonData = JSON.stringify(user)
 		res.end(jsonData)
 	} catch (error) {
-		const errorRes = ApiError.BadRequest(`Bad-request from login controller`)
+		if (error instanceof Error) {
+			const errorRes = ApiError.BadRequest(error.message)
 
-		await responseBadRequest(errorRes.message, res)
+			await responseBadRequest(errorRes.message, res)
+		} else {
+			const errorRes = ApiError.BadRequest('Bad-request from login controller')
+
+			await responseBadRequest(errorRes.message, res)
+		}
 	}
 }

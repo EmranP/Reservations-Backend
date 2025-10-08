@@ -1,7 +1,7 @@
 import type { ROLES } from '../../app/roles'
-import type { IAppData } from '../../shared/types/app/app.interface'
+import type { ISharedModelApp } from '../../shared/types/db/app.interface'
 
-export interface IUser extends IAppData {
+export interface IUser extends ISharedModelApp {
 	first_name: string
 	last_name: string
 	email: string
