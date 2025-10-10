@@ -1,5 +1,5 @@
 -- ========================
--- 2. TYPES
+-- 3. TYPES
 -- ========================
 
 DROP TYPE IF EXISTS status_mood CASCADE;

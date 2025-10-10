@@ -18,5 +18,4 @@ export const genJwks = async () => {
 	const jwks = { keys: [jwk] }
 
 	fs.writeFileSync('./jwks.json', JSON.stringify(jwks, null, 2))
-	console.log('jwks.json created with kid:', jwk.kid)
 }

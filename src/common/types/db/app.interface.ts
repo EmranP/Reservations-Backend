@@ -1,5 +1,5 @@
 export interface ISharedModelApp {
-	id: number
+	id: string
 	created_at: Date
 	updated_at: Date
 }

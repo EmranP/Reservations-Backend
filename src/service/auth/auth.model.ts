@@ -1,6 +1,6 @@
 import { pool } from '../../app/check-db.app'
+import { DB_TABLE_USERS } from '../../common/constants/table-db.constant'
 import type { IUser } from '../../db/types/user.types'
-import { DB_TABLE_USERS } from '../../shared/constants/table-db.constant'
 import type { LoginDto, RegistrationDto, VerifyLinkDto } from './auth.dto'
 
 // Login

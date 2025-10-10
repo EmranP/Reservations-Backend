@@ -1,7 +1,7 @@
 import type {
 	Middleware,
 	TypeErrorContextBody,
-} from '../shared/types/middlewares/app.types-middleware'
+} from '../common/types/middlewares/app.types-middleware'
 
 export const json: Middleware<unknown> = async (ctx, next): Promise<void> => {
 	const { req } = ctx

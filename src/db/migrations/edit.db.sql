@@ -1,5 +1,5 @@
 -- ========================
--- 5. Migration edit
+-- 6. Migration edit
 -- ========================
 
 -- ALTER TABLE rooms DROP COLUMN status CASCADE;

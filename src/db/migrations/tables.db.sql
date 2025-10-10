@@ -1,10 +1,10 @@
 -- ========================
--- 3. TABLES
+-- 4. TABLES
 -- ========================
 
 -- USERS
 CREATE TABLE IF NOT EXISTS public.users (
-	id SERIAL PRIMARY KEY,
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	first_name VARCHAR(100) NOT NULL,
 	last_name VARCHAR(100) NOT NULL,
 	email VARCHAR(100) NOT NULL,
@@ -20,15 +20,15 @@ CREATE TABLE IF NOT EXISTS public.users (
 
 -- TOKENS
 CREATE TABLE IF NOT EXISTS public.tokens (
-	id SERIAL PRIMARY KEY,
-	user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
 	refresh_token TEXT NOT NULL,
 	created_at TIMESTAMP DEFAULT now()
 );
 
 -- Rooms
 CREATE TABLE IF NOT EXISTS public.rooms (
-	id SERIAL PRIMARY KEY,
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	price NUMERIC(10,2) NOT NULL,
 	quality VARCHAR(35) NOT NULL,
 	description VARCHAR(500) NOT NULL,
@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS public.rooms (
 
 -- Occupied Rooms
 CREATE TABLE IF NOT EXISTS public.occupied_rooms (
-	id SERIAL PRIMARY KEY,
-	user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-	room_id INTEGER UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+	room_id UUID UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
 	status status_mood NOT NULL DEFAULT 'BUYS',
 	total_price NUMERIC(10, 2) NOT NULL,
 	residence_time TIMESTAMP NOT NULL,
@@ -52,9 +52,9 @@ CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 
 -- Reviews
 CREATE TABLE IF NOT EXISTS public.reviews (
-	id SERIAL PRIMARY KEY,
-	user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-	room_id INTEGER UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+	room_id UUID UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
 	review VARCHAR(350),
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()

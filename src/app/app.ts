@@ -1,9 +1,9 @@
 import { createServer } from 'node:http'
-import { compose } from '../middleware/compose.middleware'
 import type {
 	IContext,
 	Middleware,
-} from '../shared/types/middlewares/app.types-middleware'
+} from '../common/types/middlewares/app.types-middleware'
+import { compose } from '../middleware/compose.middleware'
 import { logger } from '../utils/log/logger.log'
 
 export class App<T> {

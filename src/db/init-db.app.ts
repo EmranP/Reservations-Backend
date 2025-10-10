@@ -5,6 +5,10 @@ import { logger } from '../utils/log/logger.log'
 
 export const initDB = async (): Promise<void> => {
 	try {
+		const initExtensionSqlDB = await readFile(
+			path.join(__dirname, './migrations/extension.db.sql'),
+			'utf-8'
+		)
 		const initHandlerSqlDB = await readFile(
 			path.join(__dirname, './migrations/handler.db.sql'),
 			'utf-8'
@@ -27,6 +31,7 @@ export const initDB = async (): Promise<void> => {
 		)
 
 		const queries = [
+			pool.query(initExtensionSqlDB),
 			pool.query(initHandlerSqlDB),
 			pool.query(initTypeSqlDB),
 			pool.query(initTablesSqlDB),

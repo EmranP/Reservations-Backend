@@ -7,7 +7,7 @@ import {
 	transports,
 } from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
-import type { ICustomLogLevels } from '../../shared/types/config/log.interface'
+import type { ICustomLogLevels } from '../../common/types/config/log.interface'
 
 const customLevels: ICustomLogLevels = {
 	levels: {

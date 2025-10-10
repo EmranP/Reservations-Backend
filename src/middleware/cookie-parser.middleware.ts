@@ -1,4 +1,4 @@
-import type { Middleware } from '../shared/types/middlewares/app.types-middleware'
+import type { Middleware } from '../common/types/middlewares/app.types-middleware'
 
 export const cookieParser: Middleware<unknown> = async (
 	ctx,

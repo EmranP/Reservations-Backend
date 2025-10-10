@@ -1,7 +1,7 @@
 import type {
 	IContext,
 	Middleware,
-} from '../shared/types/middlewares/app.types-middleware'
+} from '../common/types/middlewares/app.types-middleware'
 import { logAndThrowInternalServer } from '../utils/log/throw-error.log'
 
 export function compose<T>(middleware: Middleware<T>[]) {

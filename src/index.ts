@@ -32,7 +32,7 @@ const startApp = async (): Promise<void> => {
 		await initDB()
 
 		// Generate Jwks
-		await genJwks()
+		await genJwks().catch()
 
 		app.listen(port, hostname)
 	} catch (error) {
