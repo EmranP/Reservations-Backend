@@ -1,5 +1,5 @@
+import type { IUser } from '../../app/db/types/user.types'
 import type { ROLES } from '../../app/roles'
-import type { IUser } from '../../db/types/user.types'
 
 export class LoginDto {
 	email: string | undefined
@@ -7,7 +7,7 @@ export class LoginDto {
 }
 
 export interface IUserDto {
-	id: number
+	id: string
 	firstName: string
 	lastName: string
 	email: string
@@ -20,7 +20,7 @@ export interface IUserDto {
 }
 
 export class UserDto {
-	id: number
+	id: string
 	firstName: string
 	lastName: string
 	email: string

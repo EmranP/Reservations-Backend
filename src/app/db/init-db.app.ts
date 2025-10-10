@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises'
 import path from 'path'
-import { pool } from '../app/check-db.app'
-import { logger } from '../utils/log/logger.log'
+import { logger } from '../../common/utils/log/logger.log'
+import { pool } from '../check-db.app'
 
 export const initDB = async (): Promise<void> => {
 	try {

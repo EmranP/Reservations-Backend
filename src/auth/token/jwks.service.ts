@@ -5,7 +5,7 @@ import { v4 as uuidV4 } from 'uuid'
 
 export const genJwks = async () => {
 	const publicPem = fs.readFileSync(
-		path.join(__dirname, '../../../../public.pem'),
+		path.join(__dirname, '../../../public.pem'),
 		'utf8'
 	)
 	const key = await importSPKI(publicPem, 'RS256')

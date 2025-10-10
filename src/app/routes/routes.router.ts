@@ -1,7 +1,7 @@
 import { URL } from 'url'
-import { rootAuthRouter } from '../common/constants/api.constant'
-import type { Middleware } from '../common/types/middlewares/app.types-middleware'
-import { responseNotFoundApi } from '../utils/app/errorResponse.utils'
+import { rootAuthRouter } from '../../common/constants/api.constant'
+import type { Middleware } from '../../common/types/middlewares/app.types-middleware'
+import { responseNotFoundApi } from '../../common/utils/app/errorResponse.utils'
 import { authRouter } from './auth/auth.router'
 
 export const routerApp: Middleware<unknown> = async (

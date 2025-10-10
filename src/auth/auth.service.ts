@@ -1,10 +1,12 @@
 import bcrypt from 'bcrypt'
-import { UserDto } from '../../dto/auth/login.dto'
-import type { LoginDto } from './auth.dto'
-import { authLoginModel } from './auth.model'
+import { AuthModel } from './auth.model'
+import { UserDto, type LoginDto } from './dto/login.dto'
+
 export class AuthService {
+	constructor(private model: AuthModel) {}
+
 	async login(dto: LoginDto) {
-		const user = await authLoginModel(dto)
+		const user = await this.model.loginModel(dto)
 
 		if (!user || !user.id) return { message: 'User not founded', status: 404 }
 
@@ -32,5 +34,3 @@ export class AuthService {
 
 	async forgetPassword() {}
 }
-
-export const authService = new AuthService()

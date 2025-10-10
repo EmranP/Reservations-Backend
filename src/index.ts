@@ -1,13 +1,13 @@
 import dotenv from 'dotenv'
 import { App } from './app/app'
 import { checkDB } from './app/check-db.app'
-import { initDB } from './db/init-db.app'
-import { cookieParser } from './middleware/cookie-parser.middleware'
-import { cors } from './middleware/cors.middleware'
-import { helmetMiddleware } from './middleware/helmet.middleware'
-import { json } from './middleware/json.middleware'
-import { routerApp } from './routes/routes.router'
-import { genJwks } from './service/auth/token/jwks.service'
+import { initDB } from './app/db/init-db.app'
+import { routerApp } from './app/routes/routes.router'
+import { genJwks } from './auth/token/jwks.service'
+import { cookieParser } from './common/middleware/cookie-parser.middleware'
+import { cors } from './common/middleware/cors.middleware'
+import { helmetMiddleware } from './common/middleware/helmet.middleware'
+import { json } from './common/middleware/json.middleware'
 
 dotenv.config({ path: '../.env' })
 
