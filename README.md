@@ -16,15 +16,15 @@
 
 **5) входа/регистрации.**
 
-**6) 2FA auth
+**6) 2FA auth**
 
 **7) Добавить платежную систему для покупки номера .**
 
-**8) Add cash req auth with redis
+**8) Add cash req auth with redis**
 
-**9) Work with files system
+**9) Work with files system**
 
-**10) Add tg bot where will be push notfi
+**10) Add tg bot where will be push notfi**
 
 ## Stack
 
