@@ -28,8 +28,8 @@
 
 ## Stack
 
-**Pure Node JS + TS**
-**Pure SQL + PostgreSQL**
-**Rollup for builder**
+**Pure Node JS + TS**.
+**Pure SQL + PostgreSQL**.
+**Rollup for builder**.
 
 ##Frontend: **https://github.com/EmranP/Hotel-Reservations-Frontend**
