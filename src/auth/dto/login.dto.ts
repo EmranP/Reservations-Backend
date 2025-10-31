@@ -4,6 +4,7 @@ import type { ROLES } from '../../app/roles'
 export class LoginDto {
 	email: string | undefined
 	password: string | undefined
+	phone?: string | undefined
 }
 
 export interface IUserDto {

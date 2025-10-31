@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { isAuthLoginDto } from '../../../auth/dto/login.dto'
+import { isAuthRegistrationDto } from '../../../auth/dto/registration.dto'
 import { authController } from '../../../auth/index.auth'
 import {
 	AUTH_LOGIN_API_URL,
@@ -24,7 +25,12 @@ export const authRouter = async (
 		}
 		await authController.login(req, res, body)
 	} else if (path === AUTH_REGISTRATION_API_URL && req.method === 'POST') {
-		// Add validate type for registration body
+		if (!isAuthRegistrationDto(body)) {
+			await responseBadRequest('Invalid data registration!', res)
+
+			return
+		}
+
 		await authController.registration(req, res, body)
 	} else if (path === AUTH_LOGOUT_API_URL && req.method === 'GET') {
 		//! Add before controller middleware for check auth and roles user

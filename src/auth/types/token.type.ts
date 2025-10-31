@@ -1,4 +1,4 @@
-import { ROLES } from '../../../app/roles'
+import { ROLES } from '../../app/roles'
 
 export interface ITokenPayload {
 	id: number
@@ -8,4 +8,11 @@ export interface ITokenPayload {
 export interface IGenerateToken {
 	accessToken: string
 	refreshToken: string
+}
+
+export interface IResponseTokens {
+	id: string
+	user_id: string
+	refresh_token: string
+	created_at: Date
 }

@@ -1,9 +1,15 @@
 import bcrypt from 'bcrypt'
+import type { Logger } from 'winston'
 import { AuthModel } from './auth.model'
 import { UserDto, type LoginDto } from './dto/login.dto'
+import type { TokenService } from './token/token.service'
 
 export class AuthService {
-	constructor(private model: AuthModel) {}
+	constructor(
+		private model: AuthModel,
+		private tokenService: TokenService,
+		private logger: Logger
+	) {}
 
 	async login(dto: LoginDto) {
 		const user = await this.model.loginModel(dto)

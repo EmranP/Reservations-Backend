@@ -1,4 +1,4 @@
-import type { Middleware } from '../common/types/middlewares/app.types-middleware'
+import type { Middleware } from '../types/middlewares/app.types-middleware'
 
 export const cors: Middleware<unknown> = async (ctx, next): Promise<void> => {
 	const { req, res } = ctx

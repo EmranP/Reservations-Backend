@@ -4,9 +4,11 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "nodemon --watch src --exec bun run  src/index.ts",
+		"dev": "NODE_ENV=development nodemon --watch  src --exec bun run  src/index.ts",
+		"prod": "NODE_ENV=production nodemon --watch  src --exec bun run src/index.ts",
 		"clean": "rimraf build",
-		"build": "npm run clean && tsc"
+		"build:dev": "bun run clean && bun build ./src/index.ts  --outdir ./build --target bun",
+		"build:prod": "bun run clean && bun build ./src/index.ts --minify --outdir ./build --target bun"
 	},
 	"devDependencies": {
 		"@types/bcrypt": "^6.0.0",
@@ -16,6 +18,7 @@
 		"@types/pg": "^8.15.4",
 		"@types/winston": "^2.4.4",
 		"nodemon": "^3.1.10",
+		"ts-node": "^10.9.2",
 		"winston-daily-rotate-file": "^5.0.0"
 	},
 	"peerDependencies": {

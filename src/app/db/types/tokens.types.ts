@@ -1,6 +1,6 @@
-import type { IAppData } from '../../common/types/app/app.interface'
+import type { ISharedModelApp } from '../../../common/types/db/app.interface'
 
-export interface IToken extends Omit<IAppData, 'updated_at'> {
+export interface IToken extends Omit<ISharedModelApp, 'updated_at'> {
 	user_id: number
 	refresh_token: string
 }

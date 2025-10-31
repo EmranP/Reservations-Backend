@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 
+import type { Logger } from 'winston'
 import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
 import { writeHeadData } from '../common/utils/app/writeHeadData.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
@@ -8,7 +9,7 @@ import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
 
 export class AuthController {
-	constructor(private authService: AuthService) {}
+	constructor(private authService: AuthService, private logger: Logger) {}
 
 	async login(
 		req: IncomingMessage,

@@ -1,4 +1,5 @@
 import type { Pool } from 'pg'
+import type { Logger } from 'winston'
 import type { IUser } from '../app/db/types/user.types'
 import { DB_TABLE_USERS } from '../common/constants/table-db.constant'
 import type { LoginDto } from './dto/login.dto'
@@ -6,14 +7,17 @@ import type { RegistrationDto } from './dto/registration.dto'
 import type { VerifyLinkDto } from './dto/verify.dto'
 
 export class AuthModel {
-	constructor(private pool: Pool) {}
+	constructor(private pool: Pool, private logger: Logger) {}
 
 	async loginModel(dto: LoginDto): Promise<IUser | null> {
-		const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE email = $1 AND password = $2;`
+		const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE email = $1 OR phone = $2 AND password = $2;`
 		const queryResult = await this.pool.query<IUser>(query, [
 			dto.email,
+			dto.phone,
 			dto.password,
 		])
+
+		this.logger.info(queryResult.rows[0])
 
 		return queryResult.rows[0] ?? null
 	}
