@@ -1,10 +1,10 @@
 import { createServer } from 'node:http'
-import { compose } from '../middleware/compose.middleware'
+import { compose } from '../common/middleware/compose.middleware'
 import type {
 	IContext,
 	Middleware,
-} from '../shared/types/middlewares/app.types-middleware'
-import { logger } from '../utils/log/logger.log'
+} from '../common/types/middlewares/app.types-middleware'
+import { logger } from '../common/utils/log/logger.log'
 
 export class App<T> {
 	private middlewares: Middleware<T>[] = []
