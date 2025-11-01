@@ -15,6 +15,7 @@ const app = new App()
 
 const port = Number(process.env.PORT) || 4200
 const hostname = process.env.HOSTNAME || 'localhost'
+const isDev = process.env.NODE_ENV === 'development'
 
 // Middlewares
 app.use(helmetMiddleware)
@@ -29,7 +30,7 @@ const startApp = async (): Promise<void> => {
 	try {
 		// Checking DB
 		await checkDB()
-		await initDB()
+		await initDB(isDev)
 
 		// Generate Jwks
 		await genJwks().catch()
