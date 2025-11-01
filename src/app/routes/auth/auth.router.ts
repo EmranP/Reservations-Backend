@@ -11,6 +11,7 @@ import {
 import { responseBadRequest } from '../../../common/utils/app/errorResponse.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 
+//! Add validate for email checking @ symbol, phone and other
 export const authRouter = async (
 	path: string,
 	req: IncomingMessage,
@@ -19,7 +20,7 @@ export const authRouter = async (
 ): Promise<void> => {
 	if (path === AUTH_LOGIN_API_URL && req.method === 'POST') {
 		if (!isAuthLoginDto(body)) {
-			await responseBadRequest('Invalid data: email or password', res)
+			await responseBadRequest('Invalid data: email, phone or password', res)
 
 			return
 		}

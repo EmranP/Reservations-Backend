@@ -13,7 +13,7 @@ export class TokenService {
 
 	constructor(private tokenModel: TokenModel, private logger: Logger) {}
 
-	async createAccessToken(user: Pick<IUserDto, 'id' | 'role'>) {
+	private async createAccessToken(user: Pick<IUserDto, 'id' | 'role'>) {
 		if (
 			!this.kidJwks ||
 			!this.issuerApp ||
@@ -42,7 +42,7 @@ export class TokenService {
 	}
 
 	// CreateRefresh in to token model
-	async createRefreshToken(user: Pick<IUserDto, 'id' | 'role'>) {
+	private async createRefreshToken(user: Pick<IUserDto, 'id' | 'role'>) {
 		if (
 			!this.refreshExpire ||
 			!this.kidJwks ||
@@ -68,6 +68,8 @@ export class TokenService {
 
 		return jwt
 	}
+
+	async generateTokens() {}
 
 	async verifyRefreshToken() {}
 

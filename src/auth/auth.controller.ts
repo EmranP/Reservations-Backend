@@ -2,11 +2,11 @@ import type { IncomingMessage, ServerResponse } from 'http'
 
 import type { Logger } from 'winston'
 import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
-import { writeHeadData } from '../common/utils/app/writeHeadData.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { AuthService } from './auth.service'
 import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
+import type { IAuthUserService } from './types/auth.types'
 
 export class AuthController {
 	constructor(private authService: AuthService, private logger: Logger) {}
@@ -17,23 +17,34 @@ export class AuthController {
 		body: LoginDto
 	): Promise<void> {
 		try {
-			const headData = writeHeadData(200)
-			const user = await this.authService.login(body)
+			let user: Partial<IAuthUserService> | undefined
 
-			if (user.status === 404) {
-				res.writeHead(user.status, headData.contentData)
-			} else if (user.status === 400) {
-				res.writeHead(user.status, headData.contentData)
-			} else {
-				res.writeHead(headData.status, headData.contentData)
+			if (body.email) {
+				user = await this.authService.loginEmail(body)
+			} else if (body.phone) {
+				user = await this.authService.loginPhone(body)
+			}
+
+			if (user && user.status && user.status >= 400) {
+				const errorJsonData = JSON.stringify({ message: user.message })
+
+				res.writeHead(user.status ?? 500, {
+					'Content-Type': 'application/json',
+				})
+				res.end(errorJsonData)
+
+				return
 			}
 
 			const jsonData = JSON.stringify(user)
+
+			res.writeHead(200, { 'Content-Type': 'application/json' })
 			res.end(jsonData)
 		} catch (error) {
 			if (error instanceof Error) {
 				const errorRes = ApiError.BadRequest(error.message)
 
+				this.logger.error(errorRes.message)
 				await responseBadRequest(errorRes.message, res)
 			} else {
 				const errorRes = ApiError.BadRequest(
@@ -51,16 +62,29 @@ export class AuthController {
 		body: RegistrationDto
 	): Promise<void> {
 		try {
+			const newUser = await this.authService.registration(body)
+
+			if (newUser.message || (newUser.status && newUser.status >= 400)) {
+				const errorData = JSON.stringify({ message: newUser.message })
+
+				res.writeHead(newUser.status ?? 500, {
+					'Content-Type': 'application/json',
+				})
+				res.end(errorData)
+
+				return
+			}
+
+			const jsonData = JSON.stringify(newUser)
+
 			res.writeHead(201, { 'Content-Type': 'application/json' })
-
-			const data = { message: 'reg controller' }
-			const jsonData = JSON.stringify(data)
-
 			res.end(jsonData)
 		} catch (error) {
 			const errorRes = ApiError.BadRequest(
 				'Bad-request from registration controller :('
 			)
+
+			this.logger.error(errorRes.message)
 
 			await responseBadRequest(errorRes.message, res)
 		}
