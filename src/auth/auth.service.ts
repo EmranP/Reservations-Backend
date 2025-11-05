@@ -17,8 +17,6 @@ export class AuthService {
 
 	async loginEmail(dto: LoginDto): TypeAuthUserService {
 		const userEmail = await this.model.getUserByEmail(dto.email)
-		this.logger.info('login-email')
-		this.logger.debug(userEmail)
 
 		if (!userEmail || !userEmail.id)
 			return { message: 'User email not founded', status: 404 }
@@ -31,18 +29,25 @@ export class AuthService {
 		if (!isPassEquals) return { message: 'Password is not right', status: 400 }
 
 		const userDto = new UserDto(userEmail)
-		// const token = tokenService.generateRSToken({ ...userDto })
+		const tokens = await this.tokenService.generateTokens(userDto)
 
+		if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			return {
+				message: 'Error refresh-token is not generate',
+				status: 500,
+			}
+
+		await this.tokenService.saveToken(userDto.id, tokens.refresh)
+
+		await this.tokenService.verifyToken(tokens.refresh)
 		return {
 			user: userDto,
-			// accessToken: token?.accessToken,
+			accessToken: tokens.access,
 		}
 	}
 
 	async loginPhone(dto: LoginDto): TypeAuthUserService {
 		const userPhone = await this.model.getUserByPhone(dto.phone)
-		this.logger.info('login-phone')
-		this.logger.debug(userPhone)
 
 		if (!userPhone || !userPhone.id)
 			return { message: 'User phone not founded', status: 404 }
@@ -55,9 +60,25 @@ export class AuthService {
 		if (!isPassEquals) return { message: 'Password is not right', status: 400 }
 
 		const userDto = new UserDto(userPhone)
+		const tokens = await this.tokenService.generateTokens(userDto)
+
+		if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			return {
+				message: 'Error refresh-token is not generate',
+				status: 500,
+			}
+
+		await this.tokenService.saveToken(userDto.id, tokens.refresh)
+
+		const isVerifyToken = await this.tokenService.verifyToken(tokens.refresh)
+
+		if (isVerifyToken.message && typeof isVerifyToken.message === 'string') {
+			return { message: isVerifyToken.message, status: 400 }
+		}
 
 		return {
 			user: userDto,
+			accessToken: tokens.access,
 		}
 	}
 
@@ -94,13 +115,22 @@ export class AuthService {
 
 		if (!newUser?.id) return { message: 'Error is not created', status: 500 }
 
-		// Add mail service
+		//! Add mail service
 
-		// Add tokens service
 		const userDto = new UserDto(newUser)
+		const tokens = await this.tokenService.generateTokens(userDto)
+
+		if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			return {
+				message: 'Error refresh-token is not generate',
+				status: 500,
+			}
+
+		await this.tokenService.saveToken(userDto.id, tokens.refresh)
 
 		return {
 			user: userDto,
+			accessToken: tokens.access,
 		}
 	}
 
