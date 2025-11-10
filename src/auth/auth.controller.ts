@@ -6,7 +6,7 @@ import { ApiError } from '../common/utils/log/exists-error.log'
 import { AuthService } from './auth.service'
 import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
-import type { IAuthUserService } from './types/auth.types'
+import type { IAuthUserService } from './types/types.auth'
 
 export class AuthController {
 	constructor(private authService: AuthService, private logger: Logger) {}

@@ -37,7 +37,11 @@ const startApp = async (): Promise<void> => {
 
 		app.listen(port, hostname)
 	} catch (error) {
-		console.error(`❌ Ошибка запуска сервера: ${error}`)
+		console.error(
+			`❌ Error running server: ${
+				error instanceof Error ? error.message : 'Internal server'
+			}`
+		)
 		process.exit(1)
 	}
 }

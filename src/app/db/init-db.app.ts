@@ -71,7 +71,7 @@ export const initDB = async (isDev: boolean): Promise<void> => {
 
 		Promise.all(queries)
 
-		logger.info('✅ База данных успешно проинициализирована')
+		logger.info('✅ Database success init')
 	} catch (error) {
 		logger.error('Database connection error:', error)
 		throw error

@@ -97,6 +97,4 @@ export class AuthModel {
 
 		return isUserVerify.rows[0]?.is_verify || false
 	}
-
-	async logoutModel() {}
 }
