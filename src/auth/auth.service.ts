@@ -1,12 +1,12 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
+import { UserDto } from '../user/dto/user.dto'
 import { AuthModel } from './auth.model'
 import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
-import { UserDto } from './dto/user.dto'
 import type { TokenService } from './token/token.service'
-import type { TypeAuthUserService } from './types/auth.types'
+import type { TypeAuthUserService } from './types/types.auth'
 
 export class AuthService {
 	constructor(
@@ -39,7 +39,6 @@ export class AuthService {
 
 		await this.tokenService.saveToken(userDto.id, tokens.refresh)
 
-		await this.tokenService.verifyToken(tokens.refresh)
 		return {
 			user: userDto,
 			accessToken: tokens.access,
@@ -69,12 +68,6 @@ export class AuthService {
 			}
 
 		await this.tokenService.saveToken(userDto.id, tokens.refresh)
-
-		const isVerifyToken = await this.tokenService.verifyToken(tokens.refresh)
-
-		if (isVerifyToken.message && typeof isVerifyToken.message === 'string') {
-			return { message: isVerifyToken.message, status: 400 }
-		}
 
 		return {
 			user: userDto,

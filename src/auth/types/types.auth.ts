@@ -1,11 +1,10 @@
+import type { IAppService } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
-import type { UserDto } from '../dto/user.dto'
+import type { UserDto } from '../../user/dto/user.dto'
 
-export interface IAuthUserService {
+export interface IAuthUserService extends IAppService {
 	accessToken: string | { message: string }
 	user: UserDto
-	message: string
-	status: number
 }
 
 export type TypeAuthUserService = Promise<Partial<IAuthUserService>>

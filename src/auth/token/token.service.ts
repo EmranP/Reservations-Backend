@@ -1,16 +1,17 @@
 import bcrypt from 'bcrypt'
-import { importJWK, jwtVerify, SignJWT, type JWTPayload } from 'jose'
+import { importJWK, jwtVerify, SignJWT } from 'jose'
 import type { JwtPayload } from 'jsonwebtoken'
 import type { Logger } from 'winston'
 import { JWKS_CONFIG, TOKEN_CONFIG } from '../../common/config/token.config'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
-import type { IUserDto } from '../dto/user.dto'
+import type { IUserDto } from '../../user/dto/user.dto'
+import type { IUserJwtPayload } from '../types/token.type'
 import type {
 	IGenerateTokenService,
 	TypeAuthTokenServiceFindOne,
-} from '../types/auth.types'
+} from '../types/types.auth'
 import { getJwks } from './jwks.service'
 import type { TokenModel } from './token.model'
 
@@ -119,9 +120,10 @@ export class TokenService {
 
 	async verifyToken(
 		token: string
-	): Promise<JWTPayload | Pick<IErrorResponseApp, 'message'>> {
-		if (this.jwksCache && Date.now() - this.jwksCacheAt < 60 * 60 * 1000)
-			return this.jwksCache
+	): Promise<IUserJwtPayload | Pick<IErrorResponseApp, 'message'>> {
+		//! For production remove commit
+		// if (this.jwksCache && Date.now() - this.jwksCacheAt < 60 * 60 * 1000)
+		// 	return this.jwksCache
 
 		try {
 			if (token.startsWith('Bearer ')) token = token.slice(7).trim()
@@ -143,7 +145,7 @@ export class TokenService {
 			} catch (err) {
 				return {
 					message:
-						'Invalid JWT header: ' +
+						'Invalid JWT header ' +
 						`${err instanceof Error ? err.message : 'internal server'}`,
 				}
 			}
@@ -170,7 +172,7 @@ export class TokenService {
 				return { message: 'Algorithm mismatch between JWT header and JWK' }
 
 			const key = await importJWK(jwk, jwk.alg)
-			const resultJwtVerify = await jwtVerify(token, key, {
+			const resultJwtVerify = await jwtVerify<IUserJwtPayload>(token, key, {
 				issuer: JWKS_CONFIG.ISSUER,
 				audience: JWKS_CONFIG.AUDIENCE,
 			})
@@ -182,7 +184,7 @@ export class TokenService {
 		} catch (error) {
 			return {
 				message:
-					'Token verification failed: ' +
+					'Token verification failed ' +
 					`${error instanceof Error ? error.message : 'internal server'}`,
 			}
 		}

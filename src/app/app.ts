@@ -19,14 +19,12 @@ export class App<T> {
 			const appHandler = compose(this.middlewares)
 
 			appHandler(ctx).catch(err => {
-				logger.error(err)
-				res.statusCode = 500
-				res.end(`❌ Ошибка запуска сервера : ${err}`)
+				logger.error(err.message)
 			})
 		})
 
 		server.listen(port, hostname, () => {
-			logger.http(`🚀 Сервер запущен на http://${hostname}:${port}`)
+			logger.http(`🚀 Server running to http://${hostname}:${port}`)
 		})
 	}
 }

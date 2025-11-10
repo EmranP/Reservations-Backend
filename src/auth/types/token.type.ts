@@ -1,3 +1,5 @@
+import type { IncomingMessage } from 'http'
+import type { JWTPayload } from 'jose'
 import { ROLES } from '../../app/roles'
 
 export interface ITokenPayload {
@@ -15,4 +17,13 @@ export interface IResponseTokens {
 	user_id: string
 	refresh_token: string
 	created_at: Date
+}
+
+export interface IUserJwtPayload extends JWTPayload {
+	role: typeof ROLES | undefined
+	type: string
+}
+
+export interface IRequestUserApp extends IncomingMessage {
+	user: IUserJwtPayload | undefined
 }

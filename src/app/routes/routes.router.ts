@@ -1,8 +1,15 @@
 import { URL } from 'url'
-import { rootAuthRouter } from '../../common/constants/api.constant'
+import { isAuth } from '../../auth/middleware/isAuth.auth'
+import {
+	isPathWithQuery,
+	rootAuthRouter,
+	rootUserRouter,
+} from '../../common/constants/api.constant'
+import type { IAppQueryParams } from '../../common/types/app/app.type'
 import type { Middleware } from '../../common/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../../common/utils/app/errorResponse.utils'
 import { authRouter } from './auth/auth.router'
+import { userRouter } from './user/user.route'
 
 export const routerApp: Middleware<unknown> = async (
 	ctx,
@@ -11,14 +18,39 @@ export const routerApp: Middleware<unknown> = async (
 	const { req, res, body } = ctx
 	if (!req.url) return
 
-	const parserURL = new URL(req.url, `http://${req.headers.host}`)
-	const path = parserURL.pathname
+	const authMiddleware = await isAuth(req, res)
 
-	if (!rootAuthRouter.includes(path)) {
+	const parserURL = new URL(req.url, `http://${req.headers.host}`)
+	const pathWithQuery = `${parserURL.pathname}${parserURL.search}`
+	const path = parserURL.search ? pathWithQuery : parserURL.pathname
+
+	const convertQueryParams = JSON.stringify({
+		query: parserURL.searchParams,
+		path: parserURL.pathname,
+		searchParams: parserURL.search,
+	})
+	const pathOption: IAppQueryParams = JSON.parse(convertQueryParams)
+	const isPathUserHref = isPathWithQuery(
+		parserURL.origin,
+		'user',
+		pathOption.searchParams
+	)
+
+	if (
+		!rootAuthRouter.includes(path) &&
+		!rootUserRouter.includes(path) &&
+		parserURL.href !== isPathUserHref
+	) {
 		await responseNotFoundApi('Not founded auth api', res)
 	}
 
-	await authRouter(path, req, res, body)
+	if (rootAuthRouter.includes(path)) {
+		await authRouter(path, req, res, body)
+	}
+
+	if (rootUserRouter.includes(path) || parserURL.href === isPathUserHref) {
+		await userRouter(path, pathOption, authMiddleware, req, res, body, next)
+	}
 
 	await next()
 }
