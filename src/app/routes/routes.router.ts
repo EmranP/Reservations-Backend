@@ -15,7 +15,7 @@ export const routerApp: Middleware<unknown> = async (
 	ctx,
 	next
 ): Promise<void> => {
-	const { req, res, body } = ctx
+	const { req, res, body, cookies } = ctx
 	if (!req.url) return
 
 	const authMiddleware = await isAuth(req, res)
@@ -45,11 +45,11 @@ export const routerApp: Middleware<unknown> = async (
 	}
 
 	if (rootAuthRouter.includes(path)) {
-		await authRouter(path, req, res, body)
+		await authRouter(authMiddleware, path, req, res, body, cookies)
 	}
 
 	if (rootUserRouter.includes(path) || parserURL.href === isPathUserHref) {
-		await userRouter(path, pathOption, authMiddleware, req, res, body, next)
+		await userRouter(authMiddleware, path, pathOption, req, res, body, next)
 	}
 
 	await next()

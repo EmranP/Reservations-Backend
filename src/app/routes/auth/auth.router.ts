@@ -13,10 +13,12 @@ import { ApiError } from '../../../common/utils/log/exists-error.log'
 
 //! Add validate for email checking @ symbol, phone and other
 export const authRouter = async (
+	isAuth: ApiError | undefined,
 	path: string,
 	req: IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
-	body?: unknown
+	body?: unknown,
+	cookie?: Record<string, string>
 ): Promise<void> => {
 	if (path === AUTH_LOGIN_API_URL && req.method === 'POST') {
 		if (!isAuthLoginDto(body)) {
@@ -24,6 +26,7 @@ export const authRouter = async (
 
 			return
 		}
+
 		await authController.login(req, res, body)
 	} else if (path === AUTH_REGISTRATION_API_URL && req.method === 'POST') {
 		if (!isAuthRegistrationDto(body)) {
@@ -33,12 +36,10 @@ export const authRouter = async (
 		}
 
 		await authController.registration(req, res, body)
-	} else if (path === AUTH_LOGOUT_API_URL && req.method === 'GET') {
-		//! Add before controller middleware for check auth and roles user
-		await authController.logout(req, res)
 	} else if (path === AUTH_REFRESH_TOKEN_API_URL && req.method === 'POST') {
-		//! Add before controller middleware for check auth and roles user
-		await authController.refresh(req, res)
+		await authController.refresh(req, res, cookie)
+	} else if (path === AUTH_LOGOUT_API_URL && req.method === 'GET') {
+		await authController.logout(req, res, cookie)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')
 

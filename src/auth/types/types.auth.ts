@@ -4,6 +4,7 @@ import type { UserDto } from '../../user/dto/user.dto'
 
 export interface IAuthUserService extends IAppService {
 	accessToken: string | { message: string }
+	refreshToken: string | { message: string }
 	user: UserDto
 }
 

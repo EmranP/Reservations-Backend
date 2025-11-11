@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
+import { isVerifyTokenError } from '../common/utils/app/checkType.utils'
+import { ApiError } from '../common/utils/log/exists-error.log'
 import { UserDto } from '../user/dto/user.dto'
 import { AuthModel } from './auth.model'
 import type { LoginDto } from './dto/login.dto'
@@ -42,6 +44,7 @@ export class AuthService {
 		return {
 			user: userDto,
 			accessToken: tokens.access,
+			refreshToken: tokens.refresh,
 		}
 	}
 
@@ -72,6 +75,7 @@ export class AuthService {
 		return {
 			user: userDto,
 			accessToken: tokens.access,
+			refreshToken: tokens.refresh,
 		}
 	}
 
@@ -124,6 +128,31 @@ export class AuthService {
 		return {
 			user: userDto,
 			accessToken: tokens.access,
+		}
+	}
+
+	async refreshToken(refreshToken: string): TypeAuthUserService {
+		const isVerifyToken = await this.tokenService.verifyToken(refreshToken)
+
+		if (isVerifyTokenError(isVerifyToken))
+			return ApiError.BadRequest(isVerifyToken.message)
+
+		if (!isVerifyToken.sub || !isVerifyToken.role)
+			return ApiError.BadRequest('ID or Role is not have from verify token')
+
+		const tokens = await this.tokenService.generateTokens({
+			id: isVerifyToken.sub,
+			role: isVerifyToken.role,
+		})
+
+		if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			return ApiError.BadRequest('Error generate token from new-refresh token')
+
+		await this.tokenService.saveToken(isVerifyToken.sub, tokens.refresh)
+
+		return {
+			accessToken: tokens.access,
+			refreshToken: tokens.refresh,
 		}
 	}
 

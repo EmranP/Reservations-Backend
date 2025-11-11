@@ -12,9 +12,9 @@ import { userController } from '../../../user/index.user'
 import { ROLES } from '../../roles'
 
 export const userRouter = async (
+	isAuth: ApiError | undefined,
 	path: string,
 	query: IAppQueryParams,
-	isAuth: ApiError | undefined,
 	req: IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
 	body?: unknown,
@@ -28,13 +28,13 @@ export const userRouter = async (
 		(path === USER_GET_URL && req.method === 'GET')
 	) {
 		if (isAuth) {
-			await responseBadRequest(isAuth.message, res)
+			await responseBadRequest(isAuth.message, res, isAuth.status)
 
 			return
 		}
 
 		if (accessAdminRole) {
-			await responseBadRequest(accessAdminRole, res)
+			await responseBadRequest(accessAdminRole, res, 403)
 
 			return
 		}

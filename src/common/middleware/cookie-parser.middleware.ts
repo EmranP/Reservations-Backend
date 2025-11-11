@@ -11,8 +11,7 @@ export const cookieParser: Middleware<unknown> = async (
 		const [key, val] = pair.trim().split('=')
 
 		if (key && val) {
-			decodeURIComponent(pair)
-			console.log(key, val)
+			cookie[key] = val
 		}
 	})
 
