@@ -1,5 +1,6 @@
 import type { IAppService } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
+import type { ApiError } from '../../common/utils/log/exists-error.log'
 import type { UserDto } from '../../user/dto/user.dto'
 
 export interface IAuthUserService extends IAppService {
@@ -9,6 +10,13 @@ export interface IAuthUserService extends IAppService {
 }
 
 export type TypeAuthUserService = Promise<Partial<IAuthUserService>>
+
+export type TypeAuthServiceMessageWithApiError = Promise<
+	| ApiError
+	| {
+			message: string
+	  }
+>
 
 export type TypeAuthTokenServiceFindOne = Promise<
 	| {

@@ -38,7 +38,7 @@ export const authRouter = async (
 		await authController.registration(req, res, body)
 	} else if (path === AUTH_REFRESH_TOKEN_API_URL && req.method === 'POST') {
 		await authController.refresh(req, res, cookie)
-	} else if (path === AUTH_LOGOUT_API_URL && req.method === 'GET') {
+	} else if (path === AUTH_LOGOUT_API_URL && req.method === 'POST') {
 		await authController.logout(req, res, cookie)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')

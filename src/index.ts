@@ -3,6 +3,7 @@ import { App } from './app/app'
 import { checkDB } from './app/check-db.app'
 import { initDB } from './app/db/init-db.app'
 import { routerApp } from './app/routes/routes.router'
+import { genJwks } from './auth/token/jwks.service'
 import { APP_CONFIG } from './common/config/app.config'
 import { cookieParser } from './common/middleware/cookie-parser.middleware'
 import { cors } from './common/middleware/cors.middleware'
@@ -33,7 +34,7 @@ const startApp = async (): Promise<void> => {
 		await initDB(isDev)
 
 		// Generate Jwks
-		// await genJwks().catch()
+		await genJwks().catch()
 
 		if (!port || !hostname) return
 

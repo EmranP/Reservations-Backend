@@ -1,6 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 
 import type { Logger } from 'winston'
+import { TOKEN_CONFIG } from '../common/config/token.config'
+import { setDateUtil } from '../common/utils/app/date.util'
 import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
 import { writeHeadData } from '../common/utils/app/writeHeadData.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
@@ -10,8 +12,12 @@ import type { RegistrationDto } from './dto/registration.dto'
 import type { IAuthUserService } from './types/types.auth'
 
 export class AuthController {
-	// private expireRefresh = TOKEN_CONFIG.REFRESH_EXPIRE
-	// private appHostname = APP_CONFIG.HOSTNAME
+	private expireRefresh = TOKEN_CONFIG.REFRESH_EXPIRE
+	private maxAge =
+		this.expireRefresh === '7d' ? 7 : this.expireRefresh === '30d' ? 30 : 0
+	private expiresToken = setDateUtil(this.maxAge)
+	private expiresRemove = new Date(0).toUTCString()
+
 	private headData = writeHeadData(400)
 
 	constructor(private authService: AuthService, private logger: Logger) {}
@@ -47,7 +53,9 @@ export class AuthController {
 
 			res.setHeader(
 				'Set-cookie',
-				`refreshToken=${user?.refreshToken}; httpOnly; path=/api; max_age=604800000;`
+				`refreshToken=${
+					user?.refreshToken
+				}; httpOnly; path=/api; Expires=${this.expiresToken.toUTCString()}; SameSite=Strict`
 			)
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
@@ -99,7 +107,6 @@ export class AuthController {
 		}
 	}
 
-	//! Manipulation with cookie
 	async refresh(
 		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
@@ -137,7 +144,9 @@ export class AuthController {
 
 			res.setHeader(
 				'Set-cookie',
-				`refreshToken=${newRefresh?.refreshToken}; httpOnly; path=/api; max_age=604800000;`
+				`refreshToken=${
+					newRefresh?.refreshToken
+				}; httpOnly; path=/api; Expires=${this.expiresToken.toUTCString()}; SameSite=Strict`
 			)
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
@@ -156,5 +165,41 @@ export class AuthController {
 		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
-	) {}
+	) {
+		try {
+			if (
+				!cookies ||
+				!cookies.refreshToken ||
+				cookies.refreshToken === 'refreshToken='
+			) {
+				const error = JSON.stringify({
+					message: 'Bad-request Cookie is not have',
+				})
+
+				res.writeHead(400, this.headData.contentData)
+				res.end(error)
+
+				return
+			}
+
+			const { refreshToken } = cookies
+
+			const resultLogoutService = await this.authService.logout(refreshToken)
+
+			const jsonData = JSON.stringify({ message: resultLogoutService.message })
+
+			res.setHeader(
+				'Set-cookie',
+				`refreshToken=; httpOnly; path=/api; Expires=${this.expiresRemove}; SameSite=Strict`
+			)
+			res.writeHead(200, this.headData.contentData)
+			res.end(jsonData)
+		} catch (error) {
+			const errorRes = ApiError.BadRequest('Bad-request from logout controller')
+
+			this.logger.error(errorRes.message)
+
+			await responseBadRequest(errorRes.message, res)
+		}
+	}
 }

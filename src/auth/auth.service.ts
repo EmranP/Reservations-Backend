@@ -8,7 +8,10 @@ import { AuthModel } from './auth.model'
 import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
 import type { TokenService } from './token/token.service'
-import type { TypeAuthUserService } from './types/types.auth'
+import type {
+	TypeAuthServiceMessageWithApiError,
+	TypeAuthUserService,
+} from './types/types.auth'
 
 export class AuthService {
 	constructor(
@@ -156,7 +159,26 @@ export class AuthService {
 		}
 	}
 
-	async logout() {}
+	async logout(refreshToken: string): TypeAuthServiceMessageWithApiError {
+		const isVerifyToken = await this.tokenService.verifyToken(refreshToken)
+
+		if (isVerifyTokenError(isVerifyToken))
+			return ApiError.BadRequest(isVerifyToken.message)
+
+		if (!isVerifyToken.sub) return ApiError.BadRequest('User id is not have')
+
+		const resultRemoveToken = await this.tokenService.deleteToken(
+			isVerifyToken.sub,
+			refreshToken
+		)
+
+		if (!resultRemoveToken)
+			return ApiError.BadRequest('Something was wrong to logout')
+
+		return {
+			message: `Logout has success completed to USER-ID: ${resultRemoveToken.id}`,
+		}
+	}
 
 	async verifyEmail() {}
 
