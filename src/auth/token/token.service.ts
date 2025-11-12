@@ -7,7 +7,7 @@ import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
 import type { IUserDto } from '../../user/dto/user.dto'
-import type { IUserJwtPayload } from '../types/token.type'
+import type { IResponseTokens, IUserJwtPayload } from '../types/token.type'
 import type {
 	IGenerateTokenService,
 	TypeAuthTokenServiceFindOne,
@@ -190,7 +190,15 @@ export class TokenService {
 		}
 	}
 
-	async saveToken(userId: string, refreshToken: string) {
+	async saveToken(
+		userId: string,
+		refreshToken: string
+	): Promise<
+		| IResponseTokens
+		| {
+				message: string
+		  }
+	> {
 		const hashToken = await bcrypt.hash(refreshToken, 10)
 
 		await this.deleteToken(userId, refreshToken)
@@ -206,7 +214,10 @@ export class TokenService {
 		return newToken
 	}
 
-	async deleteToken(userId: string, refreshToken: string) {
+	async deleteToken(
+		userId: string,
+		refreshToken: string
+	): Promise<Pick<IResponseTokens, 'id' | 'refresh_token'> | null> {
 		const tokenModel = await this.tokenModel.delete(userId, refreshToken)
 
 		return tokenModel

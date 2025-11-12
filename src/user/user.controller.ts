@@ -75,8 +75,6 @@ export class UserController {
 		try {
 			const userId = ''
 			const removeUser = await this.userService.deleteUser(userId)
-
-			console.log(req)
 		} catch (error) {
 			const errorRes = ApiError.BadRequest(
 				'Bad-request from delete user controller'
