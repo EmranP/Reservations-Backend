@@ -18,3 +18,13 @@ export const setMinuteUtil = (minute: number): Date => {
 
 	return plusMinute
 }
+
+export const setSecundUtil = (sec: number): Date => {
+	const now = new Date()
+
+	const plusSecund = new Date(now)
+
+	plusSecund.setSeconds(now.getSeconds() + sec)
+
+	return plusSecund
+}

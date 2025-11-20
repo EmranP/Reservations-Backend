@@ -7,7 +7,8 @@ export interface IAppService extends IAppMessage {
 }
 
 export interface IAppQueryParams {
-	query: Record<string, string> | undefined
+	queryParams: Record<string, string> | undefined
 	path: string
 	searchParams: string | undefined
+	query: string | null
 }

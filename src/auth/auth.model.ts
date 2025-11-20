@@ -40,18 +40,18 @@ export class AuthModel {
 		}
 	}
 
-	async getUserBydActivationLinkModel(
-		dto: VerifyLinkDto
-	): Promise<Pick<IUser, 'activation_link'> | null> {
-		const query = `SELECT activation_link FROM ${DB_TABLE_USERS} WHERE activation_link = $1`
+	// async getUserBydActivationLinkModel(
+	// 	dto: VerifyLinkDto
+	// ): Promise<Pick<IUser, 'activation_link'> | null> {
+	// 	const query = `SELECT activation_link FROM ${DB_TABLE_USERS} WHERE activation_link = $1`
 
-		const queryResult = await this.pool.query<Pick<IUser, 'activation_link'>>(
-			query,
-			[dto.activationLink]
-		)
+	// 	const queryResult = await this.pool.query<Pick<IUser, 'activation_link'>>(
+	// 		query,
+	// 		[dto.activationLink]
+	// 	)
 
-		return queryResult.rows[0] ?? null
-	}
+	// 	return queryResult.rows[0] ?? null
+	// }
 
 	async createUserModel(
 		dto: RegistrationDto,
@@ -77,24 +77,26 @@ export class AuthModel {
 		return queryResult.rows[0]
 	}
 
-	async verifyModel(dto: VerifyLinkDto): Promise<boolean> {
-		const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE activation_link = $1`
+	async verifyModel(dto: VerifyLinkDto): Promise<Partial<IUser> | false> {
+		const query = `SELECT id FROM ${DB_TABLE_USERS} WHERE activation_link = $1`
 		const queryUpdatedVerify =
-			'UPDATE users SET is_verify = true WHERE id = $1 RETURNING is_verify'
+			'UPDATE users SET is_verify = true WHERE id = $1 RETURNING id, is_verify'
 
-		const queryResult = await this.pool.query<IUser>(query, [
-			dto.activationLink,
-		])
+		const queryResult = await this.pool.query<Pick<IUser, 'id' | 'is_verify'>>(
+			query,
+			[dto.activationLink]
+		)
+
+		if (!queryResult.rows[0]) return false
 
 		const userData = queryResult.rows[0]
 
 		if (!userData || !userData.id) return false
 
-		const isUserVerify = await this.pool.query<Pick<IUser, 'is_verify'>>(
-			queryUpdatedVerify,
-			[userData.id]
-		)
+		const isUserVerify = await this.pool.query<IUser>(queryUpdatedVerify, [
+			userData.id,
+		])
 
-		return isUserVerify.rows[0]?.is_verify || false
+		return isUserVerify.rows[0] || false
 	}
 }
