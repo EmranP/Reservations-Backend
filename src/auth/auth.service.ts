@@ -1,12 +1,18 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
+import { APP_CONFIG } from '../common/config/app.config'
+import { activationLinkHandler } from '../common/constants/link.constant'
 import { isVerifyTokenError } from '../common/utils/app/checkType.utils'
+import { setMinuteUtil } from '../common/utils/app/date.util'
+import { renderSendActivationTwoFactoryAuth } from '../common/utils/format/render.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { UserDto } from '../user/dto/user.dto'
+import type { UserModel } from '../user/user.model'
 import { AuthModel } from './auth.model'
 import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
+import { authEmailService } from './index.auth'
 import type { TokenService } from './token/token.service'
 import type {
 	TypeAuthServiceMessageWithApiError,
@@ -14,10 +20,19 @@ import type {
 } from './types/types.auth'
 
 export class AuthService {
+	private verifyConfig = APP_CONFIG.EXPIRES_USER_VERIFY
+	private maxAgeVerify = this.verifyConfig === '5m' ? 5 : 0
+	private expiresVerify = setMinuteUtil(this.maxAgeVerify)
+	private errorExpireMessage =
+		'Unfortunately, your confirmation time has expired, please register again.'
+	private expireMessage =
+		'Please confirm your account via the link, you have 5 minutes to do this.'
+
 	constructor(
-		private model: AuthModel,
-		private tokenService: TokenService,
-		private logger: Logger
+		protected model: AuthModel,
+		private userModel: UserModel,
+		protected tokenService: TokenService,
+		protected logger: Logger
 	) {}
 
 	async loginEmail(dto: LoginDto): TypeAuthUserService {
@@ -34,6 +49,13 @@ export class AuthService {
 		if (!isPassEquals) return { message: 'Password is not right', status: 400 }
 
 		const userDto = new UserDto(userEmail)
+
+		if (!userDto.isVerify)
+			return {
+				message: 'User is account is not verify',
+				status: 400,
+			}
+
 		const tokens = await this.tokenService.generateTokens(userDto)
 
 		if (!tokens.refresh || typeof tokens.refresh !== 'string')
@@ -65,6 +87,13 @@ export class AuthService {
 		if (!isPassEquals) return { message: 'Password is not right', status: 400 }
 
 		const userDto = new UserDto(userPhone)
+
+		if (!userDto.isVerify)
+			return {
+				message: 'User is account is not verify',
+				status: 400,
+			}
+
 		const tokens = await this.tokenService.generateTokens(userDto)
 
 		if (!tokens.refresh || typeof tokens.refresh !== 'string')
@@ -83,6 +112,9 @@ export class AuthService {
 	}
 
 	async registration(dto: RegistrationDto): TypeAuthUserService {
+		const now = new Date()
+		const isTimeCheck = now.getTime() >= this.expiresVerify.getTime()
+
 		// Candidate
 		const candidateEmail = await this.model.getUserByEmail(dto.email)
 		const candidatePhone = await this.model.getUserByPhone(dto.phone)
@@ -91,17 +123,42 @@ export class AuthService {
 		const errorPhoneMessage = `A user with phone ${dto.phone} already exists.`
 
 		if (candidateEmail?.id) {
-			this.logger.info(errorEmailMessage)
+			if (isTimeCheck && !candidateEmail.is_verify) {
+				await this.userModel.removeUserModel(candidateEmail.id)
+
+				this.expiresVerify = setMinuteUtil(this.maxAgeVerify)
+
+				return {
+					message: this.errorExpireMessage,
+					status: 400,
+				}
+			}
+
+			this.logger.info(!isTimeCheck ? this.expireMessage : errorEmailMessage)
 
 			return {
-				message: errorEmailMessage,
+				message: !isTimeCheck ? this.expireMessage : errorEmailMessage,
 				status: 409,
 			}
 		} else if (candidatePhone?.id) {
-			this.logger.info(errorPhoneMessage)
+			if (
+				now.getTime() >= this.expiresVerify.getTime() &&
+				!candidatePhone.is_verify
+			) {
+				await this.userModel.removeUserModel(candidatePhone.id)
+
+				this.expiresVerify = setMinuteUtil(this.maxAgeVerify)
+
+				return {
+					message: this.errorExpireMessage,
+					status: 400,
+				}
+			}
+
+			this.logger.info(!isTimeCheck ? this.expireMessage : errorPhoneMessage)
 
 			return {
-				message: errorPhoneMessage,
+				message: !isTimeCheck ? this.expireMessage : errorPhoneMessage,
 				status: 409,
 			}
 		}
@@ -115,22 +172,36 @@ export class AuthService {
 
 		if (!newUser?.id) return { message: 'Error is not created', status: 500 }
 
-		//! Add mail service
-
-		const userDto = new UserDto(newUser)
-		const tokens = await this.tokenService.generateTokens(userDto)
-
-		if (!tokens.refresh || typeof tokens.refresh !== 'string')
+		if (!APP_CONFIG.API_URL)
 			return {
-				message: 'Error refresh-token is not generate',
+				message: 'App config is not set api-url',
 				status: 500,
 			}
 
-		await this.tokenService.saveToken(userDto.id, tokens.refresh)
+		const link = activationLinkHandler(
+			APP_CONFIG.API_URL,
+			newUser.activation_link
+		)
+		const renderHtml = renderSendActivationTwoFactoryAuth(link)
+
+		const resultEmail = await authEmailService.sendLink(
+			dto.email,
+			'Verify account',
+			renderHtml
+		)
+
+		if (!resultEmail)
+			return {
+				message: 'Error sending email',
+				status: 400,
+			}
+
+		if (!newUser.is_verify)
+			return { message: 'Please verify your account', status: 409 }
 
 		return {
-			user: userDto,
-			accessToken: tokens.access,
+			message: 'User has success registration',
+			status: 201,
 		}
 	}
 
@@ -177,10 +248,41 @@ export class AuthService {
 
 		return {
 			message: `Logout has success completed to USER-ID: ${resultRemoveToken.id}`,
+			status: 201,
 		}
 	}
 
-	async verifyEmail() {}
+	async verifyAccount(
+		activationLink: string | null
+	): TypeAuthServiceMessageWithApiError {
+		const now = new Date()
+		const isTimeCheck = now.getTime() >= this.expiresVerify.getTime()
+
+		if (!activationLink || activationLink === null)
+			return ApiError.NotFound('Activation link is must be empty')
+
+		const isVerifyUser = await this.model.verifyModel({ activationLink })
+
+		if (isTimeCheck && isVerifyUser && isVerifyUser.id) {
+			await this.userModel.removeUserModel(isVerifyUser.id)
+
+			this.expiresVerify = setMinuteUtil(this.maxAgeVerify)
+
+			return ApiError.BadRequest(this.errorExpireMessage)
+		}
+
+		if (isVerifyUser === false || typeof isVerifyUser !== 'undefined')
+			return ApiError.BadRequest('Bad-request from verify-account')
+
+		const user = new UserDto(isVerifyUser)
+
+		return {
+			message: user.isVerify
+				? `The user has success verify account`
+				: 'The user has not confirmed the account',
+			status: 204,
+		}
+	}
 
 	async forgetPassword() {}
 }

@@ -161,11 +161,34 @@ export class AuthController {
 		}
 	}
 
+	async verifyAccount(
+		req: IncomingMessage,
+		res: ServerResponse<IncomingMessage>,
+		link: string | null
+	) {
+		try {
+			const verifyUser = await this.authService.verifyAccount(link)
+
+			const jsonData = JSON.stringify({ message: verifyUser.message })
+
+			res.writeHead(verifyUser.status, this.headData.contentData)
+			res.end(jsonData)
+		} catch (error) {
+			const errorRes = ApiError.BadRequest(
+				'Bad-request from verify-account controller'
+			)
+
+			this.logger.error(errorRes.message)
+
+			await responseBadRequest(errorRes.message, res)
+		}
+	}
+
 	async logout(
 		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
-	) {
+	): Promise<void> {
 		try {
 			if (
 				!cookies ||
@@ -192,7 +215,7 @@ export class AuthController {
 				'Set-cookie',
 				`refreshToken=; httpOnly; path=/api; Expires=${this.expiresRemove}; SameSite=Strict`
 			)
-			res.writeHead(200, this.headData.contentData)
+			res.writeHead(resultLogoutService.status, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
 			const errorRes = ApiError.BadRequest('Bad-request from logout controller')
