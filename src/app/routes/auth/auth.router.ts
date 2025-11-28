@@ -151,17 +151,15 @@ export const authRouter = async (
 			return
 		}
 
-		if (body.newPassword) {
-			const isValidPass = validatePassword(body.newPassword)
-			console.log
-			if (!isValidPass.valid) {
-				await responseBadRequest(
-					isValidPass.message ?? 'Password is not valid',
-					res
-				)
+		const isValidPass = validatePassword(String(body.newPassword))
 
-				return
-			}
+		if (!isValidPass.valid) {
+			await responseBadRequest(
+				isValidPass.message ?? 'Password is not valid',
+				res
+			)
+
+			return
 		}
 
 		await authController.newPassword(req, res, body)

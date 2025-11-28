@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 	is_verify BOOLEAN NOT NULL DEFAULT FALSE,
 	is_two_auth_code INTEGER DEFAULT NULL,
 	enable_reset_pass BOOLEAN NOT NULL DEFAULT FALSE,
+	enable_two_auth_code BOOLEAN NOT NULL DEFAULT FALSE,
  	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
