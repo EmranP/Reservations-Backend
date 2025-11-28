@@ -20,16 +20,20 @@ export class ApiError extends Error {
 		Error.captureStackTrace(this, this.constructor)
 	}
 
-	static InternalServer(): ApiError {
-		return new ApiError(500, 'Internal Server Error')
+	static InternalServer(message: string = 'Internal Server Error'): ApiError {
+		return new ApiError(500, message)
 	}
 
 	static UnauthorizedError(): ApiError {
 		return new ApiError(401, 'Пользователь не авторизован')
 	}
 
-	static BadRequest(message: string, errors: Error[] = []): ApiError {
-		return new ApiError(400, message, errors)
+	static BadRequest(
+		message: string,
+		status: number = 400,
+		errors: Error[] = []
+	): ApiError {
+		return new ApiError(status, message, errors)
 	}
 
 	static NotFound(message: string) {

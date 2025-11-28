@@ -11,11 +11,17 @@ export const isAuthRegistrationDto = (obj: unknown): obj is RegistrationDto => {
 	return (
 		typeof obj === 'object' &&
 		obj !== null &&
-		typeof (obj as RegistrationDto).firstName === 'string' &&
-		typeof (obj as RegistrationDto).lastName === 'string' &&
-		typeof (obj as RegistrationDto).email === 'string' &&
-		typeof (obj as RegistrationDto).avatar === 'string' &&
-		typeof (obj as RegistrationDto).phone === 'string' &&
-		typeof (obj as RegistrationDto).password === 'string'
+		'firstName' in obj &&
+		'lastName' in obj &&
+		'email' in obj &&
+		'avatar' in obj &&
+		'phone' in obj &&
+		'password' in obj &&
+		typeof obj.firstName === 'string' &&
+		typeof obj.lastName === 'string' &&
+		typeof obj.email === 'string' &&
+		typeof obj.avatar === 'string' &&
+		typeof obj.phone === 'string' &&
+		typeof obj.password === 'string'
 	)
 }

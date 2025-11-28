@@ -10,5 +10,8 @@ export interface IUser extends ISharedModelApp {
 	avatar: string
 	role: typeof ROLES
 	activation_link: string
+	reset_pass_link: string
+	enable_reset_pass: boolean
 	is_verify: boolean
+	is_two_auth_code: number | null
 }

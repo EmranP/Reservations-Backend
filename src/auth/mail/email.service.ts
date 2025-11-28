@@ -1,22 +1,14 @@
 import { createTransport, type Transporter } from 'nodemailer'
 import type { Logger } from 'winston'
 import { EMAIL_CONFIG } from '../../common/config/app.config'
-import type { UserModel } from '../../user/user.model'
-import type { AuthModel } from '../auth.model'
-import { AuthService } from '../auth.service'
-import type { TokenService } from '../token/token.service'
+import type { IResponseEmail } from '../types/mail.types'
 
-export class EmailService extends AuthService {
+export class EmailService {
 	private transporter: Transporter
+	private logger: Logger
 
-	constructor(
-		model: AuthModel,
-		userModel: UserModel,
-		tokenService: TokenService,
-		logger: Logger
-	) {
-		super(model, userModel, tokenService, logger)
-
+	constructor(logger: Logger) {
+		this.logger = logger
 		this.transporter = createTransport({
 			host: EMAIL_CONFIG.HOST,
 			port: EMAIL_CONFIG.PORT || 587,
@@ -35,9 +27,9 @@ export class EmailService extends AuthService {
 		to: string | undefined,
 		subject: string,
 		html: string
-	): Promise<boolean> {
+	): Promise<IResponseEmail | string | undefined> {
 		try {
-			await this.transporter.sendMail({
+			const mailResult = await this.transporter.sendMail({
 				from: EMAIL_CONFIG.USER,
 				to,
 				subject: subject,
@@ -45,15 +37,18 @@ export class EmailService extends AuthService {
 				html,
 			})
 
-			return true
+			return mailResult
 		} catch (error) {
+			let errorMessage: undefined | string
 			if (error instanceof Error) {
-				this.logger.error(`Ошибка при отправке письма: ${error.message}`)
+				errorMessage = `Ошибка при отправке письма: ${error.message}`
+				this.logger.error(errorMessage)
 			} else {
-				this.logger.error(`Ошибка при отправке письма`)
+				errorMessage = `Ошибка при отправке письма`
+				this.logger.error(errorMessage)
 			}
 
-			return false
+			return errorMessage
 		}
 	}
 }

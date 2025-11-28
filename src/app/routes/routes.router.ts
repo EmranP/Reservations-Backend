@@ -36,6 +36,7 @@ export const routerApp: Middleware<unknown> = async (
 	// Search
 	const searchAuthActivateQuery = pathOption.path.search('activate/')
 	const searchAuthActivateRepaidQuery = pathOption.path.search('repaid/')
+	const searchAuthActivateForgetQuery = pathOption.path.search('forget/')
 
 	// Convert
 	const convertAuthQueryRoute = pathOption.path.slice(
@@ -46,8 +47,11 @@ export const routerApp: Middleware<unknown> = async (
 	// Checking
 	const isAuthActivatePath = path.slice(0, searchAuthActivateQuery + 8)
 	const isAuthActivateRepaid = path.slice(0, searchAuthActivateRepaidQuery + 15)
+	const isAuthActivateForget = path.slice(0, searchAuthActivateForgetQuery + 15)
 
 	if (searchAuthActivateQuery !== -1) {
+		pathOption.query = decodeURIComponent(convertAuthQueryRoute)
+	} else if (searchAuthActivateForgetQuery !== -1) {
 		pathOption.query = decodeURIComponent(convertAuthQueryRoute)
 	} else {
 		pathOption.query = null
@@ -69,13 +73,19 @@ export const routerApp: Middleware<unknown> = async (
 		'auth/repaid/activate',
 		`/${pathOption.query}`
 	)
+	const isPathAuthForgetHref = isPathWithQuery(
+		parserURL.origin,
+		'auth/forget/activate',
+		pathOption.query !== null ? `/${pathOption.query}` : ''
+	)
 
 	if (
 		!rootAuthRouter.includes(path) &&
 		!rootUserRouter.includes(path) &&
 		parserURL.href !== isPathUserHref &&
 		parserURL.href !== isPathAuthHref &&
-		parserURL.href !== isPathAuthRepaidHref
+		parserURL.href !== isPathAuthRepaidHref &&
+		parserURL.href !== isPathAuthForgetHref
 	) {
 		await responseNotFoundApi('Not founded auth api', res)
 	}
@@ -83,14 +93,15 @@ export const routerApp: Middleware<unknown> = async (
 	if (
 		rootAuthRouter.includes(path) ||
 		parserURL.href === isPathAuthHref ||
-		parserURL.href === isPathAuthRepaidHref
+		parserURL.href === isPathAuthRepaidHref ||
+		parserURL.href === isPathAuthForgetHref
 	) {
 		await authRouter(
 			authMiddleware,
 			path,
 			pathOption,
 			isAuthActivatePath,
-			isAuthActivateRepaid,
+			isAuthActivateForget,
 			req,
 			res,
 			body,

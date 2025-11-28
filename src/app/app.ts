@@ -6,6 +6,8 @@ import type {
 } from '../common/types/middlewares/app.types-middleware'
 import { logger } from '../common/utils/log/logger.log'
 
+export const isDev = process.env.NODE_ENV === 'development'
+
 export class App<T> {
 	private middlewares: Middleware<T>[] = []
 

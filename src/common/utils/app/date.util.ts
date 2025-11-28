@@ -19,6 +19,16 @@ export const setMinuteUtil = (minute: number): Date => {
 	return plusMinute
 }
 
+export const setHoursUtil = (hours: number): Date => {
+	const now = new Date()
+
+	const plusHours = new Date(now)
+
+	plusHours.setHours(now.getMinutes() + hours)
+
+	return plusHours
+}
+
 export const setSecundUtil = (sec: number): Date => {
 	const now = new Date()
 

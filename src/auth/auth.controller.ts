@@ -3,12 +3,17 @@ import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
 import { TOKEN_CONFIG } from '../common/config/token.config'
 import { setDateUtil } from '../common/utils/app/date.util'
-import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
+import {
+	isErrorHandler,
+	responseBadRequest,
+} from '../common/utils/app/errorResponse.utils'
 import { writeHeadData } from '../common/utils/app/writeHeadData.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { AuthService } from './auth.service'
+import type { ForgetDto } from './dto/forget.dto'
 import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
+import type { RepaidVerifyDto } from './dto/verify.dto'
 import type { IAuthUserService } from './types/types.auth'
 
 export class AuthController {
@@ -60,18 +65,11 @@ export class AuthController {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			if (error instanceof Error) {
-				const errorRes = ApiError.BadRequest(error.message)
+			const isError = isErrorHandler(error, 'Bad-request from login controller')
+			const errorRes = ApiError.BadRequest(isError)
+			this.logger.error(errorRes.message)
 
-				this.logger.error(errorRes.message)
-				await responseBadRequest(errorRes.message, res)
-			} else {
-				const errorRes = ApiError.BadRequest(
-					'Bad-request from login controller'
-				)
-
-				await responseBadRequest(errorRes.message, res)
-			}
+			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -97,13 +95,15 @@ export class AuthController {
 			res.writeHead(201, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const errorRes = ApiError.BadRequest(
+			const isError = isErrorHandler(
+				error,
 				'Bad-request from registration controller :('
 			)
+			const errorRes = ApiError.BadRequest(isError)
 
 			this.logger.error(errorRes.message)
 
-			await responseBadRequest(errorRes.message, res)
+			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -126,7 +126,7 @@ export class AuthController {
 
 			const { refreshToken } = cookies
 
-			const newRefresh = await this.authService.refreshToken(refreshToken)
+			const newRefresh = await this.authService.refresh(refreshToken)
 
 			if (
 				newRefresh.message ||
@@ -151,13 +151,15 @@ export class AuthController {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const errorRes = ApiError.BadRequest(
+			const isError = isErrorHandler(
+				error,
 				'Bad-request from refresh controller'
 			)
+			const errorRes = ApiError.BadRequest(isError)
 
 			this.logger.error(errorRes.message)
 
-			await responseBadRequest(errorRes.message, res)
+			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -167,20 +169,37 @@ export class AuthController {
 		link: string | null
 	) {
 		try {
+			const clientUrl = process.env.CLIENT_URL
 			const verifyUser = await this.authService.verifyAccount(link)
-
 			const jsonData = JSON.stringify({ message: verifyUser.message })
 
-			res.writeHead(verifyUser.status, this.headData.contentData)
-			res.end(jsonData)
+			if (
+				verifyUser.status === 201 &&
+				clientUrl &&
+				typeof clientUrl !== 'undefined'
+			) {
+				res.writeHead(302, {
+					location: clientUrl,
+				})
+				res.end()
+
+				return
+			} else {
+				res.writeHead(verifyUser.status, this.headData.contentData)
+				res.end(jsonData)
+
+				return
+			}
 		} catch (error) {
-			const errorRes = ApiError.BadRequest(
+			const isError = isErrorHandler(
+				error,
 				'Bad-request from verify-account controller'
 			)
+			const errorRes = ApiError.BadRequest(isError)
 
 			this.logger.error(errorRes.message)
 
-			await responseBadRequest(errorRes.message, res)
+			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -218,11 +237,131 @@ export class AuthController {
 			res.writeHead(resultLogoutService.status, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const errorRes = ApiError.BadRequest('Bad-request from logout controller')
+			const isError = isErrorHandler(
+				error,
+				'Bad-request from logout controller'
+			)
+			const errorRes = ApiError.BadRequest(isError)
 
 			this.logger.error(errorRes.message)
 
-			await responseBadRequest(errorRes.message, res)
+			await responseBadRequest(errorRes.message, res, 500)
+		}
+	}
+
+	async getLink(
+		req: IncomingMessage,
+		res: ServerResponse<IncomingMessage>,
+		body: RepaidVerifyDto
+	): Promise<void> {
+		try {
+			const repaidSendMail =
+				await this.authService.repaidVerifyAccountSendEmail(body)
+
+			const data = JSON.stringify({ message: repaidSendMail.message })
+
+			res.writeHead(repaidSendMail.status, this.headData.contentData)
+			res.end(data)
+		} catch (error) {
+			const isError = isErrorHandler(
+				error,
+				'Bad-request from get-link controller'
+			)
+			const errorRes = ApiError.BadRequest(isError)
+
+			this.logger.error(errorRes.message)
+
+			await responseBadRequest(errorRes.message, res, 500)
+		}
+	}
+
+	// Forget
+	async getForgetLink(
+		req: IncomingMessage,
+		res: ServerResponse<IncomingMessage>,
+		body: RepaidVerifyDto
+	): Promise<void> {
+		try {
+			const resetSendMail = await this.authService.forgetPasswordSendLink(body)
+
+			const data = JSON.stringify({ message: resetSendMail.message })
+
+			res.writeHead(resetSendMail.status, this.headData.contentData)
+			res.end(data)
+		} catch (error) {
+			const isError = isErrorHandler(
+				error,
+				'Bad-request from get reset-link controller'
+			)
+			const errorRes = ApiError.BadRequest(isError)
+
+			this.logger.error(errorRes.message)
+
+			await responseBadRequest(errorRes.message, res, 500)
+		}
+	}
+
+	async verifyForgetPassword(
+		req: IncomingMessage,
+		res: ServerResponse<IncomingMessage>,
+		link: string | null
+	) {
+		try {
+			const clientProfileUrl = process.env.CLIENT_PROFILE_URL
+			const verifyForgetUser = await this.authService.forgetPasswordVerify(link)
+			const jsonData = JSON.stringify({ message: verifyForgetUser.message })
+
+			if (
+				verifyForgetUser.status === 201 &&
+				clientProfileUrl &&
+				typeof clientProfileUrl !== 'undefined'
+			) {
+				res.writeHead(302, {
+					location: clientProfileUrl,
+				})
+				res.end()
+
+				return
+			} else {
+				res.writeHead(verifyForgetUser.status, this.headData.contentData)
+				res.end(jsonData)
+
+				return
+			}
+		} catch (error) {
+			const isError = isErrorHandler(
+				error,
+				'Bad-request from verify-forget controller'
+			)
+			const errorRes = ApiError.BadRequest(isError)
+
+			this.logger.error(errorRes.message)
+
+			await responseBadRequest(errorRes.message, res, 500)
+		}
+	}
+
+	async newPassword(
+		req: IncomingMessage,
+		res: ServerResponse<IncomingMessage>,
+		dto: Pick<ForgetDto, 'email' | 'newPassword'>
+	) {
+		try {
+			const newUserData = await this.authService.setNewPassword(dto)
+			const jsonData = JSON.stringify({ message: newUserData.message })
+
+			res.writeHead(newUserData.status, this.headData.contentData)
+			res.end(jsonData)
+		} catch (error) {
+			const isError = isErrorHandler(
+				error,
+				'Bad-request from new-password controller'
+			)
+			const errorRes = ApiError.BadRequest(isError)
+
+			this.logger.error(errorRes.message)
+
+			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 }

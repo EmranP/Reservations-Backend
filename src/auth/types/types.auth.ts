@@ -13,6 +13,7 @@ export type TypeAuthUserService = Promise<Partial<IAuthUserService>>
 export type TypeAuthServiceMessageWithApiError = Promise<{
 	message: string
 	status: number
+	isTimeCheck?: boolean
 }>
 
 export type TypeAuthTokenServiceFindOne = Promise<

@@ -2,17 +2,22 @@ import bcrypt from 'bcrypt'
 import { importJWK, jwtVerify, SignJWT } from 'jose'
 import type { JwtPayload } from 'jsonwebtoken'
 import type { Logger } from 'winston'
+import { isDev } from '../../app/app'
 import { JWKS_CONFIG, TOKEN_CONFIG } from '../../common/config/token.config'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
+import { isVerifyTokenError } from '../../common/utils/app/checkType.utils'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
+import { ApiError } from '../../common/utils/log/exists-error.log'
 import type { IUserDto } from '../../user/dto/user.dto'
+import type { IJwksData } from '../types/jwks.types'
 import type { IResponseTokens, IUserJwtPayload } from '../types/token.type'
 import type {
 	IGenerateTokenService,
 	TypeAuthTokenServiceFindOne,
+	TypeAuthUserService,
 } from '../types/types.auth'
-import { getJwks } from './jwks.service'
+import { getJwks, getJwksLocal } from './jwks.service'
 import type { TokenModel } from './token.model'
 
 export class TokenService {
@@ -156,10 +161,37 @@ export class TokenService {
 			if (!kid) return { message: 'JWT header missing kid' }
 			if (!alg) return { message: 'JWT header missing alg' }
 
-			const jwksResponse = await getJwks()
+			let jwksResponse: IJwksData | IJwksData[] | null | undefined
+			let jwk: IJwksData | null | undefined
 
-			const keys = Array.isArray(jwksResponse) ? jwksResponse : []
-			const jwk = keys?.find(jwkItem => jwkItem.kid === kid)
+			if (isDev) {
+				jwksResponse = await getJwksLocal()
+
+				if (
+					!Array.isArray(jwksResponse) &&
+					!jwksResponse &&
+					typeof jwksResponse !== 'undefined'
+				) {
+					return {
+						message: 'Error jwks-response development',
+					}
+				}
+
+				jwk = jwksResponse
+			} else {
+				jwksResponse = await getJwks()
+
+				if (
+					Array.isArray(jwksResponse) &&
+					jwksResponse === null &&
+					typeof jwksResponse !== 'undefined'
+				)
+					return {
+						message: 'Error jwks-response production',
+					}
+
+				jwk = jwksResponse?.find(jwkItem => jwkItem.kid === kid)
+			}
 
 			if (!jwk)
 				return {
@@ -212,6 +244,31 @@ export class TokenService {
 		}
 
 		return newToken
+	}
+
+	async refreshToken(refreshToken: string): TypeAuthUserService {
+		const isVerifyToken = await this.verifyToken(refreshToken)
+
+		if (isVerifyTokenError(isVerifyToken))
+			return ApiError.BadRequest(isVerifyToken.message)
+
+		if (!isVerifyToken.sub || !isVerifyToken.role)
+			return ApiError.BadRequest('ID or Role is not have from verify token')
+
+		const tokens = await this.generateTokens({
+			id: isVerifyToken.sub,
+			role: isVerifyToken.role,
+		})
+
+		if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			return ApiError.BadRequest('Error generate token from new-refresh token')
+
+		await this.saveToken(isVerifyToken.sub, tokens.refresh)
+
+		return {
+			accessToken: tokens.access,
+			refreshToken: tokens.refresh,
+		}
 	}
 
 	async deleteToken(

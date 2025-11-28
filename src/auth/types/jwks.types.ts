@@ -1,10 +1,14 @@
-export interface IJwksKeysData {
+export interface IJwksData {
 	e: string
 	kty: string
 	n: string
 	kid: string
 	use: string
 	alg: string
+}
+
+export interface IJwksKeysData {
+	keys: IJwksData[]
 }
 
 export interface IJwksMetaData {
@@ -14,8 +18,6 @@ export interface IJwksMetaData {
 }
 
 export interface IResponseJwks {
-	record: {
-		keys: IJwksKeysData[]
-	}
+	record: IJwksKeysData
 	metadata: IJwksMetaData
 }
