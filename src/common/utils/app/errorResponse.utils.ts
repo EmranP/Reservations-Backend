@@ -28,3 +28,6 @@ export const responseNotFoundApi = async (
 
 	res.end(jsonData)
 }
+
+export const isErrorHandler = (error: unknown, message: string): string =>
+	error instanceof Error ? error.message : message

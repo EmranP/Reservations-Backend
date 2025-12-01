@@ -1,9 +1,9 @@
 import dotenv from 'dotenv'
-import { App } from './app/app'
+import { App, isDev } from './app/app'
 import { checkDB } from './app/check-db.app'
 import { initDB } from './app/db/init-db.app'
 import { routerApp } from './app/routes/routes.router'
-import { genJwks } from './auth/token/jwks.service'
+import { genJwks, genJwksLocal } from './auth/token/jwks.service'
 import { APP_CONFIG } from './common/config/app.config'
 import { cookieParser } from './common/middleware/cookie-parser.middleware'
 import { cors } from './common/middleware/cors.middleware'
@@ -16,7 +16,6 @@ const app = new App()
 
 const port = APP_CONFIG.PORT
 const hostname = APP_CONFIG.HOSTNAME
-const isDev = process.env.NODE_ENV === 'development'
 
 // Middlewares
 app.use(helmetMiddleware)
@@ -31,10 +30,11 @@ const startApp = async (): Promise<void> => {
 	try {
 		// Checking DB
 		await checkDB()
-		await initDB(isDev)
+		await initDB()
 
 		// Generate Jwks
-		await genJwks().catch()
+		if (isDev) await genJwksLocal().catch()
+		else await genJwks().catch()
 
 		if (!port || !hostname) return
 

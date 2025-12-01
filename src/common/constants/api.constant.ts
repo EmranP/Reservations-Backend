@@ -12,6 +12,8 @@ export const AUTH_LOGOUT_API_URL = `${globalPrefixUrl}/auth/logout`
 export const AUTH_REFRESH_TOKEN_API_URL = `${globalPrefixUrl}/auth/refresh`
 export const AUTH_ACTIVATION_EMAIL_API_URL = `${globalPrefixUrl}/auth/activate`
 export const AUTH_ACTIVATION_EMAIL_REPAID_API_URL = `${globalPrefixUrl}/auth/repaid/activate`
+export const AUTH_ACTIVATION_EMAIL_FORGET_API_URL = `${globalPrefixUrl}/auth/forget/activate`
+export const AUTH_FORGET_NEW_PASSWORD_API_URL = `${globalPrefixUrl}/auth/forget/new`
 
 export const rootAuthRouter = [
 	AUTH_LOGIN_API_URL,
@@ -19,6 +21,9 @@ export const rootAuthRouter = [
 	AUTH_LOGOUT_API_URL,
 	AUTH_REFRESH_TOKEN_API_URL,
 	AUTH_ACTIVATION_EMAIL_API_URL,
+	AUTH_ACTIVATION_EMAIL_REPAID_API_URL,
+	AUTH_ACTIVATION_EMAIL_FORGET_API_URL,
+	AUTH_FORGET_NEW_PASSWORD_API_URL,
 ]
 
 // User ===========
