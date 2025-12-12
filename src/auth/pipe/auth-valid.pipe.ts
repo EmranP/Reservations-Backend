@@ -26,3 +26,13 @@ export const validatePassword = (value: string) => {
 		message,
 	}
 }
+
+export const validatePinCode = (value: number) => {
+	let message: string | undefined
+
+	if (value.toString().length !== 6) {
+		message = 'Pin-code is not valid: that have 6 symbol'
+	}
+
+	return { message }
+}

@@ -1,10 +1,14 @@
 import type { Pool } from 'pg'
 import type { Logger } from 'winston'
 import type { IUser } from '../app/db/types/user.types'
-import { DB_TABLE_USERS } from '../common/constants/table-db.constant'
+import {
+	DB_TABLE_TOKENS,
+	DB_TABLE_USERS,
+} from '../common/constants/table-db.constant'
 import type { ForgetDto } from './dto/forget.dto'
 import type { RegistrationDto } from './dto/registration.dto'
 import type { VerifyLinkDto } from './dto/verify.dto'
+import type { IResponseTokens } from './types/token.type'
 
 export class AuthModel {
 	constructor(private pool: Pool, private logger: Logger) {}
@@ -54,16 +58,28 @@ export class AuthModel {
 		return queryResult.rows[0] ?? null
 	}
 
+	async getExpireForget(
+		userId: string
+	): Promise<Pick<IResponseTokens, 'expires_forget_pass'> | null> {
+		const query = `SELECT expires_forget_pass FROM ${DB_TABLE_TOKENS} WHERE user_id = $1`
+		const queryResult = await this.pool.query(query, [userId])
+
+		if (!queryResult.rows[0]) return null
+
+		return queryResult.rows[0]
+	}
+
 	async createUserModel(
 		dto: RegistrationDto,
 		activationLink: string,
-		resetPassLink: string
+		resetPassLink: string,
+		authMethod: string
 	): Promise<IUser | undefined> {
 		const query = `
 				INSERT INTO ${DB_TABLE_USERS} 
-				(first_name, last_name, email, phone, password, avatar, activation_link, reset_pass_link)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-				RETURNING id, first_name, last_name, email, phone, avatar, role, is_verify, activation_link
+				(first_name, last_name, email, phone, password, picture, activation_link, reset_pass_link, method)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+				RETURNING id, first_name, last_name, email, phone, picture, role, is_verify, activation_link
 			`
 
 		const queryResult = await this.pool.query<IUser>(query, [
@@ -72,9 +88,10 @@ export class AuthModel {
 			dto.email,
 			dto.phone,
 			dto.password,
-			dto.avatar,
+			dto.picture,
 			activationLink,
 			resetPassLink,
+			authMethod,
 		])
 
 		return queryResult.rows[0]
@@ -101,27 +118,6 @@ export class AuthModel {
 		>(queryUpdatedVerify, [userData.id])
 
 		return isUserVerify.rows[0] || false
-	}
-
-	async forgetVerifyModel(
-		dto: Omit<ForgetDto, 'newPassword' | 'email'>
-	): Promise<Pick<IUser, 'enable_reset_pass' | 'id'> | false> {
-		const query = `SELECT id, enable_reset_pass FROM ${DB_TABLE_USERS} WHERE reset_pass_link = $1`
-		const queryResetPass = `UPDATE ${DB_TABLE_USERS} SET enable_reset_pass = $1 WHERE id = $2 RETURNING id, enable_reset_pass`
-
-		const queryResult = await this.pool.query<
-			Pick<IUser, 'id' | 'enable_reset_pass'>
-		>(query, [dto.resetLink])
-
-		const user = queryResult.rows[0]
-
-		if (!user || !user.id) return false
-
-		const resetUserPass = await this.pool.query<
-			Pick<IUser, 'id' | 'enable_reset_pass'>
-		>(queryResetPass, [dto.isEnableResetPass, user.id])
-
-		return resetUserPass.rows[0] || false
 	}
 
 	async updateResetLink(
@@ -154,6 +150,39 @@ export class AuthModel {
 		if (!queryResult.rows[0]) return false
 
 		return queryResult.rows[0]
+	}
+
+	async updateExpireForgetVerify(
+		userId: string,
+		expireAt: Date | null
+	): Promise<boolean> {
+		const query = `UPDATE ${DB_TABLE_TOKENS} SET expires_forget_pass = $1 WHERE user_id = $2`
+		const queryResult = await this.pool.query(query, [expireAt, userId])
+
+		if (queryResult.rowCount && queryResult.rowCount <= 0) return false
+
+		return true
+	}
+
+	async forgetVerifyModel(
+		dto: Omit<ForgetDto, 'newPassword' | 'email'>
+	): Promise<Pick<IUser, 'enable_reset_pass' | 'id'> | false> {
+		const query = `SELECT id, enable_reset_pass FROM ${DB_TABLE_USERS} WHERE reset_pass_link = $1`
+		const queryResetPass = `UPDATE ${DB_TABLE_USERS} SET enable_reset_pass = $1 WHERE id = $2 RETURNING id, enable_reset_pass`
+
+		const queryResult = await this.pool.query<
+			Pick<IUser, 'id' | 'enable_reset_pass'>
+		>(query, [dto.resetLink])
+
+		const user = queryResult.rows[0]
+
+		if (!user || !user.id) return false
+
+		const resetUserPass = await this.pool.query<
+			Pick<IUser, 'id' | 'enable_reset_pass'>
+		>(queryResetPass, [dto.isEnableResetPass, user.id])
+
+		return resetUserPass.rows[0] || false
 	}
 
 	async setNewPasswordMode(

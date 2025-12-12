@@ -5,17 +5,17 @@ export class LoginDto {
 }
 
 export const isAuthLoginDto = (obj: unknown): obj is LoginDto => {
+	const isCommonValidObj = typeof obj === 'object' && obj !== null
+
 	const isValidEmailObj =
-		typeof obj === 'object' &&
-		obj !== null &&
+		isCommonValidObj &&
 		'email' in obj &&
 		'password' in obj &&
 		typeof obj.email === 'string' &&
 		typeof obj.password === 'string'
 
 	const isValidPhoneObj =
-		typeof obj === 'object' &&
-		obj !== null &&
+		isCommonValidObj &&
 		'phone' in obj &&
 		'password' in obj &&
 		typeof obj.phone === 'string' &&

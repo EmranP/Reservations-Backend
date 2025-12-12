@@ -1,0 +1,6 @@
+export const AUTH_METHOD = {
+	CREDENTIALS: 'CREDENTIALS',
+	GOOGLE: 'GOOGLE',
+	GITHUB: 'GITHUB',
+	TELEGRAM: 'TELEGRAM',
+} as const

@@ -8,10 +8,11 @@ DECLARE
   tbl TEXT;
 BEGIN
   FOREACH tbl IN ARRAY ARRAY[
-    'users', 'rooms', 'occupied_rooms', 'reviews'
+    'users', 'rooms', 'occupied_rooms', 'reviews', 'tokens', 'accounts'
   ] LOOP
     EXECUTE format(
-      'CREATE OR REPLACE TRIGGER set_timestamp_%1$I
+      'DROP TRIGGER IF EXISTS set_timestamp_%1$I ON %1$I; 
+      CREATE TRIGGER set_timestamp_%1$I
         BEFORE UPDATE ON public.%1$I
         FOR EACH ROW
         EXECUTE FUNCTION public.update_timestamp();',

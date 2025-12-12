@@ -1,3 +1,4 @@
+import type { AUTH_METHOD } from '../../../common/constants/enum.constant'
 import type { ISharedModelApp } from '../../../common/types/db/app.interface'
 import type { ROLES } from '../../roles'
 
@@ -7,11 +8,12 @@ export interface IUser extends ISharedModelApp {
 	email: string
 	phone: string
 	password: string
-	avatar: string
+	picture: string
 	role: typeof ROLES
 	activation_link: string
 	reset_pass_link: string
-	enable_reset_pass: boolean
 	is_verify: boolean
-	is_two_auth_code: number | null
+	enable_reset_pass: boolean
+	enable_two_factory_challenge: boolean
+	method: typeof AUTH_METHOD
 }

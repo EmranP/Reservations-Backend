@@ -3,23 +3,39 @@ import { isConfirmNewPassDto } from '../../../auth/dto/forget.dto'
 import { isAuthLoginDto } from '../../../auth/dto/login.dto'
 import { isAuthRegistrationDto } from '../../../auth/dto/registration.dto'
 import { isRepaidVerifyDto } from '../../../auth/dto/verify.dto'
-import { authController } from '../../../auth/index.auth'
+import {
+	authController,
+	authTwoFactoryController,
+	oAuthGoogleController,
+} from '../../../auth/index.auth'
+import {
+	isAuthVerifyTwoFactory,
+	isEnableTwoFactoryChallengeDto,
+} from '../../../auth/pipe/auth-2fa.pipe'
 import {
 	validateEmailReg,
 	validatePassword,
 	validatePhoneReg,
+	validatePinCode,
 } from '../../../auth/pipe/auth-valid.pipe'
+import { isCodeOAuthGoogleCallbackDto } from '../../../auth/pipe/oauth.pipe'
 import {
 	AUTH_ACTIVATION_EMAIL_API_URL,
 	AUTH_ACTIVATION_EMAIL_FORGET_API_URL,
 	AUTH_ACTIVATION_EMAIL_REPAID_API_URL,
+	AUTH_CODE_GOOGLE_CALLBACK_URL,
+	AUTH_ENABLE_TWO_FACTORY_CHALLENGE,
 	AUTH_FORGET_NEW_PASSWORD_API_URL,
+	AUTH_GET_GOOGLE_URL,
+	AUTH_GOOGLE_REFRESH_TOKEN,
 	AUTH_LOGIN_API_URL,
 	AUTH_LOGOUT_API_URL,
 	AUTH_REFRESH_TOKEN_API_URL,
 	AUTH_REGISTRATION_API_URL,
-} from '../../../common/constants/api.constant'
+	AUTH_VERIFY_TWO_FACTORY_CODE,
+} from '../../../common/constants/auth.constant'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
+import { isRequestUserApp } from '../../../common/utils/app/checkType.utils'
 import { responseBadRequest } from '../../../common/utils/app/errorResponse.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 
@@ -41,6 +57,7 @@ export const authRouter = async (
 
 			return
 		}
+
 		if (body.email && !validateEmailReg(body.email)) {
 			await responseBadRequest('Email is not valid', res)
 
@@ -163,6 +180,94 @@ export const authRouter = async (
 		}
 
 		await authController.newPassword(req, res, body)
+	}
+	// 2FA
+	else if (path === AUTH_ENABLE_TWO_FACTORY_CHALLENGE) {
+		if (isAuth) {
+			await responseBadRequest(isAuth.message, res, isAuth.status)
+
+			return
+		}
+
+		if (!isEnableTwoFactoryChallengeDto(body)) {
+			await responseBadRequest(
+				'Invalid data from body enable-2fa, must be isEnableTwoAuthCode',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (!isRequestUserApp(req)) {
+			await responseBadRequest('User data is not founded!', res, 404)
+
+			return
+		}
+
+		await authTwoFactoryController.editEnableTwoFactory(req, res, body)
+	} else if (path === AUTH_VERIFY_TWO_FACTORY_CODE) {
+		if (!isAuthVerifyTwoFactory(body)) {
+			await responseBadRequest(
+				'Invalid data from body 2FA verify-code.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (body.email && !validateEmailReg(body.email)) {
+			await responseBadRequest('Email is not valid', res)
+
+			return
+		} else if (body.phone && !validatePhoneReg(body.phone)) {
+			await responseBadRequest('Phone is not valid', res)
+
+			return
+		}
+
+		if (body.code) {
+			const isValidCode = validatePinCode(body.code)
+
+			if (isValidCode.message && typeof isValidCode.message === 'string') {
+				await responseBadRequest(isValidCode.message, res, 400)
+
+				return
+			}
+		}
+
+		await authTwoFactoryController.verifyCode(req, res, body)
+	}
+	// OAuth 2.0
+	else if (path === AUTH_GET_GOOGLE_URL) {
+		await oAuthGoogleController.googleUrl(req, res)
+	} else if (path === AUTH_CODE_GOOGLE_CALLBACK_URL && req.method === 'POST') {
+		if (!isCodeOAuthGoogleCallbackDto(body)) {
+			await responseBadRequest(
+				'Invalid data from body oAuth-google callback.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (body.code?.length <= 0) {
+			await responseBadRequest(
+				'In the code symbol is must be having.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		await oAuthGoogleController.googleCallback(req, res, body)
+	}
+	// OAuth Google Refresh Token
+	else if (path === AUTH_GOOGLE_REFRESH_TOKEN && req.method === 'POST') {
+		await oAuthGoogleController.googleRefreshToken(req, res, cookie)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')
 

@@ -6,20 +6,33 @@
 CREATE TABLE IF NOT EXISTS public.users (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	first_name VARCHAR(100) NOT NULL,
-	last_name VARCHAR(100) NOT NULL,
+	last_name VARCHAR(100),
 	email VARCHAR(100) NOT NULL,
-	phone VARCHAR(20) NOT NULL,
+	phone VARCHAR(20) NOT NULL DEFAULT '+993',
 	password TEXT NOT NULL,
-	avatar TEXT,
+	picture TEXT,
 	role INTEGER NOT NULL DEFAULT 1 CHECK (role in (0, 1)),
 	activation_link TEXT,
 	reset_pass_link TEXT,
 	is_verify BOOLEAN NOT NULL DEFAULT FALSE,
-	is_two_auth_code INTEGER DEFAULT NULL,
 	enable_reset_pass BOOLEAN NOT NULL DEFAULT FALSE,
 	enable_two_auth_code BOOLEAN NOT NULL DEFAULT FALSE,
+	method auth_method NOT NULL,
  	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
+);
+
+-- ACCOUNTS
+CREATE TABLE IF NOT EXISTS public.accounts (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+	provider TEXT,
+	types TEXT,
+	access_token TEXT,
+	refresh_token TEXT,
+	expires_in INTEGER NOT NULL DEFAULT 0,
+	created_at TIMESTAMP DEFAULT now(),
+	updated_at TIMESTAMP DEFAULT now()
 );
 
 -- TOKENS
@@ -27,8 +40,14 @@ CREATE TABLE IF NOT EXISTS public.tokens (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
 	refresh_token TEXT NOT NULL,
-	created_at TIMESTAMP DEFAULT now()
+	is_two_auth_code INTEGER DEFAULT NULL,
+	expires_token_at TIMESTAMP DEFAULT NULL,
+	expires_forget_pass TIMESTAMP DEFAULT NULL, 
+	expires_two_auth_code TIMESTAMP DEFAULT NULL,
+	created_at TIMESTAMP DEFAULT now(),
+	updated_at TIMESTAMP DEFAULT now()
 );
+
 
 -- Rooms
 CREATE TABLE IF NOT EXISTS public.rooms (
@@ -36,7 +55,7 @@ CREATE TABLE IF NOT EXISTS public.rooms (
 	price NUMERIC(10,2) NOT NULL,
 	quality VARCHAR(35) NOT NULL,
 	description VARCHAR(500) NOT NULL,
-	status status_mood NOT NULL  DEFAULT 'FREE',
+	status status_mood NOT NULL DEFAULT 'FREE',
 	image_url TEXT,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
