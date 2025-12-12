@@ -71,6 +71,7 @@ export class OAuthGoogleController extends AuthBaseConfig {
 				googleCode?.user ? googleCode : { message: null }
 			)
 
+			// Add cookie for refreshToken
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {

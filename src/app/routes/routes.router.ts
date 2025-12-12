@@ -1,4 +1,5 @@
 import { URL } from 'url'
+import { authRouter } from '../../auth/auth.router'
 import { isAuth } from '../../auth/middleware/isAuth.auth'
 import { rootUserRouter } from '../../common/constants/admin.constant'
 import { rootAuthRouter } from '../../common/constants/auth.constant'
@@ -7,7 +8,6 @@ import { rootProfileRouter } from '../../common/constants/profile.constant'
 import type { IAppQueryParams } from '../../common/types/app/app.type'
 import type { Middleware } from '../../common/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../../common/utils/app/errorResponse.utils'
-import { authRouter } from './auth/auth.router'
 import { profileRouter } from './profile/profile.route'
 import { userRouter } from './user/admin.route'
 

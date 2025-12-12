@@ -19,7 +19,9 @@ export const AUTH_VERIFY_TWO_FACTORY_CODE = `${globalPrefixUrl}/auth/two-fa/veri
 export const AUTH_GET_GOOGLE_URL = `${globalPrefixUrl}/auth/google/url`
 export const AUTH_CODE_GOOGLE_CALLBACK_URL = `${globalPrefixUrl}/auth/google/callback`
 export const AUTH_GOOGLE_REFRESH_TOKEN = `${globalPrefixUrl}/auth/google/refresh`
+export const googleUrl = 'https://accounts.google.com'
 export const googleTokenUrl = 'https://oauth2.googleapis.com/token'
+export const googlePublicJwksUrl = 'https://www.googleapis.com/oauth2/v3/certs'
 
 export const rootAuthRouter = [
 	AUTH_LOGIN_API_URL,
