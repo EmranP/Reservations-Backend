@@ -1,10 +1,11 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { hasRole } from '../../../auth/middleware/hasRole.auth'
+
 import {
 	USER_DELETE_URL,
 	USER_GET_URL,
 	USER_UPDATE_URL,
-} from '../../../common/constants/api.constant'
+} from '../../../common/constants/admin.constant'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import { responseBadRequest } from '../../../common/utils/app/errorResponse.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'

@@ -1,23 +1,31 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
+import type { IUser } from '../app/db/types/user.types'
 import { APP_CONFIG } from '../common/config/app.config'
+import { AUTH_METHOD } from '../common/constants/enum.constant'
 import {
 	activationLinkHandler,
 	genLinks,
-	resetPassLinkHandler,
 } from '../common/constants/link.constant'
 import { isVerifyTokenError } from '../common/utils/app/checkType.utils'
-import { setHoursUtil, setMinuteUtil } from '../common/utils/app/date.util'
+import {
+	setDateUtil,
+	setHoursUtil,
+	setMinuteUtil,
+	setSecundUtil,
+} from '../common/utils/app/date.util'
 import { renderSendActivationLink } from '../common/utils/format/render.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { UserDto } from '../user/dto/user.dto'
 import type { UserModel } from '../user/user.model'
+import type { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
+import type { AuthTwoFactoryChallengeService } from './2fa/auth-2fa.service'
+import { AuthBaseConfig } from './abstract/auth-config.base'
 import { AuthModel } from './auth.model'
 import type { ForgetDto } from './dto/forget.dto'
 import type { LoginDto } from './dto/login.dto'
 import type { RegistrationDto } from './dto/registration.dto'
-import type { RepaidVerifyDto } from './dto/verify.dto'
 import { authEmailService } from './index.auth'
 import type { TokenService } from './token/token.service'
 import type {
@@ -26,57 +34,39 @@ import type {
 	TypeAuthUserService,
 } from './types/types.auth'
 
-export class AuthService {
-	private verifyConfig: string | undefined = APP_CONFIG.EXPIRES_USER_VERIFY
-	private verifyRemoveConfig: string | undefined =
-		APP_CONFIG.EXPIRES_USER_REMOVE_VERIFY
-	private forgetConfig: string | undefined =
-		APP_CONFIG.EXPIRES_USER_RESET_PASSWORD_VERIFY
-	// Age
-	private maxAgeVerify: number =
-		this.verifyConfig === '2m' ? 2 : this.verifyConfig === '5m' ? 5 : 0
-	private maxAgeRemoveVerify: number = this.verifyRemoveConfig === '1h' ? 1 : 0
-	private maxAgeResetVerify: number = this.forgetConfig === '30m' ? 1 : 5
-	// Flags
-	private isFirstSendEmailVerifyAccount: boolean = true
-	private isFirstSendEmailForgetPassword: boolean = true
-	private isFirstVerifyForgetPassword: boolean = true
-	// Expire
-	private expiresVerify: Date | null = null
-	private expiresRemoveVerify: Date | null = null
-	private expiresForgetVerify: Date | null = null
-	// Message
-	private expireMessage: string = `Please confirm your account verify the link, you have ${
-		this.verifyConfig === '2m' ? 2 : 1
-	} minutes to do this.`
-
-	private errorExpireMessage: string =
-		'Unfortunately, your confirmation time has expired, Do you wants again send email if you not verify time has 1 hour. Please register again.'
-	private errorAgainExpireMessage: string =
-		'Unfortunately, your confirmation time has expired, please register again.'
-
+export class AuthService extends AuthBaseConfig {
 	constructor(
-		protected model: AuthModel,
+		private model: AuthModel,
+		private authTwoFactoryModel: AuthTwoFactoryChallengeModel,
+		private authTowFactoryService: AuthTwoFactoryChallengeService,
 		private userModel: UserModel,
-		protected tokenService: TokenService,
-		protected logger: Logger
-	) {}
+		private tokenService: TokenService,
+		private logger: Logger
+	) {
+		super()
+	}
 
 	//! BASE-METHOD-AUTH =================================================
-	async loginEmail(dto: LoginDto): TypeAuthUserService {
-		const userEmail = await this.model.getUserByEmail(dto.email)
+	async login(dto: LoginDto): TypeAuthUserService {
+		const now = new Date()
+		// User
+		let user: IUser | null | undefined
+		if (dto.email) {
+			user = await this.model.getUserByEmail(dto.email)
+		} else if (dto.phone) {
+			user = await this.model.getUserByPhone(dto.phone)
+		}
 
-		if (!userEmail || !userEmail.id)
-			return { message: 'User email not founded', status: 404 }
+		if (!user || !user.id) return { message: 'User not founded', status: 404 }
 
 		const isPassEquals = await bcrypt.compare(
 			String(dto.password),
-			userEmail?.password
+			user.password
 		)
 
 		if (!isPassEquals) return { message: 'Password is not right', status: 400 }
 
-		const userDto = new UserDto(userEmail)
+		const userDto = new UserDto(user)
 
 		if (!userDto.isVerify)
 			return {
@@ -90,52 +80,91 @@ export class AuthService {
 				status: 500,
 			}
 
-		const tokens = await this.tokenService.generateTokens({
-			id: userDto.id,
-			role: userDto.role,
-		})
-
-		if (!tokens.refresh || typeof tokens.refresh !== 'string')
-			return {
-				message: 'Error refresh-token is not generate',
-				status: 500,
-			}
-
-		await this.tokenService.saveToken(userDto.id, tokens.refresh)
-
-		return {
-			user: userDto,
-			accessToken: tokens.access,
-			refreshToken: tokens.refresh,
-		}
-	}
-
-	async loginPhone(dto: LoginDto): TypeAuthUserService {
-		const userPhone = await this.model.getUserByPhone(dto.phone)
-
-		if (!userPhone || !userPhone.id)
-			return { message: 'User phone not founded', status: 404 }
-
-		const isPassEquals = await bcrypt.compare(
-			String(dto.password),
-			userPhone.password
+		const userTowFactoryData = await this.authTowFactoryService.getCode(
+			userDto.id
 		)
 
-		if (!isPassEquals) return { message: 'Password is not right', status: 400 }
+		// 2FA
+		if (userDto.enableTwoFactoryChallenge) {
+			if (
+				'message' in userTowFactoryData &&
+				!this.isFirstSendEmailTwoFactoryCode
+			)
+				return {
+					message: userTowFactoryData.message,
+					status: userTowFactoryData.status,
+				}
 
-		const userDto = new UserDto(userPhone)
+			const isTimeCheckTwoFactory =
+				'expireCode' in userTowFactoryData &&
+				userTowFactoryData.expireCode !== null &&
+				now.getTime() >= userTowFactoryData.expireCode.getTime()
 
-		if (!userDto.isVerify)
-			return {
-				message: 'User is account is not verify',
-				status: 400,
+			if (isTimeCheckTwoFactory && !this.isFirstSendEmailTwoFactoryCode) {
+				const updateTwoFactoryCode =
+					await this.authTwoFactoryModel.updateTwoFactoryAuthCode(
+						null,
+						null,
+						userDto.id
+					)
+
+				if (!updateTwoFactoryCode)
+					return {
+						message: 'Error update two-factory code',
+						status: 500,
+					}
+
+				this.isFirstSendEmailTwoFactoryCode = true
+
+				return {
+					message: this.errorExpireTwoFactoryCodeMessage,
+					status: 400,
+				}
 			}
 
-		if (!userDto.id || !userDto.role)
-			return {
-				message: 'Bad-request user dto from login-phone',
-				status: 500,
+			if (userDto.email && 'expireCode' in userTowFactoryData) {
+				// ? Maybe add transaction
+				const resultSendEmailCode = await authEmailService.sendTwoFactoryCode(
+					userDto.email,
+					isTimeCheckTwoFactory,
+					userTowFactoryData.expireCode,
+					userTowFactoryData.code,
+					this.isFirstSendEmailTwoFactoryCode
+				)
+
+				if (resultSendEmailCode.status === 409)
+					return {
+						message: resultSendEmailCode.message,
+						status: resultSendEmailCode.status,
+					}
+
+				const expiresTwoFactoryCode = setSecundUtil(this.maxAgeTwoFactoryCode)
+				const updateTwoFactoryCode =
+					await this.authTwoFactoryModel.updateTwoFactoryAuthCode(
+						resultSendEmailCode.code,
+						expiresTwoFactoryCode,
+						userDto.id
+					)
+
+				if (!updateTwoFactoryCode)
+					return {
+						message: 'Error update two-factory code',
+						status: 500,
+					}
+
+				this.isFirstSendEmailTwoFactoryCode = false
+
+				return {
+					message: !this.isFirstSendEmailTwoFactoryCode
+						? resultSendEmailCode.message
+						: this.expireTwoFactoryCodeMessage,
+					status: !this.isFirstSendEmailTwoFactoryCode
+						? resultSendEmailCode.status
+						: 200,
+					user: userDto,
+				}
 			}
+		}
 
 		const tokens = await this.tokenService.generateTokens({
 			id: userDto.id,
@@ -148,12 +177,18 @@ export class AuthService {
 				status: 500,
 			}
 
-		await this.tokenService.saveToken(userDto.id, tokens.refresh)
+		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		await this.tokenService.saveToken(
+			userDto.id,
+			tokens.refresh,
+			expireRefreshTokenAt
+		)
 
 		return {
 			user: userDto,
 			accessToken: tokens.access,
 			refreshToken: tokens.refresh,
+			expireRefreshTokenAt,
 		}
 	}
 
@@ -162,33 +197,38 @@ export class AuthService {
 		const isTimeCheck =
 			this.expiresVerify !== null &&
 			now.getTime() >= this.expiresVerify.getTime()
+		const isExpireVerifyMessage = !isTimeCheck || this.expiresVerify === null
+		// Remove user
 		const isTimeRemoveCheck =
 			this.expiresRemoveVerify !== null &&
 			now.getTime() >= this.expiresRemoveVerify.getTime()
-
-		const isExpireVerifyMessage = !isTimeCheck || this.expiresVerify === null
 		const isRemoveExpireVerifyMessage =
 			!isTimeRemoveCheck || this.expiresRemoveVerify === null
 
 		// Candidate
-		const candidateEmail = await this.model.getUserByEmail(dto.email)
-		const candidatePhone = await this.model.getUserByPhone(dto.phone)
+		let candidate: IUser | null | undefined
+		if (dto.email) {
+			candidate = await this.model.getUserByEmail(dto.email)
+		} else if (dto.phone) {
+			candidate = await this.model.getUserByPhone(dto.phone)
+		}
+
 		// Message
 		const errorEmailMessage = `A user with email ${dto.email} already exists.`
 		const errorPhoneMessage = `A user with phone ${dto.phone} already exists.`
 
-		if (candidateEmail?.id) {
-			if (candidateEmail.is_verify)
+		if (candidate?.id) {
+			if (candidate.is_verify)
 				return {
 					message: errorEmailMessage,
 					status: 400,
 				}
 
 			if (
-				now.getHours() > candidateEmail.created_at.getHours() &&
-				!candidateEmail.is_verify
+				now.getHours() > candidate.created_at.getHours() &&
+				!candidate.is_verify
 			) {
-				await this.userModel.removeUserModel(candidateEmail.id)
+				await this.userModel.removeUserModel(candidate.id)
 
 				this.expiresVerify = null
 				this.expiresRemoveVerify = null
@@ -200,12 +240,10 @@ export class AuthService {
 			}
 
 			if (
-				(isTimeCheck && isTimeRemoveCheck && !candidateEmail.is_verify) ||
+				(isTimeCheck && isTimeRemoveCheck && !candidate.is_verify) ||
 				this.expiresRemoveVerify === null
 			) {
-				await this.userModel.removeUserModel(candidateEmail.id)
-
-				this.logger.debug('Test-2')
+				await this.userModel.removeUserModel(candidate.id)
 
 				this.expiresVerify = null
 				this.expiresRemoveVerify = null
@@ -217,7 +255,7 @@ export class AuthService {
 			}
 
 			if (
-				(isTimeCheck && !candidateEmail.is_verify) ||
+				(isTimeCheck && !candidate.is_verify) ||
 				this.expiresVerify === null
 			) {
 				return {
@@ -231,69 +269,8 @@ export class AuthService {
 					? this.expireMessage
 					: isRemoveExpireVerifyMessage
 					? this.errorAgainExpireMessage
-					: errorEmailMessage
-			)
-
-			return {
-				message: isExpireVerifyMessage
-					? this.expireMessage
-					: isRemoveExpireVerifyMessage
-					? this.errorAgainExpireMessage
-					: errorEmailMessage,
-				status: isExpireVerifyMessage ? 409 : 400,
-			}
-		} else if (candidatePhone?.id) {
-			if (candidatePhone.is_verify)
-				return {
-					message: errorEmailMessage,
-					status: 400,
-				}
-
-			if (
-				now.getHours() > candidatePhone.created_at.getHours() &&
-				!candidatePhone.is_verify
-			) {
-				await this.userModel.removeUserModel(candidatePhone.id)
-
-				this.expiresVerify = null
-				this.expiresRemoveVerify = null
-
-				return {
-					message: this.errorAgainExpireMessage,
-					status: 400,
-				}
-			}
-
-			if (
-				(isTimeCheck && isTimeRemoveCheck && !candidatePhone.is_verify) ||
-				this.expiresRemoveVerify === null
-			) {
-				await this.userModel.removeUserModel(candidatePhone.id)
-
-				this.expiresVerify = null
-				this.expiresRemoveVerify = null
-
-				return {
-					message: this.errorAgainExpireMessage,
-					status: 400,
-				}
-			}
-
-			if (
-				(isTimeCheck && !candidatePhone.is_verify) ||
-				this.expiresVerify === null
-			) {
-				return {
-					message: this.errorExpireMessage,
-					status: 400,
-				}
-			}
-
-			this.logger.info(
-				isExpireVerifyMessage
-					? this.expireMessage
-					: isRemoveExpireVerifyMessage
-					? this.errorAgainExpireMessage
+					: candidate.email
+					? errorEmailMessage
 					: errorPhoneMessage
 			)
 
@@ -302,7 +279,9 @@ export class AuthService {
 					? this.expireMessage
 					: isRemoveExpireVerifyMessage
 					? this.errorAgainExpireMessage
-					: errorEmailMessage,
+					: candidate.email
+					? errorEmailMessage
+					: errorPhoneMessage,
 				status: isExpireVerifyMessage ? 409 : 400,
 			}
 		}
@@ -315,7 +294,8 @@ export class AuthService {
 		const newUser = await this.model.createUserModel(
 			newDto,
 			activationLink,
-			resetPassLink
+			resetPassLink,
+			AUTH_METHOD.CREDENTIALS
 		)
 
 		if (!newUser?.id) return { message: 'Error is not created', status: 500 }
@@ -332,7 +312,7 @@ export class AuthService {
 		)
 		const renderHtml = renderSendActivationLink(link, 'активировать аккаунт')
 
-		const resultEmail = await authEmailService.sendLink(
+		const resultEmail = await authEmailService.send(
 			dto.email,
 			'Verify account',
 			renderHtml
@@ -341,7 +321,7 @@ export class AuthService {
 		if (typeof resultEmail === 'undefined' || typeof resultEmail === 'string')
 			return {
 				message: 'Error sending email, please repaid sending!',
-				status: 400,
+				status: 500,
 			}
 
 		this.expiresVerify = setMinuteUtil(this.maxAgeVerify)
@@ -369,8 +349,6 @@ export class AuthService {
 		const isTimeRemoveCheck =
 			this.expiresRemoveVerify !== null &&
 			now.getTime() >= this.expiresRemoveVerify.getTime()
-
-		console.log(this.expiresVerify)
 
 		if (!activationLink || activationLink === null)
 			return ApiError.NotFound('Activation link is must be empty')
@@ -440,142 +418,6 @@ export class AuthService {
 	}
 
 	//! ADVANCED-AUTH-METHOD =================================================
-	async repaidVerifyAccountSendEmail(
-		dto: RepaidVerifyDto
-	): TypeAuthServiceMessageWithApiError {
-		if (!APP_CONFIG.API_URL)
-			return {
-				message: 'App config is not set api-url',
-				status: 500,
-			}
-
-		const now = new Date()
-		const errorEmailMessage = `A user with email ${dto.email} already exists.`
-		const repaidExpireMessage = `Please confirm your account verify the link, you have 2 minutes to do this.`
-
-		const isTimeCheck =
-			this.expiresVerify !== null &&
-			now.getTime() >= this.expiresVerify.getTime()
-
-		if (
-			!isTimeCheck &&
-			!this.isFirstSendEmailVerifyAccount &&
-			this.expiresVerify !== null
-		) {
-			return ApiError.BadRequest('Expire time verify is not completed')
-		}
-
-		if (
-			isTimeCheck &&
-			!this.isFirstSendEmailVerifyAccount &&
-			this.expiresVerify !== null
-		) {
-			this.expiresVerify = null
-
-			this.isFirstSendEmailVerifyAccount = true
-
-			return ApiError.BadRequest('Expire verify time that all')
-		}
-
-		const user = await this.model.getUserByEmail(dto.email)
-
-		if (!user) return ApiError.NotFound('User is not founded!')
-
-		if (user.is_verify)
-			return ApiError.BadRequest('User have been success verify')
-
-		const link = activationLinkHandler(APP_CONFIG.API_URL, user.activation_link)
-		const renderHtml = renderSendActivationLink(link, 'активировать аккаунт')
-		const resultEmail = await authEmailService.sendLink(
-			dto.email,
-			'Verify account',
-			renderHtml
-		)
-
-		if (typeof resultEmail === 'undefined' || typeof resultEmail === 'string')
-			return ApiError.BadRequest('Error sending email')
-
-		if (this.expiresVerify === null) {
-			this.expiresVerify = setMinuteUtil(2)
-		}
-
-		this.isFirstSendEmailVerifyAccount = false
-
-		return {
-			message: !isTimeCheck ? repaidExpireMessage : errorEmailMessage,
-			status: !isTimeCheck ? 409 : 400,
-		}
-	}
-
-	// Reset-password
-	async forgetPasswordSendLink(
-		dto: RepaidVerifyDto
-	): TypeAuthServiceMessageWithApiError {
-		if (!APP_CONFIG.API_URL)
-			return {
-				message: 'App config is not set api-url',
-				status: 500,
-			}
-
-		const now = new Date()
-		const resetPassExpireMessage = `Please confirm your reset-password verify the link, you have 2 minutes to do this.`
-
-		const isTimeCheck =
-			this.expiresForgetVerify !== null &&
-			now.getTime() >= this.expiresForgetVerify.getTime()
-
-		if (
-			!isTimeCheck &&
-			!this.isFirstSendEmailForgetPassword &&
-			this.expiresForgetVerify !== null
-		) {
-			return ApiError.BadRequest('The password reset has not expired.')
-		}
-
-		if (
-			isTimeCheck &&
-			!this.isFirstSendEmailForgetPassword &&
-			this.expiresForgetVerify !== null
-		) {
-			this.expiresForgetVerify = null
-
-			this.isFirstSendEmailForgetPassword = true
-
-			return ApiError.BadRequest('Expire reset verify time that all')
-		}
-
-		const user = await this.model.getUserByEmail(dto.email)
-
-		if (!user || !user.id) return ApiError.NotFound('User is not founded!')
-
-		const resetLink = resetPassLinkHandler(
-			APP_CONFIG.API_URL,
-			user.reset_pass_link
-		)
-		const renderHtml = renderSendActivationLink(resetLink, 'сброс пароль')
-		const resultEmail = await authEmailService.sendLink(
-			dto.email,
-			'Reset-password',
-			renderHtml
-		)
-
-		if (typeof resultEmail === 'undefined' || typeof resultEmail === 'string')
-			return ApiError.BadRequest('Error sending email')
-
-		if (this.expiresForgetVerify === null) {
-			this.expiresForgetVerify = setMinuteUtil(this.maxAgeResetVerify)
-		}
-
-		this.isFirstSendEmailForgetPassword = false
-
-		return {
-			message: !isTimeCheck
-				? resetPassExpireMessage
-				: 'The password reset has expired!',
-			status: !isTimeCheck ? 409 : 400,
-		}
-	}
-
 	async forgetPasswordVerify(
 		resetLink: string | null | undefined
 	): TypeAuthServiceMessageWithApiError {
@@ -583,9 +425,7 @@ export class AuthService {
 			return ApiError.BadRequest('User not have link')
 
 		const now = new Date()
-		const isTimeCheck =
-			this.expiresForgetVerify !== null &&
-			now.getTime() >= this.expiresForgetVerify.getTime()
+
 		const { resetPassLink } = genLinks(uuidV4)
 		const dto = (value: boolean) => ({ resetLink, isEnableResetPass: value })
 
@@ -597,7 +437,21 @@ export class AuthService {
 		)
 			return ApiError.BadRequest('Bad-request invalid link')
 
-		if (isTimeCheck || this.expiresForgetVerify === null) {
+		const expiresForgetVerify = await this.model.getExpireForget(
+			isVerifyForgetUser.id
+		)
+
+		if (!expiresForgetVerify)
+			return {
+				message: 'expire forget verify not founded',
+				status: 504,
+			}
+
+		const isTimeCheck =
+			expiresForgetVerify.expires_forget_pass !== null &&
+			now.getTime() >= expiresForgetVerify.expires_forget_pass.getTime()
+
+		if (isTimeCheck || expiresForgetVerify.expires_forget_pass === null) {
 			await this.model.forgetVerifyModel(dto(false))
 			const updateUserResetLink = await this.model.updateResetLink(
 				isVerifyForgetUser.id,
@@ -607,7 +461,17 @@ export class AuthService {
 			if (!updateUserResetLink)
 				return ApiError.InternalServer('Error user from update reset-link')
 
-			this.expiresForgetVerify = null
+			const updateExpireForget = await this.model.updateExpireForgetVerify(
+				isVerifyForgetUser.id,
+				null
+			)
+
+			if (!updateExpireForget)
+				return {
+					message: 'Something was wrong with edit expire forget',
+					status: 500,
+				}
+
 			this.isFirstVerifyForgetPassword = true
 
 			return ApiError.BadRequest('The verify for forget password expired!')
@@ -637,16 +501,25 @@ export class AuthService {
 		dto: Pick<ForgetDto, 'email' | 'newPassword'>
 	): TypeAuthServiceMessageWithApiError {
 		const now = new Date()
-		const isTimeCheck =
-			this.expiresForgetVerify !== null &&
-			now.getTime() >= this.expiresForgetVerify.getTime()
 		const { resetPassLink } = genLinks(uuidV4)
 		const user = await this.model.getUserByEmail(dto.email)
 
 		if (!user || !user.id) return ApiError.NotFound('User not founded')
 
-		if (!user.enable_reset_pass || this.expiresForgetVerify === null)
+		const expiresForgetVerify = await this.model.getExpireForget(user.id)
+
+		if (!expiresForgetVerify)
+			return ApiError.InternalServer('Expire forget not founded!')
+
+		if (
+			!user.enable_reset_pass ||
+			expiresForgetVerify.expires_forget_pass === null
+		)
 			return ApiError.BadRequest('User is not verify enable-reset password')
+
+		const isTimeCheck =
+			expiresForgetVerify.expires_forget_pass !== null &&
+			now.getTime() >= expiresForgetVerify.expires_forget_pass.getTime()
 
 		if (isTimeCheck && !this.isFirstSendEmailForgetPassword) {
 			const initUserResetLink = await this.model.updateResetLink(
@@ -668,7 +541,14 @@ export class AuthService {
 					'Error user from time-check set new-password'
 				)
 
-			this.expiresForgetVerify = null
+			const updateExpireForget = await this.model.updateExpireForgetVerify(
+				user.id,
+				null
+			)
+
+			if (!updateExpireForget)
+				return ApiError.InternalServer('Error update expire forget')
+
 			this.isFirstVerifyForgetPassword = true
 
 			return ApiError.BadRequest('The verify for forget password expired!')
@@ -682,6 +562,7 @@ export class AuthService {
 
 		const hashPass = await bcrypt.hash(dto.newPassword, 10)
 
+		// Add transition here
 		const newUserProfile = await this.model.setNewPasswordMode(
 			{ ...dto, newPassword: hashPass },
 			user.enable_reset_pass,
@@ -695,8 +576,17 @@ export class AuthService {
 			false,
 			user.id
 		)
+		const updateExpireForget = await this.model.updateExpireForgetVerify(
+			user.id,
+			null
+		)
 
-		if (!newUserProfile.user || !newUserResetLink || !initUserEnablePass)
+		if (
+			!newUserProfile.user ||
+			!newUserResetLink ||
+			!initUserEnablePass ||
+			!updateExpireForget
+		)
 			return ApiError.InternalServer('Error from set new password')
 
 		return {

@@ -1,15 +1,15 @@
 import { URL } from 'url'
 import { isAuth } from '../../auth/middleware/isAuth.auth'
-import {
-	isPathWithQuery,
-	rootAuthRouter,
-	rootUserRouter,
-} from '../../common/constants/api.constant'
+import { rootUserRouter } from '../../common/constants/admin.constant'
+import { rootAuthRouter } from '../../common/constants/auth.constant'
+import { isPathWithQuery } from '../../common/constants/global.constant'
+import { rootProfileRouter } from '../../common/constants/profile.constant'
 import type { IAppQueryParams } from '../../common/types/app/app.type'
 import type { Middleware } from '../../common/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../../common/utils/app/errorResponse.utils'
 import { authRouter } from './auth/auth.router'
-import { userRouter } from './user/user.route'
+import { profileRouter } from './profile/profile.route'
+import { userRouter } from './user/admin.route'
 
 export const routerApp: Middleware<unknown> = async (
 	ctx,
@@ -82,6 +82,7 @@ export const routerApp: Middleware<unknown> = async (
 	if (
 		!rootAuthRouter.includes(path) &&
 		!rootUserRouter.includes(path) &&
+		!rootProfileRouter.includes(path) &&
 		parserURL.href !== isPathUserHref &&
 		parserURL.href !== isPathAuthHref &&
 		parserURL.href !== isPathAuthRepaidHref &&
@@ -111,6 +112,10 @@ export const routerApp: Middleware<unknown> = async (
 
 	if (rootUserRouter.includes(path) || parserURL.href === isPathUserHref) {
 		await userRouter(authMiddleware, path, pathOption, req, res, body, next)
+	}
+
+	if (rootProfileRouter.includes(path)) {
+		await profileRouter(authMiddleware, path, pathOption, req, res, body, next)
 	}
 
 	await next()

@@ -6,10 +6,12 @@ import { isDev } from '../../app/app'
 import { JWKS_CONFIG, TOKEN_CONFIG } from '../../common/config/token.config'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { isVerifyTokenError } from '../../common/utils/app/checkType.utils'
+import { setDateUtil } from '../../common/utils/app/date.util'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
 import type { IUserDto } from '../../user/dto/user.dto'
+import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type { IJwksData } from '../types/jwks.types'
 import type { IResponseTokens, IUserJwtPayload } from '../types/token.type'
 import type {
@@ -20,7 +22,8 @@ import type {
 import { getJwks, getJwksLocal } from './jwks.service'
 import type { TokenModel } from './token.model'
 
-export class TokenService {
+export class TokenService extends AuthBaseConfig {
+	// Base-config
 	private accessExpire = TOKEN_CONFIG.ACCESS_EXPIRE
 	private refreshExpire = TOKEN_CONFIG.REFRESH_EXPIRE
 	private kidJwks = JWKS_CONFIG.KID
@@ -30,7 +33,9 @@ export class TokenService {
 	private jwksCache: JwtPayload | null = null
 	private jwksCacheAt = 0
 
-	constructor(private tokenModel: TokenModel, private logger: Logger) {}
+	constructor(private tokenModel: TokenModel, private logger: Logger) {
+		super()
+	}
 
 	private async createAccessToken(
 		user: Pick<IUserDto, 'id' | 'role'>
@@ -92,6 +97,7 @@ export class TokenService {
 		return jwt
 	}
 
+	//? Maybe remove this is method
 	async findToken(
 		user: Pick<IUserDto, 'id'>,
 		refreshToken: string
@@ -224,7 +230,8 @@ export class TokenService {
 
 	async saveToken(
 		userId: string,
-		refreshToken: string
+		refreshToken: string,
+		expireToken: Date
 	): Promise<
 		| IResponseTokens
 		| {
@@ -235,7 +242,11 @@ export class TokenService {
 
 		await this.deleteToken(userId, refreshToken)
 
-		const newToken = await this.tokenModel.create(userId, hashToken)
+		const newToken = await this.tokenModel.create(
+			userId,
+			hashToken,
+			expireToken
+		)
 
 		if (!newToken) {
 			this.logger.error(`Error save token to user-id: ${userId}`)
@@ -263,11 +274,17 @@ export class TokenService {
 		if (!tokens.refresh || typeof tokens.refresh !== 'string')
 			return ApiError.BadRequest('Error generate token from new-refresh token')
 
-		await this.saveToken(isVerifyToken.sub, tokens.refresh)
+		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		await this.saveToken(
+			isVerifyToken.sub,
+			tokens.refresh,
+			expireRefreshTokenAt
+		)
 
 		return {
 			accessToken: tokens.access,
 			refreshToken: tokens.refresh,
+			expireRefreshTokenAt,
 		}
 	}
 

@@ -16,7 +16,12 @@ export interface IResponseTokens {
 	id: string
 	user_id: string
 	refresh_token: string
+	is_two_auth_code: number | null
+	expires_token_at: Date | null
+	expires_two_auth_code: Date | null
+	expires_forget_pass: Date | null
 	created_at: Date
+	updated_at: Date
 }
 
 export interface IUserJwtPayload extends JWTPayload {
@@ -26,4 +31,14 @@ export interface IUserJwtPayload extends JWTPayload {
 
 export interface IRequestUserApp extends IncomingMessage {
 	user: IUserJwtPayload | undefined
+}
+
+export interface IUserGoogleJwtPayload
+	extends Omit<JWTPayload, 'azp' | 'nbf' | 'jti'> {
+	email: string
+	email_verified: boolean
+	at_hash: string
+	name: string
+	picture: string
+	given_name: string
 }

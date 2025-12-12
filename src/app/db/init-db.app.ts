@@ -25,21 +25,12 @@ export const initDB = async (): Promise<void> => {
 			path.join(__dirname, '../../../db/migrations/trigger.db.sql'),
 			'utf-8'
 		)
-		const initEditMigrate = await readFile(
-			path.join(__dirname, '../../../db/migrations/edit.db.sql'),
-			'utf-8'
-		)
 
-		const queries = [
-			pool.query(initExtensionSqlDB),
-			pool.query(initHandlerSqlDB),
-			pool.query(initTypeSqlDB),
-			pool.query(initTablesSqlDB),
-			pool.query(initTriggerSqlDB),
-			pool.query(initEditMigrate),
-		]
-
-		Promise.all(queries)
+		await pool.query(initExtensionSqlDB)
+		await pool.query(initHandlerSqlDB)
+		await pool.query(initTypeSqlDB)
+		await pool.query(initTablesSqlDB)
+		await pool.query(initTriggerSqlDB)
 
 		logger.info('✅ Database success init')
 	} catch (error) {
