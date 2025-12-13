@@ -53,25 +53,43 @@ export class OAuthGoogleController extends AuthBaseConfig {
 		body: IOAuthGoogleCallback
 	): Promise<void> {
 		try {
-			const googleCode = await this.service.googleCodeHandler(body.code)
+			const userGoogle = await this.service.googleCodeHandler(body.code)
 
 			if (
-				typeof googleCode === 'object' &&
-				googleCode !== null &&
-				'message' in googleCode
+				typeof userGoogle === 'object' &&
+				userGoogle !== null &&
+				'message' in userGoogle
 			) {
-				const errorJsonData = JSON.stringify({ message: googleCode.message })
-				res.writeHead(googleCode.status, this.headData.contentData)
+				const errorJsonData = JSON.stringify({ message: userGoogle.message })
+				res.writeHead(userGoogle.status, this.headData.contentData)
 				res.end(errorJsonData)
 
 				return
 			}
 
-			const jsonData = JSON.stringify(
-				googleCode?.user ? googleCode : { message: null }
-			)
+			const userDto = {
+				user: { ...userGoogle.user },
+				accessToken: userGoogle.accessToken,
+			}
+			const jsonData = JSON.stringify(userDto)
 
-			// Add cookie for refreshToken
+			if (!userGoogle.expiresIn) {
+				const errorJsonData = JSON.stringify({
+					message: 'Error expire-refresh token is not set',
+				})
+
+				res.writeHead(500, this.headData.contentData)
+				res.end(errorJsonData)
+
+				return
+			}
+
+			res.setHeader(
+				'Set-cookie',
+				`googleRefreshToken=${
+					userGoogle?.refreshToken
+				}; httpOnly; path=/api/auth/google/callback; Expires=${userGoogle.expiresIn.toUTCString()}; SameSite=Strict`
+			)
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {

@@ -51,10 +51,14 @@
 14. Refactoring auth class, add abstartc class for scalability: ✅
 15. Add expireVerifyForgetPass to DB. The local forget-verify remove: ✅
 16. Fixed reset pass link is not updated: ✅
-17. Redesing table user and accounts: ❌
-18. Rename avatar from user table: ❌
-19. Add ref user table with account table: ❌
-20. Add new feild to user table "authMehod": ❌
+17. Redesing table user and accounts: ✅
+18. Rename avatar from user table: ✅
+19. Add ref user table with account table: ✅
+20. Add new feild to user table "authMehod": ✅
+21. Fixed with auth_method if again loginWithService method field has remove: ❌
+22. Fixed sql from oauth.model. Add DO UPDATE AND CONFLICT where they need: ❌
+23. Add expireIn to setDateUtil if he typeof number: ❌
+24. Check expireIn: ❌
 
 ## 2FA
 

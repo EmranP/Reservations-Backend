@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 	is_verify BOOLEAN NOT NULL DEFAULT FALSE,
 	enable_reset_pass BOOLEAN NOT NULL DEFAULT FALSE,
 	enable_two_auth_code BOOLEAN NOT NULL DEFAULT FALSE,
-	method auth_method NOT NULL,
+	method auth_method NOT NULL DEFAULT 'CREDENTIALS',
  	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS public.accounts (
 	types TEXT,
 	access_token TEXT,
 	refresh_token TEXT,
-	expires_in INTEGER NOT NULL DEFAULT 0,
+	expires_in TIMESTAMP DEFAULT NULL,
 	created_at TIMESTAMP DEFAULT now(),
 	updated_at TIMESTAMP DEFAULT now()
 );
