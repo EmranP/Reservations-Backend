@@ -33,8 +33,7 @@ export interface IRequestUserApp extends IncomingMessage {
 	user: IUserJwtPayload | undefined
 }
 
-export interface IUserGoogleJwtPayload
-	extends Omit<JWTPayload, 'azp' | 'nbf' | 'jti'> {
+export interface IUserGoogleJwtPayload extends JWTPayload {
 	email: string
 	email_verified: boolean
 	at_hash: string

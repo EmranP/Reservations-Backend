@@ -48,4 +48,7 @@ export interface IGenerateTokenService {
 
 export interface IUserOAuthGoogle {
 	user: UserGoogleDto
+	accessToken: string
+	refreshToken: string | null
+	expiresIn: Date
 }

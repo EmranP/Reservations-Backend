@@ -1,24 +1,4 @@
 import type { IncomingMessage, ServerResponse } from 'http'
-import { isConfirmNewPassDto } from '../../../auth/dto/forget.dto'
-import { isAuthLoginDto } from '../../../auth/dto/login.dto'
-import { isAuthRegistrationDto } from '../../../auth/dto/registration.dto'
-import { isRepaidVerifyDto } from '../../../auth/dto/verify.dto'
-import {
-	authController,
-	authTwoFactoryController,
-	oAuthGoogleController,
-} from '../../../auth/index.auth'
-import {
-	isAuthVerifyTwoFactory,
-	isEnableTwoFactoryChallengeDto,
-} from '../../../auth/pipe/auth-2fa.pipe'
-import {
-	validateEmailReg,
-	validatePassword,
-	validatePhoneReg,
-	validatePinCode,
-} from '../../../auth/pipe/auth-valid.pipe'
-import { isCodeOAuthGoogleCallbackDto } from '../../../auth/pipe/oauth.pipe'
 import {
 	AUTH_ACTIVATION_EMAIL_API_URL,
 	AUTH_ACTIVATION_EMAIL_FORGET_API_URL,
@@ -33,11 +13,31 @@ import {
 	AUTH_REFRESH_TOKEN_API_URL,
 	AUTH_REGISTRATION_API_URL,
 	AUTH_VERIFY_TWO_FACTORY_CODE,
-} from '../../../common/constants/auth.constant'
-import type { IAppQueryParams } from '../../../common/types/app/app.type'
-import { isRequestUserApp } from '../../../common/utils/app/checkType.utils'
-import { responseBadRequest } from '../../../common/utils/app/errorResponse.utils'
-import { ApiError } from '../../../common/utils/log/exists-error.log'
+} from '../common/constants/auth.constant'
+import type { IAppQueryParams } from '../common/types/app/app.type'
+import { isRequestUserApp } from '../common/utils/app/checkType.utils'
+import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
+import { ApiError } from '../common/utils/log/exists-error.log'
+import { isConfirmNewPassDto } from './dto/forget.dto'
+import { isAuthLoginDto } from './dto/login.dto'
+import { isAuthRegistrationDto } from './dto/registration.dto'
+import { isRepaidVerifyDto } from './dto/verify.dto'
+import {
+	authController,
+	authTwoFactoryController,
+	oAuthGoogleController,
+} from './index.auth'
+import {
+	isAuthVerifyTwoFactory,
+	isEnableTwoFactoryChallengeDto,
+} from './pipe/auth-2fa.pipe'
+import {
+	validateEmailReg,
+	validatePassword,
+	validatePhoneReg,
+	validatePinCode,
+} from './pipe/auth-valid.pipe'
+import { isCodeOAuthGoogleCallbackDto } from './pipe/oauth.pipe'
 
 export const authRouter = async (
 	isAuth: ApiError | undefined,

@@ -1,6 +1,5 @@
 import type { IUser } from '../../app/db/types/user.types'
 import type { ROLES } from '../../app/roles'
-import type { IResponseGoogleApi } from '../../auth/types/api.types'
 
 export interface IUserDto {
 	id: string
@@ -18,13 +17,23 @@ export interface IUserDto {
 	updatedAt: string | Date
 }
 
-export interface IUserGoogleDto {
+export interface IUserGoogleDto
+	extends Pick<
+		IUserDto,
+		| 'firstName'
+		| 'email'
+		| 'id'
+		| 'isVerify'
+		| 'lastName'
+		| 'phone'
+		| 'picture'
+		| 'role'
+		| 'updatedAt'
+		| 'createdAt'
+	> {
 	accessToken: string
-	expiresIn: number
 	refreshToken: string
-	scope: string
-	tokenType: string
-	idToken: string
+	expiresIn: number
 }
 
 export class UserDto {
@@ -36,26 +45,24 @@ export class UserDto {
 	picture: string | null | undefined
 	role: typeof ROLES | undefined
 	isVerify: boolean | undefined
-	resetPassLink: string | undefined
 	enableResetPass: boolean | undefined
 	enableTwoFactoryChallenge: boolean | undefined
 	createdAt: string | Date | undefined
 	updatedAt: string | Date | undefined
 
-	constructor(model: Partial<IUser>) {
-		this.id = model.id
-		this.firstName = model.first_name
-		this.lastName = model.last_name
-		this.email = model.email
-		this.phone = model.phone
-		this.picture = model.picture
-		this.role = model.role
-		this.isVerify = model.is_verify
-		this.enableResetPass = model.enable_reset_pass
-		this.enableTwoFactoryChallenge = model.enable_two_factory_challenge
-		this.resetPassLink = model.reset_pass_link
-		this.createdAt = model.created_at
-		this.updatedAt = model.updated_at
+	constructor(data: Partial<IUser>) {
+		this.id = data.id
+		this.firstName = data.first_name
+		this.lastName = data.last_name
+		this.email = data.email
+		this.phone = data.phone
+		this.picture = data.picture
+		this.role = data.role
+		this.isVerify = data.is_verify
+		this.enableResetPass = data.enable_reset_pass
+		this.enableTwoFactoryChallenge = data.enable_two_factory_challenge
+		this.createdAt = data.created_at
+		this.updatedAt = data.updated_at
 	}
 
 	toPlain(): Partial<IUserDto> {
@@ -69,7 +76,6 @@ export class UserDto {
 			isVerify: this.isVerify,
 			enableResetPass: this.enableResetPass,
 			enableTwoFactoryChallenge: this.enableTwoFactoryChallenge,
-			resetPassLink: this.resetPassLink,
 			role: this.role,
 			createdAt: this.createdAt,
 			updatedAt: this.updatedAt,
@@ -79,30 +85,48 @@ export class UserDto {
 
 // ? Maybe change
 export class UserGoogleDto {
-	accessToken: string | undefined
-	expiresIn: number | undefined
-	refreshToken: string | undefined
-	scope: string | undefined
-	tokenType: string | undefined
-	idToken: string | undefined
+	id: string | undefined
+	firstName: string | undefined
+	lastName: string | null | undefined
+	email: string | undefined
+	phone: string | undefined
+	picture: string | null | undefined
+	role: typeof ROLES | undefined
+	isVerify: boolean | undefined
+	enableResetPass: boolean | undefined
+	enableTwoFactoryChallenge: boolean | undefined
+	createdAt: string | Date | undefined
+	updatedAt: string | Date | undefined
 
-	constructor(data: IResponseGoogleApi) {
-		this.accessToken = data.access_token
-		this.expiresIn = data.expires_in
-		this.refreshToken = data.refresh_token
-		this.scope = data.scope
-		this.tokenType = data.token_type
-		this.idToken = data.id_token
+	constructor(data: IUser) {
+		this.id = data.id
+		this.firstName = data.first_name
+		this.lastName = data.last_name
+		this.email = data.email
+		this.phone = data.phone
+		this.picture = data.picture
+		this.role = data.role
+		this.isVerify = data.is_verify
+		this.enableResetPass = data.enable_reset_pass
+		this.enableTwoFactoryChallenge = data.enable_two_factory_challenge
+		this.createdAt = data.created_at
+		this.updatedAt = data.updated_at
 	}
 
-	toPlain(): Partial<IUserGoogleDto> {
+	toPlain(): Partial<IUserDto> {
 		return {
-			accessToken: this.accessToken,
-			expiresIn: this.expiresIn,
-			refreshToken: this.refreshToken,
-			scope: this.scope,
-			tokenType: this.tokenType,
-			idToken: this.idToken,
+			id: this.id,
+			firstName: this.firstName,
+			lastName: this.lastName,
+			email: this.email,
+			phone: this.phone,
+			picture: this.picture,
+			isVerify: this.isVerify,
+			enableResetPass: this.enableResetPass,
+			enableTwoFactoryChallenge: this.enableTwoFactoryChallenge,
+			role: this.role,
+			createdAt: this.createdAt,
+			updatedAt: this.updatedAt,
 		}
 	}
 }

@@ -20,8 +20,8 @@ export interface ICreateUserAccountDto {
 	provider: string
 	types: string
 	accessToken: string
-	refreshToken: string
-	expiresIn: number
+	refreshToken: string | null
+	expiresIn: Date | number
 }
 
 export interface ICreateUserWithoutAccountDto
@@ -30,6 +30,5 @@ export interface ICreateUserWithoutAccountDto
 		'firstName' | 'email' | 'phone' | 'picture' | 'isVerify'
 	> {
 	authMethod: string
-	activationLink: string
 	password: string
 }

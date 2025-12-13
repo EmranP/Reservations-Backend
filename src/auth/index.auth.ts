@@ -49,6 +49,7 @@ export const authEmailService = new EmailService(
 export const oAuthGoogleModel = new OAuthGoogleModel(pool, logger)
 export const oAuthGoogleService = new OAuthGoogleService(
 	oAuthGoogleModel,
+	authModel,
 	logger
 )
 // Controller
