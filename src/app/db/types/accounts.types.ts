@@ -6,5 +6,7 @@ export interface IAccounts extends ISharedModelApp {
 	types: string
 	access_token: string
 	refresh_token: string
-	expires_in: number
+	google_refresh_token_iv: string | null
+	google_refresh_token_tag: string | null
+	expires_in: Date | null
 }

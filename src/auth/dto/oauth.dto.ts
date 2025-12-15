@@ -20,8 +20,10 @@ export interface ICreateUserAccountDto {
 	provider: string
 	types: string
 	accessToken: string
-	refreshToken: string | null
 	expiresIn: Date | number
+	googleRefreshIv?: string | null
+	googleRefreshTag?: string | null
+	refreshToken?: string | null
 }
 
 export interface ICreateUserWithoutAccountDto

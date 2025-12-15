@@ -12,3 +12,9 @@ export interface IAppQueryParams {
 	searchParams: string | undefined
 	query: string | null
 }
+
+export interface IAppEnCrypto {
+	encrypted: string
+	iv: string
+	tag: string
+}

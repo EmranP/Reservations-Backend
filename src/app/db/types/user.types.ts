@@ -17,3 +17,16 @@ export interface IUser extends ISharedModelApp {
 	enable_two_factory_challenge: boolean
 	method: typeof AUTH_METHOD
 }
+
+export type TypeReturnUpdateOAuthUser = Pick<
+	IUser,
+	| 'id'
+	| 'first_name'
+	| 'email'
+	| 'phone'
+	| 'role'
+	| 'picture'
+	| 'is_verify'
+	| 'created_at'
+	| 'updated_at'
+>
