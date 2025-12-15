@@ -9,27 +9,48 @@ import {
 } from '../../../common/constants/auth.constant'
 import { AUTH_METHOD } from '../../../common/constants/enum.constant'
 import { genLinks } from '../../../common/constants/link.constant'
+import type { IAppEnCrypto } from '../../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../../common/types/db/app.interface'
+import { isVerifyTokenError } from '../../../common/utils/app/checkType.utils'
+import { decrypt, encrypt } from '../../../common/utils/app/crypto.util'
+import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGoogleLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 import { UserGoogleDto } from '../../../user/dto/user.dto'
+import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { AuthModel } from '../../auth.model'
 import type {
 	ICreateUserAccountDto,
 	ICreateUserWithoutAccountDto,
 } from '../../dto/oauth.dto'
+import {
+	isResponseGoogleDataApi,
+	isResponseGoogleErrorDataApi,
+	isResponseGoogleRefreshDataApi,
+} from '../../pipe/oauth.pipe'
+import type { TokenService } from '../../token/token.service'
+import type {
+	IResponseGoogleApi,
+	TypeGoogleRefreshTokenResponse,
+} from '../../types/api.types'
 import type { ICommonGoogleBodyData } from '../../types/common.type'
 import type { IUserGoogleJwtPayload } from '../../types/token.type'
-import type { IUserOAuthGoogle } from '../../types/types.auth'
+import type {
+	IUserOAuthGoogle,
+	TypeUserOAuthGoogleRefresh,
+} from '../../types/types.auth'
 import { getGoogleToken } from './oauth.google.api'
 import type { OAuthGoogleModel } from './oauth.google.model'
 
-export class OAuthGoogleService {
+export class OAuthGoogleService extends AuthBaseConfig {
 	constructor(
 		private model: OAuthGoogleModel,
 		private authModel: AuthModel,
+		private tokenService: TokenService,
 		private logger: Logger
-	) {}
+	) {
+		super()
+	}
 
 	private googleClientId = APP_OAUTH_CONFIG.GOOGLE_CLIENT_ID
 	private googleClientSecret = APP_OAUTH_CONFIG.GOOGLE_CLIENT_SECRET
@@ -115,27 +136,31 @@ export class OAuthGoogleService {
 			grant_type: this.googleClientGrantTypeAuthCode,
 		}
 
-		const responseGoogleData = await getGoogleToken(dataBody)
+		const responseGoogleData = await getGoogleToken(dataBody, {
+			'Content-Type': 'application/json',
+		})
+		let googleData: undefined | IResponseGoogleApi | IErrorResponseApp
 
-		if (
-			responseGoogleData !== null &&
-			typeof responseGoogleData === 'object' &&
-			'message' in responseGoogleData
-		) {
-			return ApiError.BadRequest(
-				responseGoogleData.message,
-				responseGoogleData.status
-			)
+		if (isResponseGoogleDataApi(responseGoogleData)) {
+			googleData = responseGoogleData
 		}
 
-		if (responseGoogleData === null) {
+		if (
+			googleData !== null &&
+			typeof googleData === 'object' &&
+			'message' in googleData
+		) {
+			return ApiError.BadRequest(googleData.message, googleData.status)
+		}
+
+		if (googleData === null || typeof googleData === 'undefined') {
 			return ApiError.BadRequest(
 				'Error response from google code is have null!'
 			)
 		}
 
 		const isVerifyGoogleAccount = await this.verifyGoogleToken(
-			responseGoogleData.id_token
+			googleData.id_token
 		)
 
 		if ('message' in isVerifyGoogleAccount)
@@ -148,17 +173,16 @@ export class OAuthGoogleService {
 		const accountEmail = isVerifyGoogleAccount.email
 		const user = await this.authModel.getUserByEmail(accountEmail)
 		const { resetPassLink } = genLinks(uuidV4)
-
 		const newValuePass =
 			typeof isVerifyGoogleAccount.at_hash === 'string'
 				? isVerifyGoogleAccount.at_hash
 				: this.defaultUserPass
 		const newHasPass = await bcrypt.hash(newValuePass, 10)
-		const accessHash = await bcrypt.hash(responseGoogleData.access_token, 10)
-		let refreshHash: string | null = null
+		const accessHash = await bcrypt.hash(googleData.access_token, 10)
+		let refreshHash: IAppEnCrypto | null = null
 
-		if (responseGoogleData.refresh_token) {
-			refreshHash = await bcrypt.hash(responseGoogleData.refresh_token, 10)
+		if (googleData.refresh_token) {
+			refreshHash = encrypt(googleData.refresh_token)
 		} else {
 			refreshHash = null
 		}
@@ -166,10 +190,9 @@ export class OAuthGoogleService {
 		const calcExp =
 			typeof isVerifyGoogleAccount.exp === 'number' &&
 			isVerifyGoogleAccount.exp * 1000
-		const calcExpireIn = Date.now() + responseGoogleData.expires_in * 1000
+		const calcExpireIn = Date.now() + googleData.expires_in * 1000
 		const newExpireIn = new Date(calcExp || calcExpireIn)
 
-		// Add transition
 		if (accountEmail === user?.email) {
 			if (!isVerifyGoogleAccount.email_verified)
 				return ApiError.BadRequest(
@@ -177,13 +200,10 @@ export class OAuthGoogleService {
 					409
 				)
 
-			const existsRefresh = await this.model.findUserAccount(user.id)
-
 			const dataUpdateAccountDto: ICreateUserAccountDto = {
 				provider: 'google',
 				types: 'openid-connect',
 				accessToken: accessHash,
-				refreshToken: existsRefresh?.refresh_token ?? refreshHash,
 				expiresIn: newExpireIn,
 			}
 			const dataUpdateUserDto: ICreateUserWithoutAccountDto = {
@@ -195,7 +215,7 @@ export class OAuthGoogleService {
 				isVerify: isVerifyGoogleAccount.email_verified,
 				authMethod: AUTH_METHOD.GOOGLE,
 			}
-
+			// Add transition
 			const updateAccount = await this.model.updateUserAccount(
 				user.id,
 				dataUpdateAccountDto
@@ -206,16 +226,31 @@ export class OAuthGoogleService {
 				resetPassLink
 			)
 
-			if (!updateAccount || !updateUser)
+			if (!updateAccount?.id || !updateUser)
 				return ApiError.InternalServer('Error from update account and user!')
 
 			const userGoogle = new UserGoogleDto(updateUser)
 
+			const tokens = await this.tokenService.generateTokens({
+				id: updateUser.id,
+				role: updateUser.role,
+			})
+
+			if (!tokens.refresh || typeof tokens.refresh !== 'string')
+				return ApiError.InternalServer('Error refresh-token is not generate')
+
+			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+			await this.tokenService.saveToken(
+				updateUser.id,
+				tokens.refresh,
+				expireRefreshTokenAt
+			)
+
 			return {
 				user: userGoogle,
-				accessToken: responseGoogleData.access_token,
-				refreshToken: responseGoogleData.refresh_token ?? null,
-				expiresIn: newExpireIn,
+				accessToken: googleData.access_token,
+				refreshToken: tokens.refresh,
+				expiresIn: expireRefreshTokenAt,
 			}
 		} else {
 			if (!isVerifyGoogleAccount.email_verified)
@@ -223,6 +258,11 @@ export class OAuthGoogleService {
 					'User is not verify google email please verified him!',
 					409
 				)
+
+			const refreshNewValue =
+				typeof refreshHash?.encrypted === 'string'
+					? refreshHash.encrypted
+					: null
 
 			const dataCreateUserDto: ICreateUserWithoutAccountDto = {
 				firstName: isVerifyGoogleAccount.name,
@@ -237,7 +277,9 @@ export class OAuthGoogleService {
 				provider: 'google',
 				types: 'openid-connect',
 				accessToken: accessHash,
-				refreshToken: refreshHash,
+				refreshToken: refreshNewValue,
+				googleRefreshIv: refreshHash?.iv ?? null,
+				googleRefreshTag: refreshHash?.tag ?? null,
 				expiresIn: newExpireIn,
 			}
 
@@ -262,14 +304,160 @@ export class OAuthGoogleService {
 
 			const userGoogle = new UserGoogleDto(newUser)
 
+			if (!userGoogle.id || typeof userGoogle.role === 'undefined')
+				return ApiError.BadRequest('User google dto not found!')
+
+			const tokens = await this.tokenService.generateTokens({
+				id: userGoogle.id,
+				role: userGoogle.role,
+			})
+
+			if (!tokens.refresh || typeof tokens.refresh !== 'string')
+				return ApiError.InternalServer('Error refresh-token is not generate')
+
+			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+			await this.tokenService.saveToken(
+				userGoogle.id,
+				tokens.refresh,
+				expireRefreshTokenAt
+			)
+
 			return {
 				user: userGoogle,
-				accessToken: responseGoogleData.access_token,
-				refreshToken: responseGoogleData.refresh_token ?? null,
-				expiresIn: newExpireIn,
+				accessToken: googleData.access_token,
+				refreshToken: tokens.refresh,
+				expiresIn: expireRefreshTokenAt,
 			}
 		}
 	}
 
-	async googleRefreshToken(refreshToken: string) {}
+	async googleRefreshToken(
+		token: string
+	): Promise<TypeUserOAuthGoogleRefresh | ApiError> {
+		const now = new Date()
+		const isVerifyToken = await this.tokenService.verifyToken(token)
+
+		if (isVerifyTokenError(isVerifyToken))
+			return ApiError.BadRequest(isVerifyToken.message)
+
+		if (!isVerifyToken.sub || !isVerifyToken.role)
+			return ApiError.BadRequest('ID or Role is not have from verify token')
+
+		const userAccount = await this.model.findUserAccount(isVerifyToken.sub)
+
+		if (
+			!userAccount ||
+			!userAccount.google_refresh_token_iv ||
+			!userAccount.google_refresh_token_tag
+		)
+			return ApiError.NotFound('Not founded user data!')
+
+		const decryptToken = decrypt(
+			userAccount.refresh_token,
+			userAccount.google_refresh_token_iv,
+			userAccount.google_refresh_token_tag
+		)
+
+		const isTimeCheck =
+			userAccount.expires_in &&
+			now.getTime() >= userAccount.expires_in?.getTime()
+
+		if (
+			!this.googleClientGrantTypeRefresh ||
+			!decryptToken ||
+			!this.googleClientId ||
+			!this.googleClientSecret
+		)
+			return ApiError.InternalServer('Error not set body data!')
+
+		const dataBody = new URLSearchParams({
+			grant_type: this.googleClientGrantTypeRefresh,
+			refresh_token: decryptToken,
+			client_id: this.googleClientId,
+			client_secret: this.googleClientSecret,
+		})
+
+		if (isTimeCheck) {
+			const googleResponse = await getGoogleToken(
+				dataBody,
+				{
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				false
+			)
+			let googleData: undefined | TypeGoogleRefreshTokenResponse
+
+			if (
+				typeof googleResponse === 'object' &&
+				googleResponse !== null &&
+				'message' in googleResponse &&
+				typeof googleResponse.message === 'string' &&
+				'status' in googleResponse &&
+				typeof googleResponse.status === 'number'
+			) {
+				return ApiError.BadRequest(
+					googleResponse.message,
+					googleResponse.status
+				)
+			}
+
+			if (isResponseGoogleErrorDataApi(googleResponse)) {
+				return ApiError.BadRequest(
+					googleResponse.error_description || googleResponse.error
+				)
+			}
+
+			if (googleResponse === null || typeof googleResponse === 'undefined') {
+				return ApiError.BadRequest(
+					'Error response from google code is have null!'
+				)
+			}
+
+			if (!isResponseGoogleRefreshDataApi(googleResponse))
+				return ApiError.BadRequest('Error set googleResponse to googleData')
+
+			googleData = googleResponse
+
+			const calcExpireIn = Date.now() + googleData.expires_in * 1000
+			const newGoogleExpireIn = new Date(calcExpireIn)
+			const accessHash = await bcrypt.hash(googleData.access_token, 10)
+			const newTokenAccount = await this.model.updateTokens(
+				userAccount.user_id,
+				accessHash,
+				token,
+				newGoogleExpireIn,
+				googleData.token_type
+			)
+
+			if (!newTokenAccount)
+				return ApiError.InternalServer('Error from update account tokens')
+
+			const user = await this.authModel.getUserById(userAccount.user_id)
+
+			if (!user) return ApiError.NotFound('User not founded!!!')
+
+			const tokens = await this.tokenService.generateTokens({
+				id: user.id,
+				role: user.role,
+			})
+
+			if (!tokens.refresh || typeof tokens.refresh !== 'string')
+				return ApiError.InternalServer('Error refresh-token is not generate')
+
+			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+			await this.tokenService.saveToken(
+				user.id,
+				tokens.refresh,
+				expireRefreshTokenAt
+			)
+
+			return {
+				accessToken: googleData.access_token,
+				refreshToken: tokens.refresh,
+				expiresIn: expireRefreshTokenAt,
+			}
+		} else {
+			return ApiError.BadRequest('AccessToken is not expired!', 409)
+		}
+	}
 }

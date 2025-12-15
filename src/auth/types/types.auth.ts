@@ -52,3 +52,5 @@ export interface IUserOAuthGoogle {
 	refreshToken: string | null
 	expiresIn: Date
 }
+
+export type TypeUserOAuthGoogleRefresh = Omit<IUserOAuthGoogle, 'user'>

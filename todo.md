@@ -55,10 +55,12 @@
 18. Rename avatar from user table: ✅
 19. Add ref user table with account table: ✅
 20. Add new feild to user table "authMehod": ✅
-21. Fixed with auth_method if again loginWithService method field has remove: ❌
+21. Fixed with auth_method if again loginWithService method field has remove: ✅
 22. Fixed sql from oauth.model. Add DO UPDATE AND CONFLICT where they need: ❌
 23. Add expireIn to setDateUtil if he typeof number: ❌
 24. Check expireIn: ❌
+25. Fixed decrypt tokens from db for account table not hash: ❌
+26. Just add symmetric hash refresh, accessToken must be hash with bcrypt: ❌
 
 ## 2FA
 
@@ -76,9 +78,11 @@
 
 1. Add tabels to db Account: ✅
 2. Add state for protection CSRF attacks
-3. Add handler if user not have to db we must be create him if he have just add userId tabel acccount: ❌
-4. When user loginWith oAuth the table users feild isVerify must be true: ❌
-5. Add transaction for create user if not have main table user must be 2 req to db: ❌
+3. Add handler if user not have to db we must be create him if he have just add userId tabel acccount: ✅
+4. Add transaction for create user if not have main table user must be 2 req to db: ❌
+5. Add googleRefreshToken: ❌
+6. Add handler when user has success loginWithOauth create new session for token table: ❌
+7. Add req for update accessToken from google api: ❌
 
 ## Oauth2.0
 

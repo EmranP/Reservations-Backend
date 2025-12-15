@@ -50,6 +50,7 @@ export const oAuthGoogleModel = new OAuthGoogleModel(pool, logger)
 export const oAuthGoogleService = new OAuthGoogleService(
 	oAuthGoogleModel,
 	authModel,
+	tokenService,
 	logger
 )
 // Controller

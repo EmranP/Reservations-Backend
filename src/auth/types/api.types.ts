@@ -14,3 +14,13 @@ export interface IBodyDataGetTokenGoogle {
 	redirect_uri: string
 	grant_type: string
 }
+
+export type TypeGoogleRefreshTokenResponse = Omit<
+	IResponseGoogleApi,
+	'refresh_token' | 'id_token'
+>
+
+export interface IGoogleOAuthError {
+	error: string
+	error_description?: string
+}

@@ -98,7 +98,7 @@ export class UserGoogleDto {
 	createdAt: string | Date | undefined
 	updatedAt: string | Date | undefined
 
-	constructor(data: IUser) {
+	constructor(data: Partial<IUser>) {
 		this.id = data.id
 		this.firstName = data.first_name
 		this.lastName = data.last_name

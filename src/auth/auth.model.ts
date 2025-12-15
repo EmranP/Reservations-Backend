@@ -13,6 +13,13 @@ import type { IResponseTokens } from './types/token.type'
 export class AuthModel {
 	constructor(private pool: Pool, private logger: Logger) {}
 
+	async getUserById(id: string): Promise<IUser | null> {
+		const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE id = $1 LIMIT 1`
+		const queryResult = await this.pool.query<IUser>(query, [id])
+
+		return queryResult.rows[0] ?? null
+	}
+
 	async getUserByEmail(email: string | undefined): Promise<IUser | null> {
 		try {
 			const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE email = $1 LIMIT 1`
@@ -124,7 +131,7 @@ export class AuthModel {
 		userId: string,
 		newLink: string
 	): Promise<Pick<IUser, 'id'> | false> {
-		const query = `UPDATE ${DB_TABLE_USERS} SET reset_pass_link = $1 WHERE id = $2 RETURNING id`
+		const query = `UPDATE ${DB_TABLE_USERS} SET reset_pass_link = COALESCE($1, reset_pass_link) WHERE id = $2 RETURNING id`
 		const queryResult = await this.pool.query<Pick<IUser, 'id'>>(query, [
 			newLink,
 			userId,
@@ -141,7 +148,7 @@ export class AuthModel {
 		enablePass: boolean,
 		userId: string
 	): Promise<Pick<IUser, 'id'> | false> {
-		const query = `UPDATE ${DB_TABLE_USERS} SET enable_reset_pass = $1 WHERE id = $2 RETURNING id`
+		const query = `UPDATE ${DB_TABLE_USERS} SET enable_reset_pass = COALESCE($1, enable_reset_pass) WHERE id = $2 RETURNING id`
 		const queryResult = await this.pool.query<Pick<IUser, 'id'>>(query, [
 			enablePass,
 			userId,
@@ -156,7 +163,7 @@ export class AuthModel {
 		userId: string,
 		expireAt: Date | null
 	): Promise<boolean> {
-		const query = `UPDATE ${DB_TABLE_TOKENS} SET expires_forget_pass = $1 WHERE user_id = $2`
+		const query = `UPDATE ${DB_TABLE_TOKENS} SET expires_forget_pass = COALESCE($1, expires_forget_pass) WHERE user_id = $2`
 		const queryResult = await this.pool.query(query, [expireAt, userId])
 
 		if (queryResult.rowCount && queryResult.rowCount <= 0) return false
@@ -168,7 +175,7 @@ export class AuthModel {
 		dto: Omit<ForgetDto, 'newPassword' | 'email'>
 	): Promise<Pick<IUser, 'enable_reset_pass' | 'id'> | false> {
 		const query = `SELECT id, enable_reset_pass FROM ${DB_TABLE_USERS} WHERE reset_pass_link = $1`
-		const queryResetPass = `UPDATE ${DB_TABLE_USERS} SET enable_reset_pass = $1 WHERE id = $2 RETURNING id, enable_reset_pass`
+		const queryResetPass = `UPDATE ${DB_TABLE_USERS} SET enable_reset_pass = COALESCE($1, enable_reset_pass) WHERE id = $2 RETURNING id, enable_reset_pass`
 
 		const queryResult = await this.pool.query<
 			Pick<IUser, 'id' | 'enable_reset_pass'>
@@ -191,7 +198,7 @@ export class AuthModel {
 		userId: string
 	) {
 		const query = `SELECT * FROM ${DB_TABLE_USERS} WHERE enable_reset_pass = $1 AND id = $2`
-		const queryEditPass = `UPDATE ${DB_TABLE_USERS} SET password = $1 WHERE id = $2 RETURNING *`
+		const queryEditPass = `UPDATE ${DB_TABLE_USERS} SET password = COALESCE($1, password) WHERE id = $2 RETURNING *`
 
 		const queryResult = await this.pool.query<IUser>(query, [
 			isEnableReset,
@@ -229,7 +236,11 @@ export class AuthModel {
 		userId: string,
 		dto: Omit<ForgetDto, 'email' | 'resetLink'>
 	): Promise<Pick<IUser, 'id'> | false> {
-		const query = `UPDATE ${DB_TABLE_USERS} SET password = $1, enable_reset_pass = $2 WHERE id = $3 RETURNING id`
+		const query = `UPDATE ${DB_TABLE_USERS} SET 
+		password = COALESCE($1, password), 
+		enable_reset_pass = COALESCE($2, enable_reset_pass) 
+		WHERE id = $3 
+		RETURNING id`
 
 		const queryResult = await this.pool.query<Pick<IUser, 'id'>>(query, [
 			dto.newPassword,
