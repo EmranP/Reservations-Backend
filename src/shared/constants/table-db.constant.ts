@@ -1,5 +1,0 @@
-export const DB_TABLE_USERS = 'users'
-export const DB_TABLE_TOKENS = 'tokens'
-export const DB_TABLE_ROOMS = 'rooms'
-export const DB_TABLE_OCCUPIED_ROOMS = 'occupied_rooms'
-export const DB_TABLE_REVIEWS = 'reviews'
