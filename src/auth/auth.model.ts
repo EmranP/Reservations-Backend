@@ -163,7 +163,7 @@ export class AuthModel {
 		userId: string,
 		expireAt: Date | null
 	): Promise<boolean> {
-		const query = `UPDATE ${DB_TABLE_TOKENS} SET expires_forget_pass = COALESCE($1, expires_forget_pass) WHERE user_id = $2`
+		const query = `UPDATE ${DB_TABLE_TOKENS} SET expires_forget_pass = $1 WHERE user_id = $2`
 		const queryResult = await this.pool.query(query, [expireAt, userId])
 
 		if (queryResult.rowCount && queryResult.rowCount <= 0) return false
@@ -232,24 +232,89 @@ export class AuthModel {
 		}
 	}
 
+	async resetForgetVerifyMode(
+		link: string,
+		userId: string,
+		isEnableResetPass: boolean,
+		expireAt: null
+	): Promise<Pick<IUser, 'id' | 'enable_reset_pass'> | null> {
+		const client = await this.pool.connect()
+		try {
+			await client.query('BEGIN')
+
+			const queryUser = `
+				UPDATE ${DB_TABLE_USERS} SET 
+				enable_reset_pass = COALESCE($1, enable_reset_pass), 
+				reset_pass_link = $2 
+				WHERE id = $3 
+				RETURNING id, enable_reset_pass
+			`
+
+			const queryUserResult = await client.query<
+				Pick<IUser, 'id' | 'enable_reset_pass'>
+			>(queryUser, [isEnableResetPass, link, userId])
+
+			if (!queryUserResult.rows[0]) {
+				await client.query('ROLLBACK')
+				return null
+			}
+
+			const queryToken = `UPDATE ${DB_TABLE_TOKENS} 
+				SET expires_forget_pass = $1 
+				WHERE user_id = $2
+			`
+
+			await client.query(queryToken, [expireAt, userId])
+
+			await client.query('COMMIT')
+
+			return queryUserResult.rows[0]
+		} catch (error) {
+			await client.query('ROLLBACK')
+			return null
+		} finally {
+			client.release()
+		}
+	}
+
 	async resetUpdateUserPassword(
 		userId: string,
-		dto: Omit<ForgetDto, 'email' | 'resetLink'>
-	): Promise<Pick<IUser, 'id'> | false> {
-		const query = `UPDATE ${DB_TABLE_USERS} SET 
-		password = COALESCE($1, password), 
-		enable_reset_pass = COALESCE($2, enable_reset_pass) 
-		WHERE id = $3 
-		RETURNING id`
+		newLink: string,
+		dto: Omit<ForgetDto, 'email' | 'resetLink'>,
+		expireAt: null
+	): Promise<Pick<IUser, 'id'> | null> {
+		const client = await this.pool.connect()
+		try {
+			await client.query('BEGIN')
 
-		const queryResult = await this.pool.query<Pick<IUser, 'id'>>(query, [
-			dto.newPassword,
-			dto.isEnableResetPass,
-			userId,
-		])
+			const queryUser = `UPDATE ${DB_TABLE_USERS} SET 
+			reset_pass_link = COALESCE($1, reset_pass_link),
+			password = COALESCE($2, password), 
+			enable_reset_pass = COALESCE($3, enable_reset_pass)
+			WHERE id = $4 
+			RETURNING id`
+			const queryUserResult = await this.pool.query<Pick<IUser, 'id'>>(
+				queryUser,
+				[newLink, dto.newPassword, dto.isEnableResetPass, userId]
+			)
 
-		if (!queryResult.rows[0]) return false
+			if (!queryUserResult.rows[0]) {
+				await client.query('ROLLBACK')
+				return null
+			}
 
-		return queryResult.rows[0]
+			const queryToken = `UPDATE ${DB_TABLE_TOKENS} SET expires_forget_pass = $1 WHERE user_id = $2`
+
+			await this.pool.query(queryToken, [expireAt, userId])
+
+			await client.query('COMMIT')
+
+			return queryUserResult.rows[0]
+		} catch (error) {
+			await client.query('ROLLBACK')
+			return null
+		} finally {
+			client.release()
+		}
 	}
 }

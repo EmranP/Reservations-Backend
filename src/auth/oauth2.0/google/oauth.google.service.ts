@@ -39,12 +39,12 @@ import type {
 	IUserOAuthGoogle,
 	TypeUserOAuthGoogleRefresh,
 } from '../../types/types.auth'
+import type { OAuthModel } from '../oauth.model'
 import { getGoogleToken } from './oauth.google.api'
-import type { OAuthGoogleModel } from './oauth.google.model'
 
 export class OAuthGoogleService extends AuthBaseConfig {
 	constructor(
-		private model: OAuthGoogleModel,
+		private model: OAuthModel,
 		private authModel: AuthModel,
 		private tokenService: TokenService,
 		private logger: Logger
@@ -136,9 +136,13 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			grant_type: this.googleClientGrantTypeAuthCode,
 		}
 
-		const responseGoogleData = await getGoogleToken(dataBody, {
-			'Content-Type': 'application/json',
-		})
+		const responseGoogleData = await getGoogleToken(
+			dataBody,
+			{
+				'Content-Type': 'application/json',
+			},
+			true
+		)
 		let googleData: undefined | IResponseGoogleApi | IErrorResponseApp
 
 		if (isResponseGoogleDataApi(responseGoogleData)) {
@@ -163,12 +167,14 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			googleData.id_token
 		)
 
-		if ('message' in isVerifyGoogleAccount)
+		console.log(isVerifyGoogleAccount)
+		if ('message' in isVerifyGoogleAccount) {
 			return ApiError.InternalServer(
 				typeof isVerifyGoogleAccount.message === 'string'
 					? isVerifyGoogleAccount.message
 					: 'Something was wrong'
 			)
+		}
 
 		const accountEmail = isVerifyGoogleAccount.email
 		const user = await this.authModel.getUserByEmail(accountEmail)
@@ -200,13 +206,12 @@ export class OAuthGoogleService extends AuthBaseConfig {
 					409
 				)
 
-			const dataUpdateAccountDto: ICreateUserAccountDto = {
+			const dataUpdateDto: ICreateUserAccountDto &
+				ICreateUserWithoutAccountDto = {
 				provider: 'google',
 				types: 'openid-connect',
 				accessToken: accessHash,
 				expiresIn: newExpireIn,
-			}
-			const dataUpdateUserDto: ICreateUserWithoutAccountDto = {
 				firstName: isVerifyGoogleAccount.name,
 				email: isVerifyGoogleAccount.email,
 				phone: '+993',
@@ -215,25 +220,21 @@ export class OAuthGoogleService extends AuthBaseConfig {
 				isVerify: isVerifyGoogleAccount.email_verified,
 				authMethod: AUTH_METHOD.GOOGLE,
 			}
-			// Add transition
-			const updateAccount = await this.model.updateUserAccount(
+
+			const updateUserGoogle = await this.model.updateUserOAuth(
 				user.id,
-				dataUpdateAccountDto
-			)
-			const updateUser = await this.model.updateUser(
-				user.id,
-				dataUpdateUserDto,
-				resetPassLink
+				resetPassLink,
+				dataUpdateDto
 			)
 
-			if (!updateAccount?.id || !updateUser)
+			if (!updateUserGoogle?.id || !updateUserGoogle)
 				return ApiError.InternalServer('Error from update account and user!')
 
-			const userGoogle = new UserGoogleDto(updateUser)
+			const userGoogle = new UserGoogleDto(updateUserGoogle)
 
 			const tokens = await this.tokenService.generateTokens({
-				id: updateUser.id,
-				role: updateUser.role,
+				id: updateUserGoogle.id,
+				role: updateUserGoogle.role,
 			})
 
 			if (!tokens.refresh || typeof tokens.refresh !== 'string')
@@ -241,7 +242,7 @@ export class OAuthGoogleService extends AuthBaseConfig {
 
 			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
 			await this.tokenService.saveToken(
-				updateUser.id,
+				updateUserGoogle.id,
 				tokens.refresh,
 				expireRefreshTokenAt
 			)
@@ -264,7 +265,8 @@ export class OAuthGoogleService extends AuthBaseConfig {
 					? refreshHash.encrypted
 					: null
 
-			const dataCreateUserDto: ICreateUserWithoutAccountDto = {
+			const dataCreateGoogleDto: ICreateUserAccountDto &
+				ICreateUserWithoutAccountDto = {
 				firstName: isVerifyGoogleAccount.name,
 				email: isVerifyGoogleAccount.email,
 				phone: '+993',
@@ -272,8 +274,6 @@ export class OAuthGoogleService extends AuthBaseConfig {
 				picture: isVerifyGoogleAccount.picture,
 				isVerify: isVerifyGoogleAccount.email_verified,
 				authMethod: AUTH_METHOD.GOOGLE,
-			}
-			const dataCreateAccountDto: ICreateUserAccountDto = {
 				provider: 'google',
 				types: 'openid-connect',
 				accessToken: accessHash,
@@ -283,26 +283,18 @@ export class OAuthGoogleService extends AuthBaseConfig {
 				expiresIn: newExpireIn,
 			}
 
-			const newUser = await this.model.createUserWithoutAccount(
-				dataCreateUserDto,
+			const newUserGoogle = await this.model.createUserOAuth(
 				resetPassLink,
-				AUTH_METHOD.GOOGLE
+				AUTH_METHOD.GOOGLE,
+				dataCreateGoogleDto
 			)
 
-			if (!newUser)
-				return ApiError.InternalServer('Error from create user with google!')
-
-			const newAccount = await this.model.createUserAccount(
-				newUser.id,
-				dataCreateAccountDto
-			)
-
-			if (!newAccount)
+			if (!newUserGoogle)
 				return ApiError.InternalServer(
 					'Error from create user-account with google'
 				)
 
-			const userGoogle = new UserGoogleDto(newUser)
+			const userGoogle = new UserGoogleDto(newUserGoogle)
 
 			if (!userGoogle.id || typeof userGoogle.role === 'undefined')
 				return ApiError.BadRequest('User google dto not found!')

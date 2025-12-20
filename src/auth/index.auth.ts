@@ -9,8 +9,8 @@ import { AuthModel } from './auth.model'
 import { AuthService } from './auth.service'
 import { EmailService } from './mail/email.service'
 import { OAuthGoogleController } from './oauth2.0/google/oauth.google.controller'
-import { OAuthGoogleModel } from './oauth2.0/google/oauth.google.model'
 import { OAuthGoogleService } from './oauth2.0/google/oauth.google.service'
+import { OAuthModel } from './oauth2.0/oauth.model'
 import { TokenModel } from './token/token.model'
 import { TokenService } from './token/token.service'
 
@@ -46,7 +46,7 @@ export const authEmailService = new EmailService(
 	authTwoFactoryModel
 )
 // OAuth Google
-export const oAuthGoogleModel = new OAuthGoogleModel(pool, logger)
+export const oAuthGoogleModel = new OAuthModel(pool, logger)
 export const oAuthGoogleService = new OAuthGoogleService(
 	oAuthGoogleModel,
 	authModel,

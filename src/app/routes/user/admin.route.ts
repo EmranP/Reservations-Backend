@@ -10,7 +10,7 @@ import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import { responseBadRequest } from '../../../common/utils/app/errorResponse.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 import { userController } from '../../../user/index.user'
-import { ROLES } from '../../roles'
+import { ROLES } from '../../enums'
 
 export const userRouter = async (
 	isAuth: ApiError | undefined,

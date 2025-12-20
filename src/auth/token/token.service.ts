@@ -240,6 +240,7 @@ export class TokenService extends AuthBaseConfig {
 	> {
 		const hashToken = await bcrypt.hash(refreshToken, 10)
 
+		// ? Add transition
 		await this.deleteToken(userId, refreshToken)
 
 		const newToken = await this.tokenModel.create(

@@ -1,6 +1,6 @@
 import type { IncomingMessage } from 'http'
 import type { JWTPayload } from 'jose'
-import { ROLES } from '../../app/roles'
+import { ROLES } from '../../app/enums'
 
 export interface ITokenPayload {
 	id: number
