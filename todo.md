@@ -3,6 +3,7 @@
 ## Main Bugs
 
 1. Add fields persons: type integer for occupied_rooms from table.sql: ❌
+2. Add cheking for CSRF attack, for everything req where have session: ❌
 
 ## AUTH
 
@@ -80,14 +81,14 @@
 4. Add handler when user has success loginWithOauth create new session for token table: ✅
 5. Add req for update accessToken from google api: ✅
 6. Add transaction for create user if not have main table user must be 2 req to db: ✅
-7. Add state for protection CSRF attacks: ❌
+7. Add state for protection CSRF attacks: ✅
 
 ## Oauth2.0
 
-1. Google: **90%**
-2. Apple: ❌
-3. Yandex: ❌
-4. Github: ❌
+1. Google: ✅
+2. Github: ❌
+3. Apple: ❌
+4. Yandex: ❌
 
 ## Redis
 
@@ -95,6 +96,10 @@
 2. Add jsonbin api: ❌
 3. Add profile api: ❌
 4. get all rooms api: ❌
+
+## Storage for files
+
+1. Add s3 storage: ❌
 
 ## Profile
 

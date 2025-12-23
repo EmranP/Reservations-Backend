@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS public.tokens (
 	expires_token_at TIMESTAMP DEFAULT NULL,
 	expires_forget_pass TIMESTAMP DEFAULT NULL, 
 	expires_two_auth_code TIMESTAMP DEFAULT NULL,
+	state_auth TEXT,
 	created_at TIMESTAMP DEFAULT now(),
 	updated_at TIMESTAMP DEFAULT now()
 );

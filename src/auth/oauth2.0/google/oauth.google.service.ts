@@ -1,10 +1,14 @@
 import bcrypt from 'bcrypt'
-import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { createRemoteJWKSet } from 'jose'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import { APP_CONFIG, APP_OAUTH_CONFIG } from '../../../common/config/app.config'
+import {
+	APP_CONFIG,
+	APP_OAUTH_GOOGLE_CONFIG,
+} from '../../../common/config/app.config'
 import {
 	googlePublicJwksUrl,
+	googleTokenUrl,
 	googleUrl,
 } from '../../../common/constants/auth.constant'
 import { AUTH_METHOD } from '../../../common/constants/enum.constant'
@@ -17,7 +21,6 @@ import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGoogleLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 import { UserGoogleDto } from '../../../user/dto/user.dto'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { AuthModel } from '../../auth.model'
 import type {
 	ICreateUserAccountDto,
@@ -33,18 +36,20 @@ import type {
 	IResponseGoogleApi,
 	TypeGoogleRefreshTokenResponse,
 } from '../../types/api.types'
-import type { ICommonGoogleBodyData } from '../../types/common.type'
+import type { ICommonOAuthBodyData } from '../../types/common.type'
 import type { IUserGoogleJwtPayload } from '../../types/token.type'
 import type {
 	IUserOAuthGoogle,
 	TypeUserOAuthGoogleRefresh,
 } from '../../types/types.auth'
+import { getOAuthToken } from '../oauth.api'
 import type { OAuthModel } from '../oauth.model'
-import { getGoogleToken } from './oauth.google.api'
+import { OAuthService } from '../oauth.service'
 
-export class OAuthGoogleService extends AuthBaseConfig {
+export class OAuthGoogleService extends OAuthService {
 	constructor(
 		private model: OAuthModel,
+		private service: OAuthService,
 		private authModel: AuthModel,
 		private tokenService: TokenService,
 		private logger: Logger
@@ -52,39 +57,41 @@ export class OAuthGoogleService extends AuthBaseConfig {
 		super()
 	}
 
-	private googleClientId = APP_OAUTH_CONFIG.GOOGLE_CLIENT_ID
-	private googleClientSecret = APP_OAUTH_CONFIG.GOOGLE_CLIENT_SECRET
-	private googleClientRedirect = APP_OAUTH_CONFIG.GOOGLE_CLIENT_REDIRECT
+	private googleClientId = APP_OAUTH_GOOGLE_CONFIG.GOOGLE_CLIENT_ID
+	private googleClientSecret = APP_OAUTH_GOOGLE_CONFIG.GOOGLE_CLIENT_SECRET
+	private googleClientRedirect = APP_OAUTH_GOOGLE_CONFIG.GOOGLE_CLIENT_REDIRECT
 	private googleClientGrantTypeAuthCode = 'authorization_code'
 	private googleClientGrantTypeRefresh = 'refresh_token'
 	private googlePublicJwks = createRemoteJWKSet(new URL(googlePublicJwksUrl))
 	private defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
 
-	async getGoogleUrl(): Promise<ApiError | string> {
-		if (
-			!this.googleClientId ||
-			!this.googleClientSecret ||
-			!this.googleClientRedirect
-		)
-			return ApiError.InternalServer('Google oauth config not set!')
-
-		const url = generateOAuthGoogleLink(
+	// Put the common oauth service
+	async getGoogleUrl(state: string | undefined): Promise<ApiError | string> {
+		return await this.service.getOauthUrl(
+			state,
 			this.googleClientId,
-			this.googleClientRedirect
+			this.googleClientSecret,
+			this.googleClientRedirect,
+			() =>
+				generateOAuthGoogleLink(
+					this.googleClientId,
+					this.googleClientRedirect,
+					state
+				)
 		)
-
-		return url
 	}
 
-	async getCommonGoogleBodyData(): Promise<ApiError | ICommonGoogleBodyData> {
+	async getCommonGoogleBodyData(): Promise<ApiError | ICommonOAuthBodyData> {
 		if (
 			!this.googleClientId ||
 			!this.googleClientSecret ||
 			!this.googleClientRedirect
 		)
-			return ApiError.InternalServer('Google oauth config not set!')
+			return ApiError.InternalServer(
+				'Google oauth config not set from common body data!'
+			)
 
-		const commonData: ICommonGoogleBodyData = {
+		const commonData: ICommonOAuthBodyData = {
 			client_id: this.googleClientId,
 			client_secret: this.googleClientSecret,
 			redirect_uri: this.googleClientRedirect,
@@ -93,34 +100,10 @@ export class OAuthGoogleService extends AuthBaseConfig {
 		return commonData
 	}
 
-	async verifyGoogleToken(
-		idToken: string | undefined
-	): Promise<IErrorResponseApp | IUserGoogleJwtPayload> {
-		if (!idToken)
-			return {
-				message: 'ID token is not have!',
-				status: 404,
-			}
-
-		const account = await jwtVerify<IUserGoogleJwtPayload>(
-			idToken,
-			this.googlePublicJwks,
-			{
-				algorithms: ['RS256'],
-				issuer: googleUrl,
-			}
-		)
-
-		if (!account || !account.payload)
-			return {
-				message: 'Error from verify-account google',
-				status: 500,
-			}
-
-		return account.payload
-	}
-
-	async googleCodeHandler(code: string): Promise<ApiError | IUserOAuthGoogle> {
+	async googleCodeHandler(
+		code: string,
+		state: string
+	): Promise<ApiError | IUserOAuthGoogle> {
 		if (!this.defaultUserPass)
 			return ApiError.InternalServer(
 				'App-config is not set default-pass for user'
@@ -134,14 +117,19 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			...commonData,
 			code,
 			grant_type: this.googleClientGrantTypeAuthCode,
+			state,
 		}
 
-		const responseGoogleData = await getGoogleToken(
-			dataBody,
-			{
-				'Content-Type': 'application/json',
-			},
-			true
+		const headerData = {
+			'Content-Type': 'application/json',
+		}
+
+		const responseGoogleData = await getOAuthToken(
+			googleTokenUrl,
+			'POST',
+			headerData,
+			true,
+			dataBody
 		)
 		let googleData: undefined | IResponseGoogleApi | IErrorResponseApp
 
@@ -163,11 +151,14 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			)
 		}
 
-		const isVerifyGoogleAccount = await this.verifyGoogleToken(
-			googleData.id_token
-		)
+		const isVerifyGoogleAccount =
+			await this.verifyOAuthToken<IUserGoogleJwtPayload>(
+				googleData.id_token,
+				this.googlePublicJwks,
+				['RS256'],
+				googleUrl
+			)
 
-		console.log(isVerifyGoogleAccount)
 		if ('message' in isVerifyGoogleAccount) {
 			return ApiError.InternalServer(
 				typeof isVerifyGoogleAccount.message === 'string'
@@ -232,20 +223,31 @@ export class OAuthGoogleService extends AuthBaseConfig {
 
 			const userGoogle = new UserGoogleDto(updateUserGoogle)
 
+			if (!userGoogle.id || !userGoogle.role)
+				return ApiError.InternalServer('Error transform user-google dto')
+
 			const tokens = await this.tokenService.generateTokens({
-				id: updateUserGoogle.id,
-				role: updateUserGoogle.role,
+				id: userGoogle.id,
+				role: userGoogle.role,
 			})
 
 			if (!tokens.refresh || typeof tokens.refresh !== 'string')
 				return ApiError.InternalServer('Error refresh-token is not generate')
 
 			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			await this.tokenService.saveToken(
-				updateUserGoogle.id,
+			const newSession = await this.tokenService.saveToken(
+				userGoogle.id,
 				tokens.refresh,
-				expireRefreshTokenAt
+				expireRefreshTokenAt,
+				state
 			)
+
+			if (
+				typeof newSession === 'object' &&
+				newSession !== null &&
+				'message' in newSession
+			)
+				return ApiError.InternalServer(newSession.message)
 
 			return {
 				user: userGoogle,
@@ -308,11 +310,19 @@ export class OAuthGoogleService extends AuthBaseConfig {
 				return ApiError.InternalServer('Error refresh-token is not generate')
 
 			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			await this.tokenService.saveToken(
+			const newSession = await this.tokenService.saveToken(
 				userGoogle.id,
 				tokens.refresh,
-				expireRefreshTokenAt
+				expireRefreshTokenAt,
+				state
 			)
+
+			if (
+				typeof newSession === 'object' &&
+				newSession !== null &&
+				'message' in newSession
+			)
+				return ApiError.InternalServer(newSession.message)
 
 			return {
 				user: userGoogle,
@@ -369,13 +379,17 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			client_secret: this.googleClientSecret,
 		})
 
+		const headersData = {
+			'Content-Type': 'application/x-www-form-urlencoded',
+		}
+
 		if (isTimeCheck) {
-			const googleResponse = await getGoogleToken(
-				dataBody,
-				{
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				false
+			const googleResponse = await getOAuthToken(
+				googleTokenUrl,
+				'POST',
+				headersData,
+				false,
+				dataBody
 			)
 			let googleData: undefined | TypeGoogleRefreshTokenResponse
 

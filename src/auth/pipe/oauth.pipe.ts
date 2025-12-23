@@ -13,7 +13,10 @@ export const isCodeOAuthGoogleCallbackDto = (
 	const isValidCode =
 		isCommonValidObj && 'code' in obj && typeof obj.code === 'string'
 
-	return isValidCode
+	const isValidState =
+		isCommonValidObj && 'state' in obj && typeof obj.state === 'string'
+
+	return isValidCode && isValidState
 }
 
 export const isResponseGoogleDataApi = (

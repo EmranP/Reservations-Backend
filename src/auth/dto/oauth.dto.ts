@@ -5,8 +5,9 @@ export class OAuthGoogleCallbackDto {
 	code: undefined | string
 }
 
-export interface IOAuthGoogleCallback {
+export interface IOAuthCallback {
 	code: string
+	state: string
 }
 
 export interface IOAuthGoogleCodeHandler {
