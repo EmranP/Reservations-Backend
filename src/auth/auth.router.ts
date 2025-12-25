@@ -3,10 +3,12 @@ import {
 	AUTH_ACTIVATION_EMAIL_API_URL,
 	AUTH_ACTIVATION_EMAIL_FORGET_API_URL,
 	AUTH_ACTIVATION_EMAIL_REPAID_API_URL,
-	AUTH_CODE_GOOGLE_CALLBACK_URL,
 	AUTH_ENABLE_TWO_FACTORY_CHALLENGE,
 	AUTH_FORGET_NEW_PASSWORD_API_URL,
+	AUTH_GET_GITHUB_URL,
 	AUTH_GET_GOOGLE_URL,
+	AUTH_GITHUB_CALLBACK_URL,
+	AUTH_GOOGLE_CALLBACK_URL,
 	AUTH_GOOGLE_REFRESH_TOKEN,
 	AUTH_LOGIN_API_URL,
 	AUTH_LOGOUT_API_URL,
@@ -25,6 +27,7 @@ import { isRepaidVerifyDto } from './dto/verify.dto'
 import {
 	authController,
 	authTwoFactoryController,
+	oAuthGithubController,
 	oAuthGoogleController,
 } from './index.auth'
 import {
@@ -37,7 +40,7 @@ import {
 	validatePhoneReg,
 	validatePinCode,
 } from './pipe/auth-valid.pipe'
-import { isCodeOAuthGoogleCallbackDto } from './pipe/oauth.pipe'
+import { isCodeOAuthCallbackDto } from './pipe/oauth.pipe'
 
 export const authRouter = async (
 	isAuth: ApiError | undefined,
@@ -239,13 +242,16 @@ export const authRouter = async (
 
 		await authTwoFactoryController.verifyCode(req, res, body)
 	}
-	// OAuth 2.0
-	else if (path === AUTH_GET_GOOGLE_URL) {
-		await oAuthGoogleController.googleUrl(req, res)
-	} else if (path === AUTH_CODE_GOOGLE_CALLBACK_URL && req.method === 'POST') {
-		if (!isCodeOAuthGoogleCallbackDto(body)) {
+	// Google OAuth 2.0
+	else if (
+		path === AUTH_GET_GOOGLE_URL ||
+		path === `${AUTH_GET_GOOGLE_URL}${pathOption.searchParams}`
+	) {
+		await oAuthGoogleController.googleUrl(req, res, pathOption)
+	} else if (path === AUTH_GOOGLE_CALLBACK_URL && req.method === 'POST') {
+		if (!isCodeOAuthCallbackDto(body)) {
 			await responseBadRequest(
-				'Invalid data from body oAuth-google callback.',
+				'Invalid data from body oauth-google callback.',
 				res,
 				400
 			)
@@ -255,7 +261,17 @@ export const authRouter = async (
 
 		if (body.code?.length <= 0) {
 			await responseBadRequest(
-				'In the code symbol is must be having.',
+				'In the "code" symbol is must be having.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (body.state.length <= 0) {
+			await responseBadRequest(
+				'In the "state" symbol is must be having.',
 				res,
 				400
 			)
@@ -268,6 +284,45 @@ export const authRouter = async (
 	// OAuth Google Refresh Token
 	else if (path === AUTH_GOOGLE_REFRESH_TOKEN && req.method === 'POST') {
 		await oAuthGoogleController.googleRefreshToken(req, res, cookie)
+	}
+	// Github OAuth 2.0
+	else if (
+		path === AUTH_GET_GITHUB_URL ||
+		path === `${AUTH_GET_GITHUB_URL}${pathOption.searchParams}`
+	) {
+		await oAuthGithubController.githubUrl(req, res, pathOption)
+	} else if (path === AUTH_GITHUB_CALLBACK_URL && req.method === 'POST') {
+		if (!isCodeOAuthCallbackDto(body)) {
+			await responseBadRequest(
+				'Invalid data from body oauth-github callback.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (body.code?.length <= 0) {
+			await responseBadRequest(
+				'In the "code" symbol is must be having.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (body.state.length <= 0) {
+			await responseBadRequest(
+				'In the "state" symbol is must be having.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		await oAuthGithubController.githubCallback(req, res, body)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')
 

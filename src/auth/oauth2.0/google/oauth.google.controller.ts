@@ -1,12 +1,13 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import {
 	isErrorHandler,
 	responseBadRequest,
 } from '../../../common/utils/app/errorResponse.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 import { AuthBaseConfig } from '../../abstract/auth-config.base'
-import type { IOAuthGoogleCallback } from '../../dto/oauth.dto'
+import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthGoogleService } from './oauth.google.service'
 
 export class OAuthGoogleController extends AuthBaseConfig {
@@ -16,10 +17,12 @@ export class OAuthGoogleController extends AuthBaseConfig {
 
 	async googleUrl(
 		req: IncomingMessage,
-		res: ServerResponse<IncomingMessage>
+		res: ServerResponse<IncomingMessage>,
+		query: IAppQueryParams
 	): Promise<void> {
 		try {
-			const getLink = await this.service.getGoogleUrl()
+			const state = query.queryParams?.state
+			const getLink = await this.service.getGoogleUrl(state)
 
 			if (typeof getLink === 'string') {
 				res.writeHead(302, {
@@ -49,11 +52,14 @@ export class OAuthGoogleController extends AuthBaseConfig {
 
 	async googleCallback(
 		req: IncomingMessage,
-		res: ServerResponse,
-		body: IOAuthGoogleCallback
+		res: ServerResponse<IncomingMessage>,
+		body: IOAuthCallback
 	): Promise<void> {
 		try {
-			const userGoogle = await this.service.googleCodeHandler(body.code)
+			const userGoogle = await this.service.googleCodeHandler(
+				body.code,
+				body.state
+			)
 
 			if (
 				typeof userGoogle === 'object' &&

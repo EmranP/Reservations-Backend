@@ -137,8 +137,7 @@ export class EmailService extends AuthBaseConfig {
 
 	// !Reset-password
 	async forgetPasswordSendLink(
-		dto: RepaidVerifyDto,
-		isFirstSendEmailForgetPassword: boolean
+		dto: RepaidVerifyDto
 	): TypeAuthServiceMessageWithApiError {
 		if (!APP_CONFIG.API_URL)
 			return {
@@ -167,20 +166,24 @@ export class EmailService extends AuthBaseConfig {
 
 		if (
 			!isTimeCheck &&
-			!isFirstSendEmailForgetPassword &&
+			!this.isFirstSendEmailForgetPassword &&
 			expireUserForgetVerify.expires_forget_pass !== null
-		) {
-			return ApiError.BadRequest('The password reset has not expired.')
-		}
+		)
+			return ApiError.BadRequest('The password reset has not expired.', 409)
 
-		if (
-			isTimeCheck &&
-			!isFirstSendEmailForgetPassword &&
-			expireUserForgetVerify.expires_forget_pass !== null
-		) {
-			expireUserForgetVerify.expires_forget_pass = null
+		if (isTimeCheck && expireUserForgetVerify.expires_forget_pass !== null) {
+			const updateExpireForget = await this.authModel.updateExpireForgetVerify(
+				user.id,
+				null
+			)
 
-			isFirstSendEmailForgetPassword = true
+			if (!updateExpireForget)
+				return {
+					message: 'Something was wrong with update expire forget',
+					status: 500,
+				}
+
+			this.isFirstSendEmailForgetPassword = true
 
 			return ApiError.BadRequest('Expire reset verify time that all')
 		}
@@ -210,16 +213,11 @@ export class EmailService extends AuthBaseConfig {
 				}
 		}
 
+		this.isFirstSendEmailForgetPassword = false
+
 		return {
-			message: !isTimeCheck
-				? resetPassExpireMessage
-				: 'The password reset has expired!',
-			status:
-				!isTimeCheck && isFirstSendEmailForgetPassword
-					? 200
-					: !isTimeCheck
-					? 409
-					: 400,
+			message: resetPassExpireMessage,
+			status: 200,
 		}
 	}
 

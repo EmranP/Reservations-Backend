@@ -1,6 +1,6 @@
 import type { IAppService } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
-import type { UserDto, UserGoogleDto } from '../../user/dto/user.dto'
+import type { UserDto } from '../../user/dto/user.dto'
 
 export interface IAuthResponseError {
 	status: number
@@ -46,11 +46,11 @@ export interface IGenerateTokenService {
 	refresh: string | Pick<IErrorResponseApp, 'message'>
 }
 
-export interface IUserOAuthGoogle {
-	user: UserGoogleDto
+export interface IUserOAuth {
+	user: UserDto
 	accessToken: string
 	refreshToken: string | null
 	expiresIn: Date
 }
 
-export type TypeUserOAuthGoogleRefresh = Omit<IUserOAuthGoogle, 'user'>
+export type TypeUserOAuthRefresh = Omit<IUserOAuth, 'user'>

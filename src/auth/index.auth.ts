@@ -8,9 +8,12 @@ import { AuthController } from './auth.controller'
 import { AuthModel } from './auth.model'
 import { AuthService } from './auth.service'
 import { EmailService } from './mail/email.service'
+import { OAuthGithubController } from './oauth2.0/github/oauth.github.controller'
+import { OAuthGithubService } from './oauth2.0/github/oauth.github.service'
 import { OAuthGoogleController } from './oauth2.0/google/oauth.google.controller'
-import { OAuthGoogleModel } from './oauth2.0/google/oauth.google.model'
 import { OAuthGoogleService } from './oauth2.0/google/oauth.google.service'
+import { OAuthModel } from './oauth2.0/oauth.model'
+import { OAuthService } from './oauth2.0/oauth.service'
 import { TokenModel } from './token/token.model'
 import { TokenService } from './token/token.service'
 
@@ -45,10 +48,21 @@ export const authEmailService = new EmailService(
 	authModel,
 	authTwoFactoryModel
 )
+// OAuth Common
+export const oAuthModel = new OAuthModel(pool, logger)
+export const oAuthService = new OAuthService()
 // OAuth Google
-export const oAuthGoogleModel = new OAuthGoogleModel(pool, logger)
 export const oAuthGoogleService = new OAuthGoogleService(
-	oAuthGoogleModel,
+	oAuthModel,
+	oAuthService,
+	authModel,
+	tokenService,
+	logger
+)
+// OAuth Github
+export const oAuthGithubService = new OAuthGithubService(
+	oAuthModel,
+	oAuthService,
 	authModel,
 	tokenService,
 	logger
@@ -68,5 +82,11 @@ export const authTwoFactoryController = new AuthTwoFactoryController(
 // OAuth Google
 export const oAuthGoogleController = new OAuthGoogleController(
 	oAuthGoogleService,
+	logger
+)
+
+// OAuth Github
+export const oAuthGithubController = new OAuthGithubController(
+	oAuthGithubService,
 	logger
 )

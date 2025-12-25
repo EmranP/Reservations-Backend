@@ -305,14 +305,9 @@ export class AuthController extends AuthBaseConfig {
 		body: RepaidVerifyDto
 	): Promise<void> {
 		try {
-			const resetSendMail = await this.emailService.forgetPasswordSendLink(
-				body,
-				this.isFirstSendEmailForgetPassword
-			)
+			const resetSendMail = await this.emailService.forgetPasswordSendLink(body)
 
 			const data = JSON.stringify({ message: resetSendMail.message })
-
-			this.isFirstSendEmailForgetPassword = false
 
 			res.writeHead(resetSendMail.status, this.headData.contentData)
 			res.end(data)

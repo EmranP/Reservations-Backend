@@ -1,6 +1,6 @@
 import type { IncomingMessage } from 'http'
 import type { JWTPayload } from 'jose'
-import { ROLES } from '../../app/roles'
+import { ROLES } from '../../app/enums'
 
 export interface ITokenPayload {
 	id: number
@@ -20,6 +20,7 @@ export interface IResponseTokens {
 	expires_token_at: Date | null
 	expires_two_auth_code: Date | null
 	expires_forget_pass: Date | null
+	state_auth: string
 	created_at: Date
 	updated_at: Date
 }
