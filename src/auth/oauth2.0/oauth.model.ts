@@ -12,17 +12,14 @@ import {
 	DB_TABLE_TOKENS,
 	DB_TABLE_USERS,
 } from '../../common/constants/table-db.constant'
-import type {
-	ICreateUserAccountDto,
-	ICreateUserWithoutAccountDto,
-} from '../dto/oauth.dto'
+import type { IUserAccountDto, IUserWithoutAccountDto } from '../dto/oauth.dto'
 
 export class OAuthModel {
 	constructor(private pool: Pool, private logger: Logger) {}
 
 	async createUserAccount(
 		userId: string,
-		dto: ICreateUserAccountDto
+		dto: IUserAccountDto
 	): Promise<
 		Pick<IAccounts, 'access_token' | 'refresh_token' | 'expires_in'> | false
 	> {
@@ -49,8 +46,8 @@ export class OAuthModel {
 			dto.accessToken,
 			dto.refreshToken,
 			dto.expiresIn,
-			dto.googleRefreshIv,
-			dto.googleRefreshTag,
+			dto.refreshIv,
+			dto.refreshTag,
 		])
 
 		if (
@@ -63,7 +60,7 @@ export class OAuthModel {
 	}
 
 	async createUserWithoutAccount(
-		dto: ICreateUserWithoutAccountDto,
+		dto: IUserWithoutAccountDto,
 		resetLink: string,
 		authMethod: string
 	): Promise<IUser | null> {
@@ -89,7 +86,7 @@ export class OAuthModel {
 	async createUserOAuth(
 		resetLink: string,
 		authMethod: string,
-		dto: ICreateUserAccountDto & ICreateUserWithoutAccountDto
+		dto: IUserAccountDto & IUserWithoutAccountDto
 	): Promise<IUser | null> {
 		const client = await this.pool.connect()
 		try {
@@ -140,8 +137,8 @@ export class OAuthModel {
 				dto.accessToken,
 				dto.refreshToken,
 				dto.expiresIn,
-				dto.googleRefreshIv,
-				dto.googleRefreshTag,
+				dto.refreshIv,
+				dto.refreshTag,
 			])
 
 			await client.query('COMMIT')
@@ -167,7 +164,7 @@ export class OAuthModel {
 	async updateUserOAuth(
 		userId: string,
 		resetLink: string,
-		dto: ICreateUserAccountDto & ICreateUserWithoutAccountDto
+		dto: IUserAccountDto & IUserWithoutAccountDto
 	): Promise<TypeReturnUpdateOAuthUser | null> {
 		const client = await this.pool.connect()
 		try {
@@ -237,7 +234,7 @@ export class OAuthModel {
 
 	async updateUserAccount(
 		userId: string,
-		dto: ICreateUserAccountDto
+		dto: IUserAccountDto
 	): Promise<Pick<IAccounts, 'id'> | null> {
 		const query = `
 		UPDATE ${DB_TABLE_ACCOUNTS} SET 
@@ -262,7 +259,7 @@ export class OAuthModel {
 
 	async updateUser(
 		userId: string,
-		dto: ICreateUserWithoutAccountDto,
+		dto: IUserWithoutAccountDto,
 		resetLink: string
 	): Promise<TypeReturnUpdateOAuthUser | null> {
 		const query = `

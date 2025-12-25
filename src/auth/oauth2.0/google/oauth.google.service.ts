@@ -20,11 +20,11 @@ import { decrypt, encrypt } from '../../../common/utils/app/crypto.util'
 import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGoogleLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
-import { UserGoogleDto } from '../../../user/dto/user.dto'
+import { UserDto } from '../../../user/dto/user.dto'
 import type { AuthModel } from '../../auth.model'
 import type {
-	ICreateUserAccountDto,
-	ICreateUserWithoutAccountDto,
+	IUserAccountDto,
+	IUserWithoutAccountDto,
 } from '../../dto/oauth.dto'
 import {
 	isResponseGoogleDataApi,
@@ -38,10 +38,7 @@ import type {
 } from '../../types/api.types'
 import type { ICommonOAuthBodyData } from '../../types/common.type'
 import type { IUserGoogleJwtPayload } from '../../types/token.type'
-import type {
-	IUserOAuthGoogle,
-	TypeUserOAuthGoogleRefresh,
-} from '../../types/types.auth'
+import type { IUserOAuth, TypeUserOAuthRefresh } from '../../types/types.auth'
 import { getOAuthToken } from '../oauth.api'
 import type { OAuthModel } from '../oauth.model'
 import { OAuthService } from '../oauth.service'
@@ -103,7 +100,7 @@ export class OAuthGoogleService extends OAuthService {
 	async googleCodeHandler(
 		code: string,
 		state: string
-	): Promise<ApiError | IUserOAuthGoogle> {
+	): Promise<ApiError | IUserOAuth> {
 		if (!this.defaultUserPass)
 			return ApiError.InternalServer(
 				'App-config is not set default-pass for user'
@@ -174,7 +171,7 @@ export class OAuthGoogleService extends OAuthService {
 			typeof isVerifyGoogleAccount.at_hash === 'string'
 				? isVerifyGoogleAccount.at_hash
 				: this.defaultUserPass
-		const newHasPass = await bcrypt.hash(newValuePass, 10)
+		const newHashPass = await bcrypt.hash(newValuePass, 10)
 		const accessHash = await bcrypt.hash(googleData.access_token, 10)
 		let refreshHash: IAppEnCrypto | null = null
 
@@ -197,8 +194,7 @@ export class OAuthGoogleService extends OAuthService {
 					409
 				)
 
-			const dataUpdateDto: ICreateUserAccountDto &
-				ICreateUserWithoutAccountDto = {
+			const dataUpdateDto: IUserAccountDto & IUserWithoutAccountDto = {
 				provider: 'google',
 				types: 'openid-connect',
 				accessToken: accessHash,
@@ -206,7 +202,7 @@ export class OAuthGoogleService extends OAuthService {
 				firstName: isVerifyGoogleAccount.name,
 				email: isVerifyGoogleAccount.email,
 				phone: '+993',
-				password: user.password ?? newHasPass,
+				password: user.password ?? newHashPass,
 				picture: isVerifyGoogleAccount.picture,
 				isVerify: isVerifyGoogleAccount.email_verified,
 				authMethod: AUTH_METHOD.GOOGLE,
@@ -221,7 +217,7 @@ export class OAuthGoogleService extends OAuthService {
 			if (!updateUserGoogle?.id || !updateUserGoogle)
 				return ApiError.InternalServer('Error from update account and user!')
 
-			const userGoogle = new UserGoogleDto(updateUserGoogle)
+			const userGoogle = new UserDto(updateUserGoogle)
 
 			if (!userGoogle.id || !userGoogle.role)
 				return ApiError.InternalServer('Error transform user-google dto')
@@ -267,12 +263,11 @@ export class OAuthGoogleService extends OAuthService {
 					? refreshHash.encrypted
 					: null
 
-			const dataCreateGoogleDto: ICreateUserAccountDto &
-				ICreateUserWithoutAccountDto = {
+			const dataCreateGoogleDto: IUserAccountDto & IUserWithoutAccountDto = {
 				firstName: isVerifyGoogleAccount.name,
 				email: isVerifyGoogleAccount.email,
 				phone: '+993',
-				password: newHasPass,
+				password: newHashPass,
 				picture: isVerifyGoogleAccount.picture,
 				isVerify: isVerifyGoogleAccount.email_verified,
 				authMethod: AUTH_METHOD.GOOGLE,
@@ -280,8 +275,8 @@ export class OAuthGoogleService extends OAuthService {
 				types: 'openid-connect',
 				accessToken: accessHash,
 				refreshToken: refreshNewValue,
-				googleRefreshIv: refreshHash?.iv ?? null,
-				googleRefreshTag: refreshHash?.tag ?? null,
+				refreshIv: refreshHash?.iv ?? null,
+				refreshTag: refreshHash?.tag ?? null,
 				expiresIn: newExpireIn,
 			}
 
@@ -296,7 +291,7 @@ export class OAuthGoogleService extends OAuthService {
 					'Error from create user-account with google'
 				)
 
-			const userGoogle = new UserGoogleDto(newUserGoogle)
+			const userGoogle = new UserDto(newUserGoogle)
 
 			if (!userGoogle.id || typeof userGoogle.role === 'undefined')
 				return ApiError.BadRequest('User google dto not found!')
@@ -335,7 +330,7 @@ export class OAuthGoogleService extends OAuthService {
 
 	async googleRefreshToken(
 		token: string
-	): Promise<TypeUserOAuthGoogleRefresh | ApiError> {
+	): Promise<TypeUserOAuthRefresh | ApiError> {
 		const now = new Date()
 		const isVerifyToken = await this.tokenService.verifyToken(token)
 

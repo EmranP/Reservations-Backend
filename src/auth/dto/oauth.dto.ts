@@ -17,17 +17,17 @@ export interface IOAuthGoogleCodeHandler {
 	grant_type: string
 }
 
-export interface ICreateUserAccountDto {
+export interface IUserAccountDto {
 	provider: string
 	types: string
 	accessToken: string
 	expiresIn: Date | number
-	googleRefreshIv?: string | null
-	googleRefreshTag?: string | null
+	refreshIv?: string | null
+	refreshTag?: string | null
 	refreshToken?: string | null
 }
 
-export interface ICreateUserWithoutAccountDto
+export interface IUserWithoutAccountDto
 	extends Pick<
 		IUserDto,
 		'firstName' | 'email' | 'phone' | 'picture' | 'isVerify'

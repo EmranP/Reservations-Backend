@@ -27,6 +27,7 @@ export const googleTokenUrl = 'https://oauth2.googleapis.com/token'
 export const AUTH_GET_GITHUB_URL = `${globalPrefixUrl}/auth/github/url`
 export const AUTH_GITHUB_CALLBACK_URL = `${globalPrefixUrl}/auth/github/callback`
 export const githubUrl = 'https://github.com'
+export const githubApiUrl = 'https://api.github.com'
 export const githubPublicJwksUrl =
 	'https://token.actions.githubusercontent.com/.well-known/jwks'
 export const githubOAuthLogin = 'https://github.com/login/oauth/authorize'

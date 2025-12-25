@@ -40,7 +40,7 @@ import {
 	validatePhoneReg,
 	validatePinCode,
 } from './pipe/auth-valid.pipe'
-import { isCodeOAuthGoogleCallbackDto } from './pipe/oauth.pipe'
+import { isCodeOAuthCallbackDto } from './pipe/oauth.pipe'
 
 export const authRouter = async (
 	isAuth: ApiError | undefined,
@@ -249,9 +249,9 @@ export const authRouter = async (
 	) {
 		await oAuthGoogleController.googleUrl(req, res, pathOption)
 	} else if (path === AUTH_GOOGLE_CALLBACK_URL && req.method === 'POST') {
-		if (!isCodeOAuthGoogleCallbackDto(body)) {
+		if (!isCodeOAuthCallbackDto(body)) {
 			await responseBadRequest(
-				'Invalid data from body oAuth-google callback.',
+				'Invalid data from body oauth-google callback.',
 				res,
 				400
 			)
@@ -292,9 +292,9 @@ export const authRouter = async (
 	) {
 		await oAuthGithubController.githubUrl(req, res, pathOption)
 	} else if (path === AUTH_GITHUB_CALLBACK_URL && req.method === 'POST') {
-		if (!isCodeOAuthGoogleCallbackDto(body)) {
+		if (!isCodeOAuthCallbackDto(body)) {
 			await responseBadRequest(
-				'Invalid data from body oAuth-github callback.',
+				'Invalid data from body oauth-github callback.',
 				res,
 				400
 			)
