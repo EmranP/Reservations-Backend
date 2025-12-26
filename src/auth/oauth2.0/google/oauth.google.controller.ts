@@ -99,7 +99,7 @@ export class OAuthGoogleController extends AuthBaseConfig {
 		}
 	}
 
-	async googleRefreshToken(
+	async refreshToken(
 		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined

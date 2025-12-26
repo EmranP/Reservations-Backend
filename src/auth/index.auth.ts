@@ -14,6 +14,8 @@ import { OAuthGoogleController } from './oauth2.0/google/oauth.google.controller
 import { OAuthGoogleService } from './oauth2.0/google/oauth.google.service'
 import { OAuthModel } from './oauth2.0/oauth.model'
 import { OAuthService } from './oauth2.0/oauth.service'
+import { OAuthYandexController } from './oauth2.0/yandex/oauth.yandex.controller'
+import { OAuthYandexService } from './oauth2.0/yandex/oauth.yandex.service'
 import { TokenModel } from './token/token.model'
 import { TokenService } from './token/token.service'
 
@@ -67,6 +69,15 @@ export const oAuthGithubService = new OAuthGithubService(
 	tokenService,
 	logger
 )
+// OAuth Yandex
+export const oAuthYandexService = new OAuthYandexService(
+	oAuthModel,
+	oAuthService,
+	authModel,
+	tokenService,
+	logger
+)
+
 // Controller
 export const authController = new AuthController(
 	authService,
@@ -88,5 +99,11 @@ export const oAuthGoogleController = new OAuthGoogleController(
 // OAuth Github
 export const oAuthGithubController = new OAuthGithubController(
 	oAuthGithubService,
+	logger
+)
+
+// OAuth Yandex
+export const oAuthYandexController = new OAuthYandexController(
+	oAuthYandexService,
 	logger
 )

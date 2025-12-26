@@ -7,6 +7,7 @@ import {
 	AUTH_FORGET_NEW_PASSWORD_API_URL,
 	AUTH_GET_GITHUB_URL,
 	AUTH_GET_GOOGLE_URL,
+	AUTH_GET_YANDEX_URL,
 	AUTH_GITHUB_CALLBACK_URL,
 	AUTH_GOOGLE_CALLBACK_URL,
 	AUTH_GOOGLE_REFRESH_TOKEN,
@@ -15,6 +16,8 @@ import {
 	AUTH_REFRESH_TOKEN_API_URL,
 	AUTH_REGISTRATION_API_URL,
 	AUTH_VERIFY_TWO_FACTORY_CODE,
+	AUTH_YANDEX_CALLBACK_URL,
+	AUTH_YANDEX_REFRESH_TOKEN,
 } from '../common/constants/auth.constant'
 import type { IAppQueryParams } from '../common/types/app/app.type'
 import { isRequestUserApp } from '../common/utils/app/checkType.utils'
@@ -29,6 +32,7 @@ import {
 	authTwoFactoryController,
 	oAuthGithubController,
 	oAuthGoogleController,
+	oAuthYandexController,
 } from './index.auth'
 import {
 	isAuthVerifyTwoFactory,
@@ -185,7 +189,10 @@ export const authRouter = async (
 		await authController.newPassword(req, res, body)
 	}
 	// 2FA
-	else if (path === AUTH_ENABLE_TWO_FACTORY_CHALLENGE) {
+	else if (
+		path === AUTH_ENABLE_TWO_FACTORY_CHALLENGE &&
+		req.method === 'POST'
+	) {
 		if (isAuth) {
 			await responseBadRequest(isAuth.message, res, isAuth.status)
 
@@ -209,7 +216,7 @@ export const authRouter = async (
 		}
 
 		await authTwoFactoryController.editEnableTwoFactory(req, res, body)
-	} else if (path === AUTH_VERIFY_TWO_FACTORY_CODE) {
+	} else if (path === AUTH_VERIFY_TWO_FACTORY_CODE && req.method === 'POST') {
 		if (!isAuthVerifyTwoFactory(body)) {
 			await responseBadRequest(
 				'Invalid data from body 2FA verify-code.',
@@ -244,8 +251,9 @@ export const authRouter = async (
 	}
 	// Google OAuth 2.0
 	else if (
-		path === AUTH_GET_GOOGLE_URL ||
-		path === `${AUTH_GET_GOOGLE_URL}${pathOption.searchParams}`
+		(path === AUTH_GET_GOOGLE_URL && req.method === 'GET') ||
+		(path === `${AUTH_GET_GOOGLE_URL}${pathOption.searchParams}` &&
+			req.method === 'GET')
 	) {
 		await oAuthGoogleController.googleUrl(req, res, pathOption)
 	} else if (path === AUTH_GOOGLE_CALLBACK_URL && req.method === 'POST') {
@@ -282,13 +290,14 @@ export const authRouter = async (
 		await oAuthGoogleController.googleCallback(req, res, body)
 	}
 	// OAuth Google Refresh Token
-	else if (path === AUTH_GOOGLE_REFRESH_TOKEN && req.method === 'POST') {
-		await oAuthGoogleController.googleRefreshToken(req, res, cookie)
+	else if (path === AUTH_GOOGLE_REFRESH_TOKEN && req.method === 'GET') {
+		await oAuthGoogleController.refreshToken(req, res, cookie)
 	}
 	// Github OAuth 2.0
 	else if (
-		path === AUTH_GET_GITHUB_URL ||
-		path === `${AUTH_GET_GITHUB_URL}${pathOption.searchParams}`
+		(path === AUTH_GET_GITHUB_URL && req.method === 'GET') ||
+		(path === `${AUTH_GET_GITHUB_URL}${pathOption.searchParams}` &&
+			req.method === 'GET')
 	) {
 		await oAuthGithubController.githubUrl(req, res, pathOption)
 	} else if (path === AUTH_GITHUB_CALLBACK_URL && req.method === 'POST') {
@@ -323,6 +332,48 @@ export const authRouter = async (
 		}
 
 		await oAuthGithubController.githubCallback(req, res, body)
+	}
+	// Yandex OAuth 2.0
+	else if (
+		(path === AUTH_GET_YANDEX_URL && req.method === 'GET') ||
+		(path === `${AUTH_GET_YANDEX_URL}${pathOption.searchParams}` &&
+			req.method === 'GET')
+	) {
+		await oAuthYandexController.yandexUrl(req, res, pathOption)
+	} else if (path === AUTH_YANDEX_CALLBACK_URL && req.method === 'POST') {
+		if (!isCodeOAuthCallbackDto(body)) {
+			await responseBadRequest(
+				'Invalid data from body oauth-github callback.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (body.code?.length <= 0) {
+			await responseBadRequest(
+				'In the "code" symbol is must be having.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		if (body.state.length <= 0) {
+			await responseBadRequest(
+				'In the "state" symbol is must be having.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		await oAuthYandexController.yandexCallback()
+	} else if (path === AUTH_YANDEX_REFRESH_TOKEN && req.method === 'GET') {
+		await oAuthYandexController.refreshToken(req, res, cookie)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')
 
