@@ -88,6 +88,11 @@ export const routerApp: Middleware<unknown> = async (
 		'auth/github/url',
 		pathOption.searchParams
 	)
+	const isPathAuthYandexUrlWithState = isPathWithQuery(
+		parserURL.origin,
+		'auth/yandex/url',
+		pathOption.searchParams
+	)
 
 	if (
 		!rootAuthRouter.includes(path) &&
@@ -98,7 +103,8 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href !== isPathAuthRepaidHref &&
 		parserURL.href !== isPathAuthForgetHref &&
 		parserURL.href !== isPathAuthGoogleUrlWithState &&
-		parserURL.href !== isPathAuthGithubUrlWithState
+		parserURL.href !== isPathAuthGithubUrlWithState &&
+		parserURL.href !== isPathAuthYandexUrlWithState
 	) {
 		await responseNotFoundApi('Not founded auth api', res)
 	}
@@ -109,7 +115,8 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href === isPathAuthRepaidHref ||
 		parserURL.href === isPathAuthForgetHref ||
 		parserURL.href === isPathAuthGoogleUrlWithState ||
-		parserURL.href === isPathAuthGithubUrlWithState
+		parserURL.href === isPathAuthGithubUrlWithState ||
+		parserURL.href === isPathAuthYandexUrlWithState
 	) {
 		await authRouter(
 			authMiddleware,

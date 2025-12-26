@@ -1,4 +1,7 @@
-import { githubOAuthLogin } from '../../constants/auth.constant'
+import {
+	githubOAuthLogin,
+	yandexOAuthLogin,
+} from '../../constants/auth.constant'
 
 export const generateTwoFactoryCode = () =>
 	Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000
@@ -42,6 +45,30 @@ export const generateOAuthGithubLink = (
 	const query = Object.entries(queryParams)
 		.map(([key, value]) => `${key}=${value}`)
 		.join('&')
+
+	return `${baseUrl}?${query}`
+}
+
+export const generateOAuthYandexLink = (
+	clientId: string | undefined,
+	responseType: 'code',
+	redirectUrl: string | undefined,
+	state: string | undefined
+): string => {
+	const queryParams = {
+		response_type: responseType,
+		client_id: clientId,
+		redirect_uri: redirectUrl,
+		scope: ['login:email login:info login:avatar'],
+		state,
+	}
+
+	const baseUrl = yandexOAuthLogin
+	const query = Object.entries(queryParams)
+		.map(([key, value]) => `${key}=${value}`)
+		.join('&')
+
+	console.log(`${baseUrl}?${query}`)
 
 	return `${baseUrl}?${query}`
 }
