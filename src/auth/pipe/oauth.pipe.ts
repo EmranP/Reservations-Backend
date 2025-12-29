@@ -3,8 +3,10 @@ import type {
 	IGithubTokenResponse,
 	IGithubUserEmailResponse,
 	IGithubUserResponse,
-	IGoogleOAuthError,
+	IOAuthError,
 	IResponseGoogleApi,
+	IResponseYandexInfo,
+	IResponseYandexTokenApi,
 	TypeGoogleRefreshTokenResponse,
 } from '../types/api.types'
 
@@ -20,6 +22,22 @@ export const isCodeOAuthCallbackDto = (obj: unknown): obj is IOAuthCallback => {
 		isCommonValidObj && 'state' in obj && typeof obj.state === 'string'
 
 	return isValidCode && isValidState
+}
+
+export const isResponseErrorDataApi = (obj: unknown): obj is IOAuthError => {
+	const isCommonValueObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValueObj) return false
+
+	const isValidErrorObj =
+		isCommonValueObj && 'error' in obj && typeof obj.error === 'string'
+
+	const isValidErrorDescription =
+		isCommonValueObj &&
+		'error_description' in obj &&
+		typeof obj.error_description === 'string'
+
+	return isValidErrorObj || isValidErrorDescription
 }
 
 // Google
@@ -70,24 +88,6 @@ export const isResponseGoogleRefreshDataApi = (
 		typeof obj.token_type === 'string'
 
 	return isValidValue
-}
-
-export const isResponseGoogleErrorDataApi = (
-	obj: unknown
-): obj is IGoogleOAuthError => {
-	const isCommonValueObj = typeof obj === 'object' && obj !== null
-
-	if (!isCommonValueObj) return false
-
-	const isValidErrorObj =
-		isCommonValueObj && 'error' in obj && typeof obj.error === 'string'
-
-	const isValidErrorDescription =
-		isCommonValueObj &&
-		'error_description' in obj &&
-		typeof obj.error_description === 'string'
-
-	return isValidErrorObj || isValidErrorDescription
 }
 
 // Github
@@ -182,4 +182,52 @@ export const isResponseGithubEmailsApi = (
 		commonData && 'visibility' in data && data.visibility === null
 
 	return isValidStringValue || isValidNullValue
+}
+
+export const isResponseYandexTokenApi = (
+	obj: unknown
+): obj is IResponseYandexTokenApi => {
+	const isCommonValidObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValidObj) return false
+
+	const isValidValue =
+		'access_token' in obj &&
+		typeof obj.access_token === 'string' &&
+		'expires_in' in obj &&
+		typeof obj.expires_in === 'number' &&
+		'token_type' in obj &&
+		typeof obj.token_type === 'string' &&
+		'refresh_token' in obj &&
+		typeof obj.refresh_token === 'string'
+
+	return isValidValue
+}
+
+export const isResponseYandexInfoApi = (
+	obj: unknown
+): obj is IResponseYandexInfo => {
+	const isCommonValidObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValidObj) return false
+
+	const data = obj as Record<string, string | boolean>
+
+	const isValidValue =
+		typeof data.id === 'string' &&
+		typeof data.login === 'string' &&
+		typeof data.client_id &&
+		typeof data.display_name === 'string' &&
+		typeof data.real_name === 'string' &&
+		typeof data.first_name === 'string' &&
+		typeof data.last_name === 'string' &&
+		typeof data.sex === 'string' &&
+		typeof data.default_email === 'string' &&
+		Array.isArray(data.emails) &&
+		typeof data.emails[0] === 'string' &&
+		typeof data.default_avatar_id === 'string' &&
+		typeof data.is_avatar_empty === 'boolean' &&
+		typeof data.psuid === 'string'
+
+	return isValidValue
 }

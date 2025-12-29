@@ -34,7 +34,7 @@ import type {
 } from '../../types/api.types'
 import type { ICommonOAuthBodyData } from '../../types/common.type'
 import type { IUserOAuth } from '../../types/types.auth'
-import { getOAuthToken } from '../oauth.api'
+import { getOAuth, postOAuth } from '../oauth.api'
 import type { OAuthModel } from '../oauth.model'
 import { OAuthService } from '../oauth.service'
 export class OAuthGithubService extends OAuthService {
@@ -110,7 +110,7 @@ export class OAuthGithubService extends OAuthService {
 			Accept: 'application/json',
 		}
 
-		const responseGithubTokenData = await getOAuthToken(
+		const responseGithubTokenData = await postOAuth(
 			githubOAuthToken,
 			'POST',
 			headerData,
@@ -142,7 +142,7 @@ export class OAuthGithubService extends OAuthService {
 			Authorization: `Bearer ${githubTokenData.access_token}`,
 		}
 
-		const responseGithubUserData = await getOAuthToken(
+		const responseGithubUserData = await getOAuth(
 			`${githubApiUrl}/user`,
 			'GET',
 			headerAuthData
@@ -170,7 +170,7 @@ export class OAuthGithubService extends OAuthService {
 			Accept: 'application/vnd.github+json',
 		}
 
-		const responseGithubUserEmails = await getOAuthToken(
+		const responseGithubUserEmails = await postOAuth(
 			`${githubApiUrl}/user/emails`,
 			'GET',
 			headersEmailData
@@ -259,7 +259,11 @@ export class OAuthGithubService extends OAuthService {
 				role: userGithub.role,
 			})
 
-			if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			if (
+				!tokens.refresh ||
+				typeof tokens.refresh !== 'string' ||
+				typeof tokens.access !== 'string'
+			)
 				return ApiError.InternalServer('Error refresh-token is not generate')
 
 			const newSession = await this.tokenService.saveToken(
@@ -278,7 +282,7 @@ export class OAuthGithubService extends OAuthService {
 
 			return {
 				user: userGithub,
-				accessToken: githubTokenData.access_token,
+				accessToken: tokens.access,
 				refreshToken: tokens.refresh,
 				expiresIn: expireTokensAt,
 			}
@@ -327,7 +331,11 @@ export class OAuthGithubService extends OAuthService {
 				role: userGithub.role,
 			})
 
-			if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			if (
+				!tokens.refresh ||
+				typeof tokens.refresh !== 'string' ||
+				typeof tokens.access !== 'string'
+			)
 				return ApiError.InternalServer('Error refresh-token is not generate')
 
 			const newSession = await this.tokenService.saveToken(
@@ -346,7 +354,7 @@ export class OAuthGithubService extends OAuthService {
 
 			return {
 				user: userGithub,
-				accessToken: githubTokenData.access_token,
+				accessToken: tokens.access,
 				refreshToken: tokens.refresh,
 				expiresIn: expireTokensAt,
 			}

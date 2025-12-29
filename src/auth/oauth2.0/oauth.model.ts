@@ -89,6 +89,7 @@ export class OAuthModel {
 		dto: IUserAccountDto & IUserWithoutAccountDto
 	): Promise<IUser | null> {
 		const client = await this.pool.connect()
+
 		try {
 			await client.query('BEGIN')
 
@@ -97,6 +98,7 @@ export class OAuthModel {
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
 				RETURNING *
 			`
+
 			const queryUserResult = await client.query<IUser>(queryUser, [
 				dto.firstName,
 				dto.email,
@@ -118,15 +120,15 @@ export class OAuthModel {
 
 			const queryAccount = `
 			INSERT INTO ${DB_TABLE_ACCOUNTS} 
-			(user_id, provider, types, access_token, refresh_token, expires_in, google_refresh_token_iv, google_refresh_token_tag) 
+			(user_id, provider, types, access_token, refresh_token, expires_in, refresh_token_iv, refresh_token_tag) 
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
 			ON CONFLICT (user_id) 
 			DO UPDATE SET access_token = EXCLUDED.access_token, 
 			refresh_token = EXCLUDED.refresh_token, 
 			expires_in = EXCLUDED.expires_in,
 			types =  EXCLUDED.types,
-			google_refresh_token_iv = EXCLUDED.google_refresh_token_iv,
-			google_refresh_token_tag = EXCLUDED.google_refresh_token_tag,
+			refresh_token_iv = EXCLUDED.refresh_token_iv,
+			refresh_token_tag = EXCLUDED.refresh_token_tag,
 			provider = EXCLUDED.provider
 		`
 

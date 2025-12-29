@@ -371,7 +371,7 @@ export const authRouter = async (
 			return
 		}
 
-		await oAuthYandexController.yandexCallback()
+		await oAuthYandexController.yandexCallback(req, res, body)
 	} else if (path === AUTH_YANDEX_REFRESH_TOKEN && req.method === 'GET') {
 		await oAuthYandexController.refreshToken(req, res, cookie)
 	} else {

@@ -81,7 +81,7 @@ export class OAuthGoogleController extends AuthBaseConfig {
 
 			res.setHeader(
 				'Set-cookie',
-				`refreshToken=${
+				`googleRefreshToken=${
 					userGoogle.refreshToken
 				}; httpOnly; path=/api; Expires=${userGoogle.expiresIn.toUTCString()}; SameSite=Strict`
 			)
@@ -104,7 +104,7 @@ export class OAuthGoogleController extends AuthBaseConfig {
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	) {
-		if (!cookies || !cookies.refreshToken) {
+		if (!cookies || !cookies.googleRefreshToken) {
 			const error = JSON.stringify({
 				message: 'Bad-request Cookie is not have',
 			})
@@ -115,9 +115,9 @@ export class OAuthGoogleController extends AuthBaseConfig {
 			return
 		}
 
-		const { refreshToken } = cookies
+		const { googleRefreshToken } = cookies
 
-		const newRefresh = await this.service.googleRefreshToken(refreshToken)
+		const newRefresh = await this.service.googleRefreshToken(googleRefreshToken)
 
 		if ('message' in newRefresh) {
 			const errorData = JSON.stringify({ message: newRefresh.message })
@@ -143,7 +143,7 @@ export class OAuthGoogleController extends AuthBaseConfig {
 
 		res.setHeader(
 			'Set-cookie',
-			`refreshToken=${
+			`googleRefreshToken=${
 				newRefresh?.refreshToken
 			}; httpOnly; path=/api; Expires=${newRefresh.expiresIn.toUTCString()}; SameSite=Strict`
 		)

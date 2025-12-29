@@ -46,4 +46,5 @@ export abstract class AuthBaseConfig {
 		'Your confirmation two factory code time has expired.'
 	// Utils
 	protected headData = writeHeadData(400)
+	protected clientGrantTypeRefresh = 'refresh_token'
 }

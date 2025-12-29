@@ -68,7 +68,5 @@ export const generateOAuthYandexLink = (
 		.map(([key, value]) => `${key}=${value}`)
 		.join('&')
 
-	console.log(`${baseUrl}?${query}`)
-
 	return `${baseUrl}?${query}`
 }
