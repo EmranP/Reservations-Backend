@@ -15,7 +15,7 @@ export class OAuthYandexController extends AuthBaseConfig {
 		super()
 	}
 
-	async yandexUrl(
+	public async yandexUrl(
 		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		query: IAppQueryParams
@@ -50,11 +50,11 @@ export class OAuthYandexController extends AuthBaseConfig {
 		}
 	}
 
-	async yandexCallback(
+	public async yandexCallback(
 		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthCallback
-	) {
+	): Promise<void> {
 		try {
 			const userYandex = await this.service.yandexCodeHandler(
 				body.code,
@@ -99,11 +99,11 @@ export class OAuthYandexController extends AuthBaseConfig {
 		}
 	}
 
-	async refreshToken(
+	public async refreshToken(
 		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
-	) {
+	): Promise<void> {
 		if (!cookies || !cookies.yandexRefreshToken) {
 			const error = JSON.stringify({
 				message: 'Bad-request Cookie is not have',

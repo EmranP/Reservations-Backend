@@ -1,4 +1,7 @@
-import type { IOAuthCallback } from '../dto/oauth.dto'
+import type {
+	IOAuthCallback,
+	IOAuthTelegramCallbackDto,
+} from '../dto/oauth.dto'
 import type {
 	IGithubTokenResponse,
 	IGithubUserEmailResponse,
@@ -184,6 +187,8 @@ export const isResponseGithubEmailsApi = (
 	return isValidStringValue || isValidNullValue
 }
 
+// Yandex
+
 export const isResponseYandexTokenApi = (
 	obj: unknown
 ): obj is IResponseYandexTokenApi => {
@@ -230,4 +235,41 @@ export const isResponseYandexInfoApi = (
 		typeof data.psuid === 'string'
 
 	return isValidValue
+}
+
+// Telegram
+
+export const isResponseTelegramApi = (
+	obj: unknown
+): obj is IOAuthTelegramCallbackDto => {
+	const isCommonValidObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValidObj) return false
+
+	const isValidUser =
+		'user' in obj &&
+		typeof obj.user === 'object' &&
+		obj.user !== null &&
+		'id' in obj.user &&
+		typeof obj.user.id === 'number' &&
+		'auth_date' in obj.user &&
+		typeof obj.user.auth_date === 'number' &&
+		'first_name' in obj.user &&
+		typeof obj.user.first_name === 'string' &&
+		'hash' in obj.user &&
+		typeof obj.user.hash === 'string' &&
+		'photo_url' in obj.user &&
+		typeof obj.user.photo_url === 'string' &&
+		'username' in obj.user &&
+		typeof obj.user.username === 'string'
+
+	const stateValid = 'state' in obj
+
+	const isValidStateValue =
+		(stateValid && typeof obj.state === 'string') ||
+		(stateValid && obj.state === null)
+
+	const isValidEmail = 'email' in obj && typeof obj.email === 'string'
+
+	return isValidUser && isValidEmail && isValidStateValue
 }

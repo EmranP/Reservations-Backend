@@ -1,10 +1,7 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import {
-	APP_CONFIG,
-	APP_OAUTH_GITHUB_CONFIG,
-} from '../../../common/config/app.config'
+import { APP_OAUTH_GITHUB_CONFIG } from '../../../common/config/app.config'
 import {
 	githubApiUrl,
 	githubOAuthToken,
@@ -51,8 +48,6 @@ export class OAuthGithubService extends OAuthService {
 	private githubClientId = APP_OAUTH_GITHUB_CONFIG.GITHUB_CLIENT_ID
 	private githubClientSecret = APP_OAUTH_GITHUB_CONFIG.GITHUB_CLIENT_SECRET
 	private githubClientRedirect = APP_OAUTH_GITHUB_CONFIG.GITHUB_CLIENT_REDIRECT
-
-	private defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
 
 	async getGithubUrl(state: string | undefined): Promise<ApiError | string> {
 		return await this.service.getOauthUrl(

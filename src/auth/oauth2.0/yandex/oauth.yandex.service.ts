@@ -1,10 +1,7 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import {
-	APP_CONFIG,
-	APP_OAUTH_YANDEX_CONFIG,
-} from '../../../common/config/app.config'
+import { APP_OAUTH_YANDEX_CONFIG } from '../../../common/config/app.config'
 import {
 	yandexInfoApi,
 	yandexOAuthToken,
@@ -54,9 +51,9 @@ export class OAuthYandexService extends OAuthService {
 	private yandexClientSecret = APP_OAUTH_YANDEX_CONFIG.YANDEX_CLIENT_SECRET
 	private yandexClientRedirect = APP_OAUTH_YANDEX_CONFIG.YANDEX_CLIENT_REDIRECT
 
-	private defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
-
-	async getYandexUrl(state: string | undefined): Promise<ApiError | string> {
+	public async getYandexUrl(
+		state: string | undefined
+	): Promise<ApiError | string> {
 		return await this.service.getOauthUrl(
 			state,
 			this.yandexClientID,
@@ -72,7 +69,7 @@ export class OAuthYandexService extends OAuthService {
 		)
 	}
 
-	async getCommonYandexBodyData(): Promise<
+	private async getCommonYandexBodyData(): Promise<
 		ApiError | Omit<ICommonOAuthBodyData, 'redirect_uri'>
 	> {
 		if (
@@ -92,7 +89,7 @@ export class OAuthYandexService extends OAuthService {
 		return commonData
 	}
 
-	async yandexCodeHandler(
+	public async yandexCodeHandler(
 		code: string,
 		state: string
 	): Promise<ApiError | IUserOAuth> {
@@ -225,7 +222,7 @@ export class OAuthYandexService extends OAuthService {
 			)
 
 			if (!updateUserYandex?.id || !updateUserYandex)
-				return ApiError.InternalServer('Error from update account aтв user!')
+				return ApiError.InternalServer('Error from update account for user!')
 
 			const userYandex = new UserDto(updateUserYandex)
 
@@ -339,7 +336,9 @@ export class OAuthYandexService extends OAuthService {
 		}
 	}
 
-	async yandexRefresh(token: string): Promise<TypeUserOAuthRefresh | ApiError> {
+	public async yandexRefresh(
+		token: string
+	): Promise<TypeUserOAuthRefresh | ApiError> {
 		const now = new Date()
 		const isVerifyToken = await this.tokenService.verifyToken(token)
 
@@ -460,11 +459,18 @@ export class OAuthYandexService extends OAuthService {
 				return ApiError.InternalServer('Error refresh-token is not generate')
 
 			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			await this.tokenService.saveToken(
+			const newSession = await this.tokenService.saveToken(
 				user.id,
 				tokens.refresh,
 				expireRefreshTokenAt
 			)
+
+			if (
+				typeof newSession === 'object' &&
+				newSession !== null &&
+				'message' in newSession
+			)
+				return ApiError.InternalServer(newSession.message)
 
 			return {
 				accessToken: tokens.access,

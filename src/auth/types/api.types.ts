@@ -98,3 +98,13 @@ export interface IResponseYandexInfo {
 	is_avatar_empty: boolean
 	psuid: string
 }
+
+// Telegram
+export interface IResponseTelegramApi {
+	id: number
+	auth_date: number
+	first_name: string
+	hash: string
+	photo_url: string
+	username: string
+}

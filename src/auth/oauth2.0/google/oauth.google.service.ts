@@ -2,10 +2,7 @@ import bcrypt from 'bcrypt'
 import { createRemoteJWKSet } from 'jose'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import {
-	APP_CONFIG,
-	APP_OAUTH_GOOGLE_CONFIG,
-} from '../../../common/config/app.config'
+import { APP_OAUTH_GOOGLE_CONFIG } from '../../../common/config/app.config'
 import {
 	googlePublicJwksUrl,
 	googleTokenUrl,
@@ -59,7 +56,6 @@ export class OAuthGoogleService extends OAuthService {
 	private googleClientRedirect = APP_OAUTH_GOOGLE_CONFIG.GOOGLE_CLIENT_REDIRECT
 	private googleClientGrantTypeAuthCode = 'authorization_code'
 	private googlePublicJwks = createRemoteJWKSet(new URL(googlePublicJwksUrl))
-	private defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
 
 	// Put the common oauth service
 	async getGoogleUrl(state: string | undefined): Promise<ApiError | string> {

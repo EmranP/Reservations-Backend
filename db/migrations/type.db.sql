@@ -20,7 +20,7 @@ BEGIN
     AND n.nspname = 'public') 
 		THEN
     CREATE TYPE public.auth_method AS ENUM 
-		('CREDENTIALS', 'GOOGLE', 'GITHUB', 'YANDEX', 'APPLE', 'TELEGRAM');
+		('CREDENTIALS', 'GOOGLE', 'GITHUB', 'YANDEX', 'TELEGRAM');
   END IF;
 END
 $$;

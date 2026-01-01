@@ -123,7 +123,7 @@ export class OAuthModel {
 			(user_id, provider, types, access_token, refresh_token, expires_in, refresh_token_iv, refresh_token_tag) 
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
 			ON CONFLICT (user_id) 
-			DO UPDATE SET access_token = EXCLUDED.access_token, 
+			DO UPDATE SET access_token = EXCLUDED.access_token,
 			refresh_token = EXCLUDED.refresh_token, 
 			expires_in = EXCLUDED.expires_in,
 			types =  EXCLUDED.types,
@@ -177,14 +177,16 @@ export class OAuthModel {
 				provider = COALESCE($1, provider), 
 				types = COALESCE($2, types), 
 				access_token = COALESCE($3, access_token), 
-				expires_in = COALESCE($4, expires_in)
-				WHERE user_id = $5
+				refresh_token = COALESCE($4, refresh_token),
+				expires_in = COALESCE($5, expires_in)
+				WHERE user_id = $6
 			`
 
 			const queryAccountResult = await client.query(queryAccount, [
 				dto.provider,
 				dto.types,
 				dto.accessToken,
+				dto.refreshToken,
 				dto.expiresIn,
 				userId,
 			])
