@@ -3,4 +3,5 @@ export const AUTH_METHOD = {
 	GOOGLE: 'GOOGLE',
 	GITHUB: 'GITHUB',
 	TELEGRAM: 'TELEGRAM',
+	YANDEX: 'YANDEX',
 } as const

@@ -14,6 +14,8 @@ import { OAuthGoogleController } from './oauth2.0/google/oauth.google.controller
 import { OAuthGoogleService } from './oauth2.0/google/oauth.google.service'
 import { OAuthModel } from './oauth2.0/oauth.model'
 import { OAuthService } from './oauth2.0/oauth.service'
+import { OAuthTelegramController } from './oauth2.0/telegram/oauth.telegram.controller'
+import { OAuthTelegramService } from './oauth2.0/telegram/oauth.telegram.service'
 import { OAuthYandexController } from './oauth2.0/yandex/oauth.yandex.controller'
 import { OAuthYandexService } from './oauth2.0/yandex/oauth.yandex.service'
 import { TokenModel } from './token/token.model'
@@ -77,6 +79,14 @@ export const oAuthYandexService = new OAuthYandexService(
 	tokenService,
 	logger
 )
+// OAuth Telegram
+export const oAuthTelegramService = new OAuthTelegramService(
+	oAuthModel,
+	oAuthService,
+	authModel,
+	tokenService,
+	logger
+)
 
 // Controller
 export const authController = new AuthController(
@@ -105,5 +115,11 @@ export const oAuthGithubController = new OAuthGithubController(
 // OAuth Yandex
 export const oAuthYandexController = new OAuthYandexController(
 	oAuthYandexService,
+	logger
+)
+
+// OAuth Telegram
+export const oAuthTelegramController = new OAuthTelegramController(
+	oAuthTelegramService,
 	logger
 )

@@ -15,6 +15,8 @@ import {
 	AUTH_LOGOUT_API_URL,
 	AUTH_REFRESH_TOKEN_API_URL,
 	AUTH_REGISTRATION_API_URL,
+	AUTH_TELEGRAM,
+	AUTH_TELEGRAM_REFRESH,
 	AUTH_VERIFY_TWO_FACTORY_CODE,
 	AUTH_YANDEX_CALLBACK_URL,
 	AUTH_YANDEX_REFRESH_TOKEN,
@@ -32,6 +34,7 @@ import {
 	authTwoFactoryController,
 	oAuthGithubController,
 	oAuthGoogleController,
+	oAuthTelegramController,
 	oAuthYandexController,
 } from './index.auth'
 import {
@@ -44,7 +47,10 @@ import {
 	validatePhoneReg,
 	validatePinCode,
 } from './pipe/auth-valid.pipe'
-import { isCodeOAuthCallbackDto } from './pipe/oauth.pipe'
+import {
+	isCodeOAuthCallbackDto,
+	isResponseTelegramApi,
+} from './pipe/oauth.pipe'
 
 export const authRouter = async (
 	isAuth: ApiError | undefined,
@@ -371,9 +377,23 @@ export const authRouter = async (
 			return
 		}
 
-		await oAuthYandexController.yandexCallback()
+		await oAuthYandexController.yandexCallback(req, res, body)
 	} else if (path === AUTH_YANDEX_REFRESH_TOKEN && req.method === 'GET') {
 		await oAuthYandexController.refreshToken(req, res, cookie)
+	} else if (path === AUTH_TELEGRAM && req.method === 'POST') {
+		if (!isResponseTelegramApi(body)) {
+			await responseBadRequest(
+				'Invalid data from body oauth-telegram callback.',
+				res,
+				400
+			)
+
+			return
+		}
+
+		await oAuthTelegramController.tgCallback(req, res, body)
+	} else if (path === AUTH_TELEGRAM_REFRESH && req.method === 'POST') {
+		await oAuthTelegramController.tgRefresh(req, res, cookie)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')
 

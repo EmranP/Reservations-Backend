@@ -40,6 +40,12 @@ export const AUTH_YANDEX_REFRESH_TOKEN = `${globalPrefixUrl}/auth/yandex/refresh
 export const yandexUrl = 'https://ya.ru/'
 export const yandexOAuthLogin = 'https://oauth.yandex.ru/authorize'
 export const yandexOAuthToken = 'https://oauth.yandex.ru'
+export const yandexInfoApi = 'https://login.yandex.ru/info'
+export const yandexUserAvatarUrl = 'https://avatars.yandex.net/get-yapic'
+
+// OAuth 2.0 Telegram
+export const AUTH_TELEGRAM = `${globalPrefixUrl}/auth/telegram`
+export const AUTH_TELEGRAM_REFRESH = `${globalPrefixUrl}/auth/telegram/refresh`
 
 export const rootAuthRouter = [
 	AUTH_LOGIN_API_URL,
@@ -59,4 +65,7 @@ export const rootAuthRouter = [
 	AUTH_GITHUB_CALLBACK_URL,
 	AUTH_GET_YANDEX_URL,
 	AUTH_YANDEX_CALLBACK_URL,
+	AUTH_YANDEX_REFRESH_TOKEN,
+	AUTH_TELEGRAM,
+	AUTH_TELEGRAM_REFRESH,
 ]

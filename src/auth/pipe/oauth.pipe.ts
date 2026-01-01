@@ -1,10 +1,15 @@
-import type { IOAuthCallback } from '../dto/oauth.dto'
+import type {
+	IOAuthCallback,
+	IOAuthTelegramCallbackDto,
+} from '../dto/oauth.dto'
 import type {
 	IGithubTokenResponse,
 	IGithubUserEmailResponse,
 	IGithubUserResponse,
-	IGoogleOAuthError,
+	IOAuthError,
 	IResponseGoogleApi,
+	IResponseYandexInfo,
+	IResponseYandexTokenApi,
 	TypeGoogleRefreshTokenResponse,
 } from '../types/api.types'
 
@@ -20,6 +25,22 @@ export const isCodeOAuthCallbackDto = (obj: unknown): obj is IOAuthCallback => {
 		isCommonValidObj && 'state' in obj && typeof obj.state === 'string'
 
 	return isValidCode && isValidState
+}
+
+export const isResponseErrorDataApi = (obj: unknown): obj is IOAuthError => {
+	const isCommonValueObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValueObj) return false
+
+	const isValidErrorObj =
+		isCommonValueObj && 'error' in obj && typeof obj.error === 'string'
+
+	const isValidErrorDescription =
+		isCommonValueObj &&
+		'error_description' in obj &&
+		typeof obj.error_description === 'string'
+
+	return isValidErrorObj || isValidErrorDescription
 }
 
 // Google
@@ -70,24 +91,6 @@ export const isResponseGoogleRefreshDataApi = (
 		typeof obj.token_type === 'string'
 
 	return isValidValue
-}
-
-export const isResponseGoogleErrorDataApi = (
-	obj: unknown
-): obj is IGoogleOAuthError => {
-	const isCommonValueObj = typeof obj === 'object' && obj !== null
-
-	if (!isCommonValueObj) return false
-
-	const isValidErrorObj =
-		isCommonValueObj && 'error' in obj && typeof obj.error === 'string'
-
-	const isValidErrorDescription =
-		isCommonValueObj &&
-		'error_description' in obj &&
-		typeof obj.error_description === 'string'
-
-	return isValidErrorObj || isValidErrorDescription
 }
 
 // Github
@@ -182,4 +185,91 @@ export const isResponseGithubEmailsApi = (
 		commonData && 'visibility' in data && data.visibility === null
 
 	return isValidStringValue || isValidNullValue
+}
+
+// Yandex
+
+export const isResponseYandexTokenApi = (
+	obj: unknown
+): obj is IResponseYandexTokenApi => {
+	const isCommonValidObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValidObj) return false
+
+	const isValidValue =
+		'access_token' in obj &&
+		typeof obj.access_token === 'string' &&
+		'expires_in' in obj &&
+		typeof obj.expires_in === 'number' &&
+		'token_type' in obj &&
+		typeof obj.token_type === 'string' &&
+		'refresh_token' in obj &&
+		typeof obj.refresh_token === 'string'
+
+	return isValidValue
+}
+
+export const isResponseYandexInfoApi = (
+	obj: unknown
+): obj is IResponseYandexInfo => {
+	const isCommonValidObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValidObj) return false
+
+	const data = obj as Record<string, string | boolean>
+
+	const isValidValue =
+		typeof data.id === 'string' &&
+		typeof data.login === 'string' &&
+		typeof data.client_id &&
+		typeof data.display_name === 'string' &&
+		typeof data.real_name === 'string' &&
+		typeof data.first_name === 'string' &&
+		typeof data.last_name === 'string' &&
+		typeof data.sex === 'string' &&
+		typeof data.default_email === 'string' &&
+		Array.isArray(data.emails) &&
+		typeof data.emails[0] === 'string' &&
+		typeof data.default_avatar_id === 'string' &&
+		typeof data.is_avatar_empty === 'boolean' &&
+		typeof data.psuid === 'string'
+
+	return isValidValue
+}
+
+// Telegram
+
+export const isResponseTelegramApi = (
+	obj: unknown
+): obj is IOAuthTelegramCallbackDto => {
+	const isCommonValidObj = typeof obj === 'object' && obj !== null
+
+	if (!isCommonValidObj) return false
+
+	const isValidUser =
+		'user' in obj &&
+		typeof obj.user === 'object' &&
+		obj.user !== null &&
+		'id' in obj.user &&
+		typeof obj.user.id === 'number' &&
+		'auth_date' in obj.user &&
+		typeof obj.user.auth_date === 'number' &&
+		'first_name' in obj.user &&
+		typeof obj.user.first_name === 'string' &&
+		'hash' in obj.user &&
+		typeof obj.user.hash === 'string' &&
+		'photo_url' in obj.user &&
+		typeof obj.user.photo_url === 'string' &&
+		'username' in obj.user &&
+		typeof obj.user.username === 'string'
+
+	const stateValid = 'state' in obj
+
+	const isValidStateValue =
+		(stateValid && typeof obj.state === 'string') ||
+		(stateValid && obj.state === null)
+
+	const isValidEmail = 'email' in obj && typeof obj.email === 'string'
+
+	return isValidUser && isValidEmail && isValidStateValue
 }

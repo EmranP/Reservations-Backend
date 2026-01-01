@@ -30,8 +30,8 @@ CREATE TABLE IF NOT EXISTS public.accounts (
 	types TEXT,
 	access_token TEXT,
 	refresh_token TEXT,
-	google_refresh_token_iv TEXT,
-	google_refresh_token_tag TEXT,
+	refresh_token_iv TEXT,
+	refresh_token_tag TEXT,
 	expires_in TIMESTAMP DEFAULT NULL,
 	created_at TIMESTAMP DEFAULT now(),
 	updated_at TIMESTAMP DEFAULT now()

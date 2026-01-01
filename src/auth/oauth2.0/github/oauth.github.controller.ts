@@ -81,7 +81,7 @@ export class OAuthGithubController extends AuthBaseConfig {
 
 			res.setHeader(
 				'Set-cookie',
-				`refreshToken=${
+				`githubRefreshToken=${
 					userGithub.refreshToken
 				}; httpOnly; path=/api; Expires=${userGithub.expiresIn.toUTCString()}; SameSite=Strict`
 			)

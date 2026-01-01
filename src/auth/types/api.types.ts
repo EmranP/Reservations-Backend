@@ -1,8 +1,16 @@
-export interface IResponseGoogleApi {
+export interface IResponseCommonApi {
 	access_token: string
 	expires_in: number
-	scope: string
 	token_type: string
+}
+export interface IOAuthError {
+	error: string
+	error_description?: string
+}
+
+// Google
+export interface IResponseGoogleApi extends IResponseCommonApi {
+	scope: string
 	id_token: string
 	refresh_token?: string
 }
@@ -20,16 +28,9 @@ export type TypeGoogleRefreshTokenResponse = Omit<
 	'refresh_token' | 'id_token'
 >
 
-export interface IGoogleOAuthError {
-	error: string
-	error_description?: string
-}
-
 // Github
-
-export interface IGithubTokenResponse {
-	access_token: string
-	token_type: string
+export interface IGithubTokenResponse
+	extends Omit<IResponseCommonApi, 'expires_in'> {
 	scope: string
 }
 
@@ -75,4 +76,35 @@ export interface IGithubUserEmailResponse {
 	primary: boolean
 	verified: boolean
 	visibility: string
+}
+
+// Yandex
+export interface IResponseYandexTokenApi extends IResponseCommonApi {
+	refresh_token: string
+}
+
+export interface IResponseYandexInfo {
+	id: string
+	login: string
+	client_id: string
+	display_name: string
+	real_name: string
+	first_name: string
+	last_name: string
+	sex: string
+	default_email: string
+	emails: string[]
+	default_avatar_id: string
+	is_avatar_empty: boolean
+	psuid: string
+}
+
+// Telegram
+export interface IResponseTelegramApi {
+	id: number
+	auth_date: number
+	first_name: string
+	hash: string
+	photo_url: string
+	username: string
 }
