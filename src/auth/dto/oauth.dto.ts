@@ -1,12 +1,14 @@
 import type { IUserDto } from '../../user/dto/user.dto'
+import type { IResponseTelegramApi } from '../types/api.types'
 
 // Google
 export class OAuthGoogleCallbackDto {
 	code: undefined | string
 }
 
-export interface IOAuthGoogleCallback {
+export interface IOAuthCallback {
 	code: string
+	state: string
 }
 
 export interface IOAuthGoogleCodeHandler {
@@ -16,21 +18,30 @@ export interface IOAuthGoogleCodeHandler {
 	grant_type: string
 }
 
-export interface ICreateUserAccountDto {
+// Accounts
+export interface IUserAccountDto {
 	provider: string
 	types: string
-	accessToken: string
-	expiresIn: Date | number
-	googleRefreshIv?: string | null
-	googleRefreshTag?: string | null
+	accessToken: string | null
+	expiresIn: Date | number | null
+	refreshIv?: string | null
+	refreshTag?: string | null
 	refreshToken?: string | null
 }
 
-export interface ICreateUserWithoutAccountDto
+export interface IUserWithoutAccountDto
 	extends Pick<
 		IUserDto,
 		'firstName' | 'email' | 'phone' | 'picture' | 'isVerify'
 	> {
 	authMethod: string
 	password: string
+}
+
+// Telegram
+
+export interface IOAuthTelegramCallbackDto {
+	user: IResponseTelegramApi
+	state: string
+	email: string
 }

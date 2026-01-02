@@ -21,7 +21,8 @@ export abstract class AuthBaseConfig {
 		this.verifyConfig === '2m' ? 2 : this.verifyConfig === '5m' ? 5 : 0
 	protected maxAgeRemoveVerify: number =
 		this.verifyRemoveConfig === '1h' ? 1 : 0
-	protected maxAgeResetVerify: number = this.forgetConfig === '30m' ? 5 : 5
+	// ? Change time value when completed this feature auth
+	protected maxAgeResetVerify: number = this.forgetConfig === '30m' ? 1 : 5
 	protected maxAgeRefresh =
 		this.refreshConfig === '7d' ? 7 : this.refreshConfig === '30d' ? 30 : 2
 	protected maxAgeTwoFactoryCode = this.twoFactoryConfig === '60s' ? 60 : 0
@@ -45,4 +46,6 @@ export abstract class AuthBaseConfig {
 		'Your confirmation two factory code time has expired.'
 	// Utils
 	protected headData = writeHeadData(400)
+	protected clientGrantTypeRefresh = 'refresh_token'
+	protected defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
 }

@@ -3,6 +3,7 @@
 ## Main Bugs
 
 1. Add fields persons: type integer for occupied_rooms from table.sql: ❌
+2. Add cheking for CSRF attack, for everything req where have session: ❌
 
 ## AUTH
 
@@ -31,7 +32,6 @@
 23. Add expire time for set new password 30m if user not setting new password old password setting: ✅
 24. Add new fields for user enableResetPassword: value(boolean) when user has been activate reset will be true and after will be false: ✅
 25. Add transaction for somewhere where its need: ❌
-26. SMS Provider: ❌
 
 ## Auth Bugs
 
@@ -56,11 +56,10 @@
 19. Add ref user table with account table: ✅
 20. Add new feild to user table "authMehod": ✅
 21. Fixed with auth_method if again loginWithService method field has remove: ✅
-22. Fixed sql from oauth.model. Add DO UPDATE AND CONFLICT where they need: ❌
-23. Add expireIn to setDateUtil if he typeof number: ❌
-24. Check expireIn: ❌
-25. Fixed decrypt tokens from db for account table not hash: ❌
-26. Just add symmetric hash refresh, accessToken must be hash with bcrypt: ❌
+22. Check expireIn: ✅
+23. Fixed decrypt tokens from db for account table not hash: ✅
+24. Just add symmetric hash refresh, accessToken must be hash with bcrypt: ✅
+25. Fixed sql from oauth.model. Add DO UPDATE AND CONFLICT where they need: ✅
 
 ## 2FA
 
@@ -69,27 +68,27 @@
 3. Add new service for 2FA: ✅
 4. Add timecheck example 1m for 2FA like verify auth: ✅
 5. 2FA must be number lenght 6: ✅
-6. 2FA sending code with email or SMS provider: **just email yet**
+6. 2FA sending code with email: ✅
 7. 2FA just useing when user has been login: ✅
-8. Add service for repaid send email or sms code: **just email**
+8. Add service for repaid send email: ✅
 9. Add if success or fail opration new generate code: ✅
 
 ## OAuth Task
 
 1. Add tabels to db Account: ✅
-2. Add state for protection CSRF attacks
-3. Add handler if user not have to db we must be create him if he have just add userId tabel acccount: ✅
-4. Add transaction for create user if not have main table user must be 2 req to db: ❌
-5. Add googleRefreshToken: ❌
-6. Add handler when user has success loginWithOauth create new session for token table: ❌
-7. Add req for update accessToken from google api: ❌
+2. Add handler if user not have to db we must be create him if he have just add userId tabel acccount: ✅
+3. Add googleRefreshToken: ✅
+4. Add handler when user has success loginWithOauth create new session for token table: ✅
+5. Add req for update accessToken from google api: ✅
+6. Add transaction for create user if not have main table user must be 2 req to db: ✅
+7. Add state for protection CSRF attacks: ✅
 
 ## Oauth2.0
 
-1. Google: ❌
-2. Apple: ❌
-3. Yandex: ❌
-4. Github: ❌
+1. Google: ✅
+2. Github: ❌
+3. Apple: ❌
+4. Yandex: ❌
 
 ## Redis
 
@@ -97,6 +96,10 @@
 2. Add jsonbin api: ❌
 3. Add profile api: ❌
 4. get all rooms api: ❌
+
+## Storage for files
+
+1. Add s3 storage: ❌
 
 ## Profile
 

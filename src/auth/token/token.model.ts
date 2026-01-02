@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import type { Pool } from 'pg'
+import type { Pool, QueryResult } from 'pg'
 import { DB_TABLE_TOKENS } from '../../common/constants/table-db.constant'
 import type { IResponseTokens } from '../types/token.type'
 
@@ -9,16 +9,35 @@ export class TokenModel {
 	async create(
 		userId: string,
 		refreshToken: string,
-		expires_token_at: Date
+		expires_token_at: Date,
+		state_auth?: string
 	): Promise<IResponseTokens | null> {
-		const query = `
+		let query: string | undefined
+
+		if (state_auth) {
+			query = `
+				INSERT INTO ${DB_TABLE_TOKENS} 
+				(user_id, refresh_token, expires_token_at, state_auth) 
+				VALUES ($1, $2, $3, $4) 
+				ON CONFLICT (user_id)
+				DO UPDATE SET 
+				refresh_token = EXCLUDED.refresh_token, 
+				expires_token_at = EXCLUDED.expires_token_at,
+				state_auth = EXCLUDED.state_auth
+				RETURNING *
+			`
+		} else {
+			query = `
 				INSERT INTO ${DB_TABLE_TOKENS} 
 				(user_id, refresh_token, expires_token_at) 
 				VALUES ($1, $2, $3) 
 				ON CONFLICT (user_id)
-				DO UPDATE SET refresh_token = EXCLUDED.refresh_token, expires_token_at = EXCLUDED.expires_token_at
+				DO UPDATE SET 
+				refresh_token = EXCLUDED.refresh_token, 
+				expires_token_at = EXCLUDED.expires_token_at
 				RETURNING *
 			`
+		}
 
 		const queryResult = await this.pool.query<IResponseTokens>(query, [
 			userId,
@@ -35,12 +54,103 @@ export class TokenModel {
 		IResponseTokens,
 		'user_id' | 'created_at' | 'updated_at'
 	> | null> {
-		const query = `SELECT id, refresh_token, is_two_auth_code, expires_token_at, expires_two_auth_code FROM ${DB_TABLE_TOKENS} WHERE user_id = $1`
+		const query = `SELECT id, refresh_token, is_two_auth_code, expires_token_at, expires_two_auth_code, state_auth FROM ${DB_TABLE_TOKENS} WHERE user_id = $1`
 		const queryResult = await this.pool.query<
 			Omit<IResponseTokens, 'user_id' | 'created_at' | 'updated_at'>
 		>(query, [userId])
 
 		return queryResult.rows[0] ?? null
+	}
+
+	async save(
+		userId: string,
+		oldRefresh: string,
+		newRefresh: string,
+		expireToken: Date,
+		state_auth?: string
+	): Promise<IResponseTokens | Omit<IResponseTokens, 'state_auth'> | null> {
+		const client = await this.pool.connect()
+		try {
+			await client.query('BEGIN')
+
+			const queryExistsToken = `
+			SELECT id, refresh_token 
+			FROM ${DB_TABLE_TOKENS} 
+			WHERE user_id = $1`
+			const existsTokenResult = await client.query<
+				Pick<IResponseTokens, 'id' | 'refresh_token'>
+			>(queryExistsToken, [userId])
+
+			const existsToken = existsTokenResult.rows[0]
+
+			if (existsToken) {
+				const isMatch = await bcrypt.compare(
+					oldRefresh,
+					existsToken.refresh_token
+				)
+
+				if (isMatch) {
+					const queryRemove = `DELETE FROM ${DB_TABLE_TOKENS} WHERE user_id = $1`
+
+					await this.pool.query(queryRemove, [userId])
+				}
+			}
+
+			let queryCreate: string | undefined
+			let queryCreateResult:
+				| QueryResult<IResponseTokens | Omit<IResponseTokens, 'state_auth'>>
+				| undefined
+
+			if (state_auth) {
+				queryCreate = `
+				INSERT INTO ${DB_TABLE_TOKENS} 
+				(user_id, refresh_token, expires_token_at, state_auth) 
+				VALUES ($1, $2, $3, $4) 
+				ON CONFLICT (user_id)
+				DO UPDATE SET 
+				refresh_token = EXCLUDED.refresh_token, 
+				expires_token_at = EXCLUDED.expires_token_at,
+				state_auth = EXCLUDED.state_auth
+				RETURNING *
+			`
+				queryCreateResult = await this.pool.query<IResponseTokens>(
+					queryCreate,
+					[userId, newRefresh, expireToken, state_auth]
+				)
+			} else {
+				queryCreate = `
+				INSERT INTO ${DB_TABLE_TOKENS} 
+				(user_id, refresh_token, expires_token_at) 
+				VALUES ($1, $2, $3) 
+				ON CONFLICT (user_id)
+				DO UPDATE SET 
+				refresh_token = EXCLUDED.refresh_token, 
+				expires_token_at = EXCLUDED.expires_token_at
+				RETURNING *
+			`
+				queryCreateResult = await this.pool.query<
+					Omit<IResponseTokens, 'state_auth'>
+				>(queryCreate, [userId, newRefresh, expireToken])
+			}
+
+			const newSession = queryCreateResult.rows[0]
+
+			if (!newSession) {
+				await client.query('ROLLBACK')
+
+				return null
+			}
+
+			await client.query('COMMIT')
+
+			return newSession
+		} catch (error) {
+			await client.query('ROLLBACK')
+
+			return null
+		} finally {
+			client.release()
+		}
 	}
 
 	async delete(

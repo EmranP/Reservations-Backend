@@ -80,12 +80,12 @@ export class AuthService extends AuthBaseConfig {
 				status: 500,
 			}
 
-		const userTowFactoryData = await this.authTowFactoryService.getCode(
-			userDto.id
-		)
-
 		// 2FA
 		if (userDto.enableTwoFactoryChallenge) {
+			const userTowFactoryData = await this.authTowFactoryService.getCode(
+				userDto.id
+			)
+
 			if (
 				'message' in userTowFactoryData &&
 				!this.isFirstSendEmailTwoFactoryCode
@@ -123,7 +123,6 @@ export class AuthService extends AuthBaseConfig {
 			}
 
 			if (userDto.email && 'expireCode' in userTowFactoryData) {
-				// ? Maybe add transaction
 				const resultSendEmailCode = await authEmailService.sendTwoFactoryCode(
 					userDto.email,
 					isTimeCheckTwoFactory,
@@ -132,7 +131,7 @@ export class AuthService extends AuthBaseConfig {
 					this.isFirstSendEmailTwoFactoryCode
 				)
 
-				if (resultSendEmailCode.status === 409)
+				if (resultSendEmailCode.status >= 400)
 					return {
 						message: resultSendEmailCode.message,
 						status: resultSendEmailCode.status,
@@ -452,23 +451,16 @@ export class AuthService extends AuthBaseConfig {
 			now.getTime() >= expiresForgetVerify.expires_forget_pass.getTime()
 
 		if (isTimeCheck || expiresForgetVerify.expires_forget_pass === null) {
-			await this.model.forgetVerifyModel(dto(false))
-			const updateUserResetLink = await this.model.updateResetLink(
+			const resetForgetVerify = await this.model.resetForgetVerifyMode(
+				resetPassLink,
 				isVerifyForgetUser.id,
-				resetPassLink
-			)
-
-			if (!updateUserResetLink)
-				return ApiError.InternalServer('Error user from update reset-link')
-
-			const updateExpireForget = await this.model.updateExpireForgetVerify(
-				isVerifyForgetUser.id,
+				false,
 				null
 			)
 
-			if (!updateExpireForget)
+			if (!resetForgetVerify)
 				return {
-					message: 'Something was wrong with edit expire forget',
+					message: 'Something was wrong with reset forget verify',
 					status: 500,
 				}
 
@@ -521,35 +513,20 @@ export class AuthService extends AuthBaseConfig {
 			expiresForgetVerify.expires_forget_pass !== null &&
 			now.getTime() >= expiresForgetVerify.expires_forget_pass.getTime()
 
-		if (isTimeCheck && !this.isFirstSendEmailForgetPassword) {
-			const initUserResetLink = await this.model.updateResetLink(
-				user.id,
-				resetPassLink
-			)
-			const initUserState = await this.model.resetUpdateUserPassword(user.id, {
+		if (isTimeCheck) {
+			const dtoReset = {
 				isEnableResetPass: false,
 				newPassword: user.password,
-			})
-
-			if (!initUserResetLink)
-				return ApiError.InternalServer(
-					'Error user from update set new-password reset-link'
-				)
-
-			if (!initUserState)
-				return ApiError.InternalServer(
-					'Error user from time-check set new-password'
-				)
-
-			const updateExpireForget = await this.model.updateExpireForgetVerify(
+			}
+			const initUserState = await this.model.resetUpdateUserPassword(
 				user.id,
+				resetPassLink,
+				dtoReset,
 				null
 			)
 
-			if (!updateExpireForget)
-				return ApiError.InternalServer('Error update expire forget')
-
-			this.isFirstVerifyForgetPassword = true
+			if (!initUserState)
+				return ApiError.InternalServer('Error from reset user password')
 
 			return ApiError.BadRequest('The verify for forget password expired!')
 		}
@@ -562,31 +539,18 @@ export class AuthService extends AuthBaseConfig {
 
 		const hashPass = await bcrypt.hash(dto.newPassword, 10)
 
-		// Add transition here
-		const newUserProfile = await this.model.setNewPasswordMode(
-			{ ...dto, newPassword: hashPass },
-			user.enable_reset_pass,
-			user.id
-		)
-		const newUserResetLink = await this.model.updateResetLink(
+		const dtoReset = {
+			isEnableResetPass: false,
+			newPassword: hashPass,
+		}
+		const newUserState = await this.model.resetUpdateUserPassword(
 			user.id,
-			resetPassLink
-		)
-		const initUserEnablePass = await this.model.updateEnableResetPass(
-			false,
-			user.id
-		)
-		const updateExpireForget = await this.model.updateExpireForgetVerify(
-			user.id,
+			resetPassLink,
+			dtoReset,
 			null
 		)
 
-		if (
-			!newUserProfile.user ||
-			!newUserResetLink ||
-			!initUserEnablePass ||
-			!updateExpireForget
-		)
+		if (!newUserState?.id)
 			return ApiError.InternalServer('Error from set new password')
 
 		return {

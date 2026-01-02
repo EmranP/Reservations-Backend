@@ -1,10 +1,11 @@
 import bcrypt from 'bcrypt'
-import { createRemoteJWKSet, jwtVerify } from 'jose'
+import { createRemoteJWKSet } from 'jose'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import { APP_CONFIG, APP_OAUTH_CONFIG } from '../../../common/config/app.config'
+import { APP_OAUTH_GOOGLE_CONFIG } from '../../../common/config/app.config'
 import {
 	googlePublicJwksUrl,
+	googleTokenUrl,
 	googleUrl,
 } from '../../../common/constants/auth.constant'
 import { AUTH_METHOD } from '../../../common/constants/enum.constant'
@@ -16,16 +17,14 @@ import { decrypt, encrypt } from '../../../common/utils/app/crypto.util'
 import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGoogleLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
-import { UserGoogleDto } from '../../../user/dto/user.dto'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { AuthModel } from '../../auth.model'
 import type {
-	ICreateUserAccountDto,
-	ICreateUserWithoutAccountDto,
+	IUserAccountDto,
+	IUserWithoutAccountDto,
 } from '../../dto/oauth.dto'
 import {
+	isResponseErrorDataApi,
 	isResponseGoogleDataApi,
-	isResponseGoogleErrorDataApi,
 	isResponseGoogleRefreshDataApi,
 } from '../../pipe/oauth.pipe'
 import type { TokenService } from '../../token/token.service'
@@ -33,18 +32,17 @@ import type {
 	IResponseGoogleApi,
 	TypeGoogleRefreshTokenResponse,
 } from '../../types/api.types'
-import type { ICommonGoogleBodyData } from '../../types/common.type'
+import type { ICommonOAuthBodyData } from '../../types/common.type'
 import type { IUserGoogleJwtPayload } from '../../types/token.type'
-import type {
-	IUserOAuthGoogle,
-	TypeUserOAuthGoogleRefresh,
-} from '../../types/types.auth'
-import { getGoogleToken } from './oauth.google.api'
-import type { OAuthGoogleModel } from './oauth.google.model'
+import type { IUserOAuth, TypeUserOAuthRefresh } from '../../types/types.auth'
+import { postOAuth } from '../oauth.api'
+import type { OAuthModel } from '../oauth.model'
+import { OAuthService } from '../oauth.service'
 
-export class OAuthGoogleService extends AuthBaseConfig {
+export class OAuthGoogleService extends OAuthService {
 	constructor(
-		private model: OAuthGoogleModel,
+		private model: OAuthModel,
+		private service: OAuthService,
 		private authModel: AuthModel,
 		private tokenService: TokenService,
 		private logger: Logger
@@ -52,39 +50,39 @@ export class OAuthGoogleService extends AuthBaseConfig {
 		super()
 	}
 
-	private googleClientId = APP_OAUTH_CONFIG.GOOGLE_CLIENT_ID
-	private googleClientSecret = APP_OAUTH_CONFIG.GOOGLE_CLIENT_SECRET
-	private googleClientRedirect = APP_OAUTH_CONFIG.GOOGLE_CLIENT_REDIRECT
+	private googleClientId = APP_OAUTH_GOOGLE_CONFIG.GOOGLE_CLIENT_ID
+	private googleClientSecret = APP_OAUTH_GOOGLE_CONFIG.GOOGLE_CLIENT_SECRET
+	private googleClientRedirect = APP_OAUTH_GOOGLE_CONFIG.GOOGLE_CLIENT_REDIRECT
 	private googleClientGrantTypeAuthCode = 'authorization_code'
-	private googleClientGrantTypeRefresh = 'refresh_token'
 	private googlePublicJwks = createRemoteJWKSet(new URL(googlePublicJwksUrl))
-	private defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
 
-	async getGoogleUrl(): Promise<ApiError | string> {
-		if (
-			!this.googleClientId ||
-			!this.googleClientSecret ||
-			!this.googleClientRedirect
-		)
-			return ApiError.InternalServer('Google oauth config not set!')
-
-		const url = generateOAuthGoogleLink(
+	// Put the common oauth service
+	async getGoogleUrl(state: string | undefined): Promise<ApiError | string> {
+		return await this.service.getOauthUrl(
+			state,
 			this.googleClientId,
-			this.googleClientRedirect
+			this.googleClientSecret,
+			this.googleClientRedirect,
+			() =>
+				generateOAuthGoogleLink(
+					this.googleClientId,
+					this.googleClientRedirect,
+					state
+				)
 		)
-
-		return url
 	}
 
-	async getCommonGoogleBodyData(): Promise<ApiError | ICommonGoogleBodyData> {
+	async getCommonGoogleBodyData(): Promise<ApiError | ICommonOAuthBodyData> {
 		if (
 			!this.googleClientId ||
 			!this.googleClientSecret ||
 			!this.googleClientRedirect
 		)
-			return ApiError.InternalServer('Google oauth config not set!')
+			return ApiError.InternalServer(
+				'Google oauth config not set from common body data!'
+			)
 
-		const commonData: ICommonGoogleBodyData = {
+		const commonData: ICommonOAuthBodyData = {
 			client_id: this.googleClientId,
 			client_secret: this.googleClientSecret,
 			redirect_uri: this.googleClientRedirect,
@@ -93,34 +91,10 @@ export class OAuthGoogleService extends AuthBaseConfig {
 		return commonData
 	}
 
-	async verifyGoogleToken(
-		idToken: string | undefined
-	): Promise<IErrorResponseApp | IUserGoogleJwtPayload> {
-		if (!idToken)
-			return {
-				message: 'ID token is not have!',
-				status: 404,
-			}
-
-		const account = await jwtVerify<IUserGoogleJwtPayload>(
-			idToken,
-			this.googlePublicJwks,
-			{
-				algorithms: ['RS256'],
-				issuer: googleUrl,
-			}
-		)
-
-		if (!account || !account.payload)
-			return {
-				message: 'Error from verify-account google',
-				status: 500,
-			}
-
-		return account.payload
-	}
-
-	async googleCodeHandler(code: string): Promise<ApiError | IUserOAuthGoogle> {
+	async googleCodeHandler(
+		code: string,
+		state: string
+	): Promise<ApiError | IUserOAuth> {
 		if (!this.defaultUserPass)
 			return ApiError.InternalServer(
 				'App-config is not set default-pass for user'
@@ -134,11 +108,20 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			...commonData,
 			code,
 			grant_type: this.googleClientGrantTypeAuthCode,
+			state,
 		}
 
-		const responseGoogleData = await getGoogleToken(dataBody, {
+		const headerData = {
 			'Content-Type': 'application/json',
-		})
+		}
+
+		const responseGoogleData = await postOAuth(
+			googleTokenUrl,
+			'POST',
+			headerData,
+			true,
+			dataBody
+		)
 		let googleData: undefined | IResponseGoogleApi | IErrorResponseApp
 
 		if (isResponseGoogleDataApi(responseGoogleData)) {
@@ -159,16 +142,21 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			)
 		}
 
-		const isVerifyGoogleAccount = await this.verifyGoogleToken(
-			googleData.id_token
-		)
+		const isVerifyGoogleAccount =
+			await this.verifyOAuthToken<IUserGoogleJwtPayload>(
+				googleData.id_token,
+				this.googlePublicJwks,
+				['RS256'],
+				googleUrl
+			)
 
-		if ('message' in isVerifyGoogleAccount)
+		if ('message' in isVerifyGoogleAccount) {
 			return ApiError.InternalServer(
 				typeof isVerifyGoogleAccount.message === 'string'
 					? isVerifyGoogleAccount.message
 					: 'Something was wrong'
 			)
+		}
 
 		const accountEmail = isVerifyGoogleAccount.email
 		const user = await this.authModel.getUserByEmail(accountEmail)
@@ -177,7 +165,7 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			typeof isVerifyGoogleAccount.at_hash === 'string'
 				? isVerifyGoogleAccount.at_hash
 				: this.defaultUserPass
-		const newHasPass = await bcrypt.hash(newValuePass, 10)
+		const newHashPass = await bcrypt.hash(newValuePass, 10)
 		const accessHash = await bcrypt.hash(googleData.access_token, 10)
 		let refreshHash: IAppEnCrypto | null = null
 
@@ -200,57 +188,33 @@ export class OAuthGoogleService extends AuthBaseConfig {
 					409
 				)
 
-			const dataUpdateAccountDto: ICreateUserAccountDto = {
+			const dataUpdateDto: IUserAccountDto & IUserWithoutAccountDto = {
 				provider: 'google',
 				types: 'openid-connect',
 				accessToken: accessHash,
 				expiresIn: newExpireIn,
-			}
-			const dataUpdateUserDto: ICreateUserWithoutAccountDto = {
 				firstName: isVerifyGoogleAccount.name,
 				email: isVerifyGoogleAccount.email,
 				phone: '+993',
-				password: user.password ?? newHasPass,
+				password: user.password ?? newHashPass,
 				picture: isVerifyGoogleAccount.picture,
 				isVerify: isVerifyGoogleAccount.email_verified,
 				authMethod: AUTH_METHOD.GOOGLE,
 			}
-			// Add transition
-			const updateAccount = await this.model.updateUserAccount(
-				user.id,
-				dataUpdateAccountDto
+
+			const updateUserGoogle = await this.updateOAuth(
+				this.model,
+				this.tokenService,
+				resetPassLink,
+				user,
+				dataUpdateDto,
+				state
 			)
-			const updateUser = await this.model.updateUser(
-				user.id,
-				dataUpdateUserDto,
-				resetPassLink
-			)
 
-			if (!updateAccount?.id || !updateUser)
-				return ApiError.InternalServer('Error from update account and user!')
-
-			const userGoogle = new UserGoogleDto(updateUser)
-
-			const tokens = await this.tokenService.generateTokens({
-				id: updateUser.id,
-				role: updateUser.role,
-			})
-
-			if (!tokens.refresh || typeof tokens.refresh !== 'string')
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			await this.tokenService.saveToken(
-				updateUser.id,
-				tokens.refresh,
-				expireRefreshTokenAt
-			)
+			if ('message' in updateUserGoogle) return updateUserGoogle
 
 			return {
-				user: userGoogle,
-				accessToken: googleData.access_token,
-				refreshToken: tokens.refresh,
-				expiresIn: expireRefreshTokenAt,
+				...updateUserGoogle,
 			}
 		} else {
 			if (!isVerifyGoogleAccount.email_verified)
@@ -264,76 +228,44 @@ export class OAuthGoogleService extends AuthBaseConfig {
 					? refreshHash.encrypted
 					: null
 
-			const dataCreateUserDto: ICreateUserWithoutAccountDto = {
+			const dataCreateGoogleDto: IUserAccountDto & IUserWithoutAccountDto = {
 				firstName: isVerifyGoogleAccount.name,
 				email: isVerifyGoogleAccount.email,
 				phone: '+993',
-				password: newHasPass,
+				password: newHashPass,
 				picture: isVerifyGoogleAccount.picture,
 				isVerify: isVerifyGoogleAccount.email_verified,
 				authMethod: AUTH_METHOD.GOOGLE,
-			}
-			const dataCreateAccountDto: ICreateUserAccountDto = {
 				provider: 'google',
 				types: 'openid-connect',
 				accessToken: accessHash,
 				refreshToken: refreshNewValue,
-				googleRefreshIv: refreshHash?.iv ?? null,
-				googleRefreshTag: refreshHash?.tag ?? null,
+				refreshIv: refreshHash?.iv ?? null,
+				refreshTag: refreshHash?.tag ?? null,
 				expiresIn: newExpireIn,
 			}
 
-			const newUser = await this.model.createUserWithoutAccount(
-				dataCreateUserDto,
+			const newUserGoogle = await this.createOAuth(
+				this.model,
+				this.tokenService,
+				refreshHash,
+				dataCreateGoogleDto,
 				resetPassLink,
-				AUTH_METHOD.GOOGLE
+				AUTH_METHOD.GOOGLE,
+				state
 			)
 
-			if (!newUser)
-				return ApiError.InternalServer('Error from create user with google!')
-
-			const newAccount = await this.model.createUserAccount(
-				newUser.id,
-				dataCreateAccountDto
-			)
-
-			if (!newAccount)
-				return ApiError.InternalServer(
-					'Error from create user-account with google'
-				)
-
-			const userGoogle = new UserGoogleDto(newUser)
-
-			if (!userGoogle.id || typeof userGoogle.role === 'undefined')
-				return ApiError.BadRequest('User google dto not found!')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userGoogle.id,
-				role: userGoogle.role,
-			})
-
-			if (!tokens.refresh || typeof tokens.refresh !== 'string')
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			await this.tokenService.saveToken(
-				userGoogle.id,
-				tokens.refresh,
-				expireRefreshTokenAt
-			)
+			if ('message' in newUserGoogle) return newUserGoogle
 
 			return {
-				user: userGoogle,
-				accessToken: googleData.access_token,
-				refreshToken: tokens.refresh,
-				expiresIn: expireRefreshTokenAt,
+				...newUserGoogle,
 			}
 		}
 	}
 
 	async googleRefreshToken(
 		token: string
-	): Promise<TypeUserOAuthGoogleRefresh | ApiError> {
+	): Promise<TypeUserOAuthRefresh | ApiError> {
 		const now = new Date()
 		const isVerifyToken = await this.tokenService.verifyToken(token)
 
@@ -347,15 +279,15 @@ export class OAuthGoogleService extends AuthBaseConfig {
 
 		if (
 			!userAccount ||
-			!userAccount.google_refresh_token_iv ||
-			!userAccount.google_refresh_token_tag
+			!userAccount.refresh_token_iv ||
+			!userAccount.refresh_token_tag
 		)
 			return ApiError.NotFound('Not founded user data!')
 
 		const decryptToken = decrypt(
 			userAccount.refresh_token,
-			userAccount.google_refresh_token_iv,
-			userAccount.google_refresh_token_tag
+			userAccount.refresh_token_iv,
+			userAccount.refresh_token_tag
 		)
 
 		const isTimeCheck =
@@ -363,27 +295,31 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			now.getTime() >= userAccount.expires_in?.getTime()
 
 		if (
-			!this.googleClientGrantTypeRefresh ||
 			!decryptToken ||
+			!this.clientGrantTypeRefresh ||
 			!this.googleClientId ||
 			!this.googleClientSecret
 		)
 			return ApiError.InternalServer('Error not set body data!')
 
 		const dataBody = new URLSearchParams({
-			grant_type: this.googleClientGrantTypeRefresh,
+			grant_type: this.clientGrantTypeRefresh,
 			refresh_token: decryptToken,
 			client_id: this.googleClientId,
 			client_secret: this.googleClientSecret,
 		})
 
+		const headersData = {
+			'Content-Type': 'application/x-www-form-urlencoded',
+		}
+
 		if (isTimeCheck) {
-			const googleResponse = await getGoogleToken(
-				dataBody,
-				{
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				false
+			const googleResponse = await postOAuth(
+				googleTokenUrl,
+				'POST',
+				headersData,
+				false,
+				dataBody
 			)
 			let googleData: undefined | TypeGoogleRefreshTokenResponse
 
@@ -401,7 +337,7 @@ export class OAuthGoogleService extends AuthBaseConfig {
 				)
 			}
 
-			if (isResponseGoogleErrorDataApi(googleResponse)) {
+			if (isResponseErrorDataApi(googleResponse)) {
 				return ApiError.BadRequest(
 					googleResponse.error_description || googleResponse.error
 				)
@@ -441,7 +377,11 @@ export class OAuthGoogleService extends AuthBaseConfig {
 				role: user.role,
 			})
 
-			if (!tokens.refresh || typeof tokens.refresh !== 'string')
+			if (
+				!tokens.refresh ||
+				typeof tokens.refresh !== 'string' ||
+				typeof tokens.access !== 'string'
+			)
 				return ApiError.InternalServer('Error refresh-token is not generate')
 
 			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
@@ -452,12 +392,11 @@ export class OAuthGoogleService extends AuthBaseConfig {
 			)
 
 			return {
-				accessToken: googleData.access_token,
+				accessToken: tokens.access,
 				refreshToken: tokens.refresh,
 				expiresIn: expireRefreshTokenAt,
 			}
-		} else {
-			return ApiError.BadRequest('AccessToken is not expired!', 409)
-		}
+		} else
+			return ApiError.BadRequest('Google access-token is not expired!', 409)
 	}
 }

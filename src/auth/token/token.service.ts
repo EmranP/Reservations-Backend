@@ -231,30 +231,38 @@ export class TokenService extends AuthBaseConfig {
 	async saveToken(
 		userId: string,
 		refreshToken: string,
-		expireToken: Date
+		expireToken: Date,
+		stateAuth?: string
 	): Promise<
 		| IResponseTokens
+		| Omit<IResponseTokens, 'state_auth'>
 		| {
 				message: string
 		  }
 	> {
-		const hashToken = await bcrypt.hash(refreshToken, 10)
+		const existsToken = await this.tokenModel.findOne(userId)
 
-		await this.deleteToken(userId, refreshToken)
-
-		const newToken = await this.tokenModel.create(
-			userId,
-			hashToken,
-			expireToken
-		)
-
-		if (!newToken) {
-			this.logger.error(`Error save token to user-id: ${userId}`)
-
-			return { message: `Do not save token for user-id: ${userId}` }
+		if (existsToken?.id && stateAuth && stateAuth !== existsToken?.state_auth) {
+			return ApiError.BadRequest('This is maybe CSRF attack!', 409)
 		}
 
-		return newToken
+		const hashToken = await bcrypt.hash(refreshToken, 10)
+
+		const token = await this.tokenModel.save(
+			userId,
+			refreshToken,
+			hashToken,
+			expireToken,
+			stateAuth
+		)
+
+		if (!token) {
+			this.logger.error(`Error save token to user-id: ${userId}`)
+
+			return { message: `Do not save session for user-id: ${userId}` }
+		}
+
+		return token
 	}
 
 	async refreshToken(refreshToken: string): TypeAuthUserService {
