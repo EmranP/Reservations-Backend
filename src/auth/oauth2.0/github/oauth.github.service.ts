@@ -12,7 +12,6 @@ import type { IErrorResponseApp } from '../../../common/types/db/app.interface'
 import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGithubLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
-import { UserDto } from '../../../user/dto/user.dto'
 import type { AuthModel } from '../../auth.model'
 import type {
 	IUserAccountDto,
@@ -235,51 +234,19 @@ export class OAuthGithubService extends OAuthService {
 				authMethod: AUTH_METHOD.GITHUB,
 			}
 
-			const updateUserGithub = await this.model.updateUserOAuth(
-				user.id,
+			const updateUserGithub = await this.updateOAuth(
+				this.model,
+				this.tokenService,
 				resetPassLink,
-				dataUpdateDto
-			)
-
-			if (!updateUserGithub?.id || !updateUserGithub)
-				return ApiError.InternalServer('Error from update account and user!')
-
-			const userGithub = new UserDto(updateUserGithub)
-
-			if (!userGithub.id || !userGithub.role)
-				return ApiError.InternalServer('Error transform user-github dto')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userGithub.id,
-				role: userGithub.role,
-			})
-
-			if (
-				!tokens.refresh ||
-				typeof tokens.refresh !== 'string' ||
-				typeof tokens.access !== 'string'
-			)
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const newSession = await this.tokenService.saveToken(
-				userGithub.id,
-				tokens.refresh,
-				expireTokensAt,
+				user,
+				dataUpdateDto,
 				state
 			)
 
-			if (
-				typeof newSession === 'object' &&
-				newSession !== null &&
-				'message' in newSession
-			)
-				return ApiError.InternalServer(newSession.message)
+			if ('message' in updateUserGithub) return updateUserGithub
 
 			return {
-				user: userGithub,
-				accessToken: tokens.access,
-				refreshToken: tokens.refresh,
-				expiresIn: expireTokensAt,
+				...updateUserGithub,
 			}
 		} else {
 			if (!userPrimaryGithubEmail.verified)
@@ -305,53 +272,19 @@ export class OAuthGithubService extends OAuthService {
 				expiresIn: expireTokensAt,
 			}
 
-			const newUserGithub = await this.model.createUserOAuth(
+			const newUserGithub = await this.createOAuth(
+				this.model,
+				this.tokenService,
+				dataCreateGithubDto,
 				resetPassLink,
 				AUTH_METHOD.GITHUB,
-				dataCreateGithubDto
-			)
-
-			if (!newUserGithub)
-				return ApiError.InternalServer(
-					'Error from create user-account with github'
-				)
-
-			const userGithub = new UserDto(newUserGithub)
-
-			if (!userGithub.id || typeof userGithub.role === 'undefined')
-				return ApiError.BadRequest('User google dto not found!')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userGithub.id,
-				role: userGithub.role,
-			})
-
-			if (
-				!tokens.refresh ||
-				typeof tokens.refresh !== 'string' ||
-				typeof tokens.access !== 'string'
-			)
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const newSession = await this.tokenService.saveToken(
-				userGithub.id,
-				tokens.refresh,
-				expireTokensAt,
 				state
 			)
 
-			if (
-				typeof newSession === 'object' &&
-				newSession !== null &&
-				'message' in newSession
-			)
-				return ApiError.InternalServer(newSession.message)
+			if ('message' in newUserGithub) return newUserGithub
 
 			return {
-				user: userGithub,
-				accessToken: tokens.access,
-				refreshToken: tokens.refresh,
-				expiresIn: expireTokensAt,
+				...newUserGithub,
 			}
 		}
 	}

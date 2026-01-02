@@ -191,56 +191,19 @@ export class OAuthTelegramService extends OAuthService {
 				expiresIn: null,
 			}
 
-			const newTgUser = await this.model.createUserOAuth(
+			const newTgUser = await this.createOAuth(
+				this.model,
+				this.tokenService,
+				dataCreateTgDto,
 				resetPassLink,
 				AUTH_METHOD.TELEGRAM,
-				dataCreateTgDto
-			)
-
-			if (!newTgUser)
-				return ApiError.InternalServer(
-					'Error from create user-account with telegram'
-				)
-
-			const userTg = new UserDto(newTgUser)
-
-			if (!userTg.id || typeof userTg.role === 'undefined')
-				return ApiError.BadRequest('User telegram dto not found!')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userTg.id,
-				role: userTg.role,
-			})
-
-			if (
-				!tokens ||
-				typeof tokens.refresh !== 'string' ||
-				typeof tokens.access !== 'string'
-			)
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const hashRefresh = await bcrypt.hash(tokens.refresh, 10)
-
-			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			const newSession = await this.tokenService.saveToken(
-				userTg.id,
-				hashRefresh,
-				expireRefreshTokenAt,
 				state
 			)
 
-			if (
-				typeof newSession === 'object' &&
-				newSession !== null &&
-				'message' in newSession
-			)
-				return ApiError.InternalServer(newSession.message)
+			if ('message' in newTgUser) return newTgUser
 
 			return {
-				user: userTg,
-				accessToken: tokens.access,
-				refreshToken: tokens.refresh,
-				expiresIn: expireRefreshTokenAt,
+				...newTgUser,
 			}
 		}
 	}
