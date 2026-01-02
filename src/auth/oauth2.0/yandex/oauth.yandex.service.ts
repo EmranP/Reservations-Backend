@@ -15,7 +15,6 @@ import { decrypt, encrypt } from '../../../common/utils/app/crypto.util'
 import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthYandexLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
-import { UserDto } from '../../../user/dto/user.dto'
 import type { AuthModel } from '../../auth.model'
 import type {
 	IUserAccountDto,
@@ -215,52 +214,19 @@ export class OAuthYandexService extends OAuthService {
 				authMethod: AUTH_METHOD.YANDEX,
 			}
 
-			const updateUserYandex = await this.model.updateUserOAuth(
-				user.id,
+			const updateUserYandex = await this.updateOAuth(
+				this.model,
+				this.tokenService,
 				resetPassLink,
-				dataUpdateDto
-			)
-
-			if (!updateUserYandex?.id || !updateUserYandex)
-				return ApiError.InternalServer('Error from update account for user!')
-
-			const userYandex = new UserDto(updateUserYandex)
-
-			if (!userYandex.id || !userYandex.role)
-				return ApiError.InternalServer('Error transform user-yandex dto')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userYandex.id,
-				role: userYandex.role,
-			})
-
-			if (
-				!tokens ||
-				typeof tokens.refresh !== 'string' ||
-				typeof tokens.access !== 'string'
-			)
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const expiresRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			const newSession = await this.tokenService.saveToken(
-				userYandex.id,
-				tokens.refresh,
-				expiresRefreshTokenAt,
+				user,
+				dataUpdateDto,
 				state
 			)
 
-			if (
-				typeof newSession === 'object' &&
-				newSession !== null &&
-				'message' in newSession
-			)
-				return ApiError.InternalServer(newSession.message)
+			if ('message' in updateUserYandex) return updateUserYandex
 
 			return {
-				user: userYandex,
-				accessToken: tokens.access,
-				refreshToken: tokens.refresh,
-				expiresIn: expiresRefreshTokenAt,
+				...updateUserYandex,
 			}
 		} else {
 			const refreshNewValue =
@@ -285,53 +251,20 @@ export class OAuthYandexService extends OAuthService {
 				expiresIn: newExpireIn,
 			}
 
-			const newYandexUser = await this.model.createUserOAuth(
+			const newUserYandex = await this.createOAuth(
+				this.model,
+				this.tokenService,
+				dataCreateYandexDto,
 				resetPassLink,
 				AUTH_METHOD.YANDEX,
-				dataCreateYandexDto
-			)
-			if (!newYandexUser)
-				return ApiError.InternalServer(
-					'Error from create user-account with yandex'
-				)
-
-			const userYandex = new UserDto(newYandexUser)
-
-			if (!userYandex.id || typeof userYandex.role === 'undefined')
-				return ApiError.BadRequest('User yandex dto not found!')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userYandex.id,
-				role: userYandex.role,
-			})
-
-			if (
-				!tokens ||
-				typeof tokens.refresh !== 'string' ||
-				typeof tokens.access !== 'string'
-			)
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			const newSession = await this.tokenService.saveToken(
-				userYandex.id,
-				tokens.refresh,
-				expireRefreshTokenAt,
-				state
+				state,
+				refreshHash
 			)
 
-			if (
-				typeof newSession === 'object' &&
-				newSession !== null &&
-				'message' in newSession
-			)
-				return ApiError.InternalServer(newSession.message)
+			if ('message' in newUserYandex) return newUserYandex
 
 			return {
-				user: userYandex,
-				accessToken: tokens.access,
-				refreshToken: tokens.refresh,
-				expiresIn: expireRefreshTokenAt,
+				...newUserYandex,
 			}
 		}
 	}

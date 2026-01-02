@@ -17,7 +17,6 @@ import { decrypt, encrypt } from '../../../common/utils/app/crypto.util'
 import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGoogleLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
-import { UserDto } from '../../../user/dto/user.dto'
 import type { AuthModel } from '../../auth.model'
 import type {
 	IUserAccountDto,
@@ -203,52 +202,19 @@ export class OAuthGoogleService extends OAuthService {
 				authMethod: AUTH_METHOD.GOOGLE,
 			}
 
-			const updateUserGoogle = await this.model.updateUserOAuth(
-				user.id,
+			const updateUserGoogle = await this.updateOAuth(
+				this.model,
+				this.tokenService,
 				resetPassLink,
-				dataUpdateDto
-			)
-
-			if (!updateUserGoogle?.id || !updateUserGoogle)
-				return ApiError.InternalServer('Error from update account and user!')
-
-			const userGoogle = new UserDto(updateUserGoogle)
-
-			if (!userGoogle.id || !userGoogle.role)
-				return ApiError.InternalServer('Error transform user-google dto')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userGoogle.id,
-				role: userGoogle.role,
-			})
-
-			if (
-				!tokens.refresh ||
-				typeof tokens.refresh !== 'string' ||
-				typeof tokens.access !== 'string'
-			)
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			const newSession = await this.tokenService.saveToken(
-				userGoogle.id,
-				tokens.refresh,
-				expireRefreshTokenAt,
+				user,
+				dataUpdateDto,
 				state
 			)
 
-			if (
-				typeof newSession === 'object' &&
-				newSession !== null &&
-				'message' in newSession
-			)
-				return ApiError.InternalServer(newSession.message)
+			if ('message' in updateUserGoogle) return updateUserGoogle
 
 			return {
-				user: userGoogle,
-				accessToken: tokens.access,
-				refreshToken: tokens.refresh,
-				expiresIn: expireRefreshTokenAt,
+				...updateUserGoogle,
 			}
 		} else {
 			if (!isVerifyGoogleAccount.email_verified)
@@ -279,54 +245,20 @@ export class OAuthGoogleService extends OAuthService {
 				expiresIn: newExpireIn,
 			}
 
-			const newUserGoogle = await this.model.createUserOAuth(
+			const newUserGoogle = await this.createOAuth(
+				this.model,
+				this.tokenService,
+				refreshHash,
+				dataCreateGoogleDto,
 				resetPassLink,
 				AUTH_METHOD.GOOGLE,
-				dataCreateGoogleDto
-			)
-
-			if (!newUserGoogle)
-				return ApiError.InternalServer(
-					'Error from create user-account with google'
-				)
-
-			const userGoogle = new UserDto(newUserGoogle)
-
-			if (!userGoogle.id || typeof userGoogle.role === 'undefined')
-				return ApiError.BadRequest('User google dto not found!')
-
-			const tokens = await this.tokenService.generateTokens({
-				id: userGoogle.id,
-				role: userGoogle.role,
-			})
-
-			if (
-				!tokens.refresh ||
-				typeof tokens.refresh !== 'string' ||
-				typeof tokens.access !== 'string'
-			)
-				return ApiError.InternalServer('Error refresh-token is not generate')
-
-			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
-			const newSession = await this.tokenService.saveToken(
-				userGoogle.id,
-				tokens.refresh,
-				expireRefreshTokenAt,
 				state
 			)
 
-			if (
-				typeof newSession === 'object' &&
-				newSession !== null &&
-				'message' in newSession
-			)
-				return ApiError.InternalServer(newSession.message)
+			if ('message' in newUserGoogle) return newUserGoogle
 
 			return {
-				user: userGoogle,
-				accessToken: tokens.access,
-				refreshToken: tokens.refresh,
-				expiresIn: expireRefreshTokenAt,
+				...newUserGoogle,
 			}
 		}
 	}
