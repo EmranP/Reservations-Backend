@@ -1,8 +1,9 @@
 import dotenv from 'dotenv'
+import { createClient } from 'redis'
 import { App, isDev } from './app/app'
 import { checkDB } from './app/check-db.app'
 import { initDB } from './app/db/init-db.app'
-import { routerApp } from './app/routes/routes.router'
+import { routerApp } from './app/routes.router'
 import { genJwks, genJwksLocal } from './auth/token/jwks.service'
 import { APP_CONFIG } from './common/config/app.config'
 import { cookieParser } from './common/middleware/cookie-parser.middleware'
@@ -13,7 +14,7 @@ import { json } from './common/middleware/json.middleware'
 dotenv.config({ path: '../.env' })
 
 const app = new App()
-
+const clientRedis = createClient()
 const port = APP_CONFIG.PORT
 const hostname = APP_CONFIG.HOSTNAME
 
@@ -28,9 +29,12 @@ app.use(routerApp)
 // Start app
 const startApp = async (): Promise<void> => {
 	try {
+		clientRedis.on('error', err => console.error('Redis Client Error', err))
+
 		// Checking DB
 		await checkDB()
 		await initDB()
+		await clientRedis.connect()
 
 		// Generate Jwks
 		if (isDev) await genJwksLocal().catch()

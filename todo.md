@@ -31,7 +31,7 @@
 22. Add after success reset password and set new password generate new links for reset-pass in next time: ✅
 23. Add expire time for set new password 30m if user not setting new password old password setting: ✅
 24. Add new fields for user enableResetPassword: value(boolean) when user has been activate reset will be true and after will be false: ✅
-25. Add transaction for somewhere where its need: ❌
+25. Add transaction for somewhere where its need: ✅
 
 ## Auth Bugs
 
@@ -86,9 +86,9 @@
 ## Oauth2.0
 
 1. Google: ✅
-2. Github: ❌
-3. Apple: ❌
-4. Yandex: ❌
+2. Github: ✅
+3. Telegram: ✅
+4. Yandex: ✅
 
 ## Redis
 
