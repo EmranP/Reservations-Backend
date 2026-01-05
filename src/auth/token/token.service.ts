@@ -3,6 +3,7 @@ import { importJWK, jwtVerify, SignJWT } from 'jose'
 import type { JwtPayload } from 'jsonwebtoken'
 import type { Logger } from 'winston'
 import { isDev } from '../../app/app'
+import { APP_REDIS_CONFIG } from '../../common/config/app.config'
 import { JWKS_CONFIG, TOKEN_CONFIG } from '../../common/config/token.config'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { isVerifyTokenError } from '../../common/utils/app/checkType.utils'
@@ -10,10 +11,15 @@ import { setDateUtil } from '../../common/utils/app/date.util'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
+import { clientRedis } from '../../index'
 import type { IUserDto } from '../../user/dto/user.dto'
 import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type { IJwksData } from '../types/jwks.types'
-import type { IResponseTokens, IUserJwtPayload } from '../types/token.type'
+import type {
+	ExistTokenType,
+	IResponseTokens,
+	IUserJwtPayload,
+} from '../types/token.type'
 import type {
 	IGenerateTokenService,
 	TypeAuthTokenServiceFindOne,
@@ -182,8 +188,6 @@ export class TokenService extends AuthBaseConfig {
 						message: 'Error jwks-response development',
 					}
 				}
-
-				jwk = jwksResponse
 			} else {
 				jwksResponse = await getJwks()
 
@@ -195,9 +199,9 @@ export class TokenService extends AuthBaseConfig {
 					return {
 						message: 'Error jwks-response production',
 					}
-
-				jwk = jwksResponse?.find(jwkItem => jwkItem.kid === kid)
 			}
+
+			jwk = jwksResponse
 
 			if (!jwk)
 				return {
@@ -240,7 +244,24 @@ export class TokenService extends AuthBaseConfig {
 				message: string
 		  }
 	> {
-		const existsToken = await this.tokenModel.findOne(userId)
+		if (!APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS)
+			return ApiError.InternalServer(
+				'Error not set app config redis default time'
+			)
+
+		let existsToken: undefined | string | ExistTokenType
+
+		const sessionUserCache = await clientRedis.hGet(
+			'sessions',
+			`user:id:${userId}`
+		)
+
+		if (sessionUserCache) {
+			const parseSession = JSON.parse(sessionUserCache) as ExistTokenType
+			existsToken = parseSession
+		} else {
+			existsToken = await this.tokenModel.findOne(userId)
+		}
 
 		if (existsToken?.id && stateAuth && stateAuth !== existsToken?.state_auth) {
 			return ApiError.BadRequest('This is maybe CSRF attack!', 409)
@@ -250,6 +271,7 @@ export class TokenService extends AuthBaseConfig {
 
 		const token = await this.tokenModel.save(
 			userId,
+			existsToken,
 			refreshToken,
 			hashToken,
 			expireToken,
@@ -260,6 +282,35 @@ export class TokenService extends AuthBaseConfig {
 			this.logger.error(`Error save token to user-id: ${userId}`)
 
 			return { message: `Do not save session for user-id: ${userId}` }
+		}
+
+		const isRemoveOdlSession = await clientRedis.hDel(
+			'sessions',
+			`user:id:${userId}`
+		)
+
+		if (isRemoveOdlSession) {
+			this.logger.info('Old session has success remove!')
+
+			const newSessionCache = await clientRedis.hSetEx(
+				'sessions',
+				{
+					keys: `user:id:${userId}`,
+					set: JSON.stringify(token),
+				},
+				{
+					expiration: {
+						type: 'PX',
+						value: Number(APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS),
+					},
+				}
+			)
+
+			if (newSessionCache) {
+				this.logger.info('New session-cache has success added!')
+			}
+		} else {
+			this.logger.warn('Old session is not has been remove!')
 		}
 
 		return token

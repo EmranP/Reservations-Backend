@@ -92,10 +92,9 @@
 
 ## Redis
 
-1. Add auth api: ❌
-2. Add jsonbin api: ❌
-3. Add profile api: ❌
-4. get all rooms api: ❌
+1. Add users: ❌
+2. Add json-bin: ❌
+3. get all rooms: ❌
 
 ## Storage for files
 
