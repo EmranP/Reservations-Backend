@@ -31,8 +31,6 @@ export const routerApp: Middleware<unknown> = async (
 	})
 	const pathOption: IAppQueryParams = JSON.parse(convertQueryParams)
 
-	// Query Route:
-
 	// Search
 	const searchAuthActivateQuery = pathOption.path.search('activate/')
 	const searchAuthActivateRepaidQuery = pathOption.path.search('repaid/')
@@ -46,7 +44,6 @@ export const routerApp: Middleware<unknown> = async (
 
 	// Checking
 	const isAuthActivatePath = path.slice(0, searchAuthActivateQuery + 8)
-	const isAuthActivateRepaid = path.slice(0, searchAuthActivateRepaidQuery + 15)
 	const isAuthActivateForget = path.slice(0, searchAuthActivateForgetQuery + 15)
 
 	if (searchAuthActivateQuery !== -1) {
