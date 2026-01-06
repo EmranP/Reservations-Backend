@@ -1,0 +1,21 @@
+import type { Middleware } from '../types/middlewares/app.types-middleware'
+
+export const cookieParser: Middleware<unknown> = async (
+	ctx,
+	next
+): Promise<void> => {
+	const cookieHeader = ctx.req.headers.cookie || ''
+	const cookie: Record<string, string> = {}
+
+	cookieHeader.split(';').forEach(pair => {
+		const [key, val] = pair.trim().split('=')
+
+		if (key && val) {
+			cookie[key] = val
+		}
+	})
+
+	ctx.cookies = cookie
+
+	await next()
+}

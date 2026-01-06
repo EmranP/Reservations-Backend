@@ -5,6 +5,7 @@ node_modules
 out
 dist
 *.tgz
+build
 
 # code coverage
 coverage
@@ -34,4 +35,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 
 # Todo
-todo.md
+# todo.md
+
+# Key
+private.pem
+google-jwks.json
