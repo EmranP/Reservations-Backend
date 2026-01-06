@@ -3,7 +3,6 @@ import { createClient } from 'redis'
 import { App, isDev } from './app/app'
 import { checkDB } from './app/check-db.app'
 import { initDB } from './app/db/init-db.app'
-import { initRedisDB } from './app/redis/init-redis.db'
 import { routerApp } from './app/routes.router'
 import {
 	genJwks,
@@ -17,6 +16,7 @@ import { cookieParser } from './common/middleware/cookie-parser.middleware'
 import { cors } from './common/middleware/cors.middleware'
 import { helmetMiddleware } from './common/middleware/helmet.middleware'
 import { json } from './common/middleware/json.middleware'
+import { initRedisDB } from './common/redis/init-redis.db'
 import { logger } from './common/utils/log/logger.log'
 
 dotenv.config({ path: '../.env' })

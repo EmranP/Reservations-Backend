@@ -71,16 +71,6 @@ export class TokenModel {
 		state_auth?: string
 	): Promise<IResponseTokens | Omit<IResponseTokens, 'state_auth'> | null> {
 		try {
-			// const queryExistsToken = `
-			// SELECT id, refresh_token
-			// FROM ${DB_TABLE_TOKENS}
-			// WHERE user_id = $1`
-			// const existsTokenResult = await client.query<
-			// 	Pick<IResponseTokens, 'id' | 'refresh_token'>
-			// >(queryExistsToken, [userId])
-
-			// const existsToken = existsTokenResult.rows[0]
-
 			if (existsToken) {
 				const isMatch = await bcrypt.compare(
 					oldRefresh,

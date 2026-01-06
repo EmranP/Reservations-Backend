@@ -1,17 +1,21 @@
 import bcrypt from 'bcrypt'
 import { importJWK, jwtVerify, SignJWT } from 'jose'
-import type { JwtPayload } from 'jsonwebtoken'
+import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
 import { isDev } from '../../app/app'
 import { APP_REDIS_CONFIG } from '../../common/config/app.config'
 import { JWKS_CONFIG, TOKEN_CONFIG } from '../../common/config/token.config'
+import { checkCacheRedisClient } from '../../common/redis/utils/check-cache.util'
+import {
+	getRedisClientHashKey,
+	setHashRedisClientWithEx,
+} from '../../common/redis/utils/grud-redis.util'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { isVerifyTokenError } from '../../common/utils/app/checkType.utils'
 import { setDateUtil } from '../../common/utils/app/date.util'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
-import { clientRedis } from '../../index'
 import type { IUserDto } from '../../user/dto/user.dto'
 import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type { IJwksData } from '../types/jwks.types'
@@ -19,10 +23,10 @@ import type {
 	ExistTokenType,
 	IResponseTokens,
 	IUserJwtPayload,
+	TokenWithStateAuthType,
 } from '../types/token.type'
 import type {
 	IGenerateTokenService,
-	TypeAuthTokenServiceFindOne,
 	TypeAuthUserService,
 } from '../types/types.auth'
 import { getJwks, getJwksLocal } from './jwks.service'
@@ -36,7 +40,7 @@ export class TokenService extends AuthBaseConfig {
 	private issuerApp = JWKS_CONFIG.ISSUER
 	private audienceApp = JWKS_CONFIG.AUDIENCE
 	// Cache
-	private jwksCache: JwtPayload | null = null
+	private jwksCache: IUserJwtPayload | null = null
 	private jwksCacheAt = 0
 
 	constructor(private tokenModel: TokenModel, private logger: Logger) {
@@ -73,7 +77,6 @@ export class TokenService extends AuthBaseConfig {
 		return jwt
 	}
 
-	// CreateRefresh in to token model
 	private async createRefreshToken(
 		user: Pick<IUserDto, 'id' | 'role'>
 	): Promise<string | Pick<IErrorResponseApp, 'message'>> {
@@ -103,26 +106,6 @@ export class TokenService extends AuthBaseConfig {
 		return jwt
 	}
 
-	//? Maybe remove this is method
-	async findToken(
-		user: Pick<IUserDto, 'id'>,
-		refreshToken: string
-	): TypeAuthTokenServiceFindOne {
-		const tokenData = await this.tokenModel.findOne(user.id)
-
-		if (!Array.isArray(tokenData))
-			return { message: 'Error find-token from service' }
-
-		for (const row of tokenData) {
-			const isMatch = await bcrypt.compare(refreshToken, row.refresh_token)
-			if (isMatch) {
-				return { id: row.id, refresh_token: row.refresh_token }
-			}
-		}
-
-		return null
-	}
-
 	async generateTokens(
 		user: Pick<IUserDto, 'id' | 'role'>
 	): Promise<IGenerateTokenService> {
@@ -138,9 +121,8 @@ export class TokenService extends AuthBaseConfig {
 	async verifyToken(
 		token: string
 	): Promise<IUserJwtPayload | Pick<IErrorResponseApp, 'message'>> {
-		//! For production remove commit
-		// if (this.jwksCache && Date.now() - this.jwksCacheAt < 60 * 60 * 1000)
-		// 	return this.jwksCache
+		if (this.jwksCache && Date.now() - this.jwksCacheAt < 60 * 60 * 1000)
+			return this.jwksCache
 
 		try {
 			if (token.startsWith('Bearer ')) token = token.slice(7).trim()
@@ -238,8 +220,7 @@ export class TokenService extends AuthBaseConfig {
 		expireToken: Date,
 		stateAuth?: string
 	): Promise<
-		| IResponseTokens
-		| Omit<IResponseTokens, 'state_auth'>
+		| TokenWithStateAuthType
 		| {
 				message: string
 		  }
@@ -250,67 +231,84 @@ export class TokenService extends AuthBaseConfig {
 			)
 
 		let existsToken: undefined | string | ExistTokenType
-
-		const sessionUserCache = await clientRedis.hGet(
+		const sessionKeyField = `session:id:${userId}`
+		const sessionUserCache = await getRedisClientHashKey(
 			'sessions',
-			`user:id:${userId}`
+			sessionKeyField
 		)
 
-		if (sessionUserCache) {
-			const parseSession = JSON.parse(sessionUserCache) as ExistTokenType
-			existsToken = parseSession
-		} else {
-			existsToken = await this.tokenModel.findOne(userId)
-		}
+		existsToken = await checkCacheRedisClient(
+			sessionUserCache,
+			() => this.tokenModel.findOne(userId),
+			this.logger.info('token cache'),
+			this.logger.info('token not cache')
+		)
 
 		if (existsToken?.id && stateAuth && stateAuth !== existsToken?.state_auth) {
 			return ApiError.BadRequest('This is maybe CSRF attack!', 409)
 		}
 
 		const hashToken = await bcrypt.hash(refreshToken, 10)
+		const jsonCacheData = {
+			id: uuidV4(),
+			user_id: userId,
+			refresh_token: hashToken,
+			expires_token_at: expireToken,
+			expires_forget_pass: null,
+			expires_two_auth_code: null,
+			is_two_auth_code: null,
+			state_auth: stateAuth,
+			created_at: Date.now(),
+			updated_at: Date.now(),
+		}
+		let token: undefined | TokenWithStateAuthType | null
 
-		const token = await this.tokenModel.save(
-			userId,
-			existsToken,
-			refreshToken,
-			hashToken,
-			expireToken,
-			stateAuth
-		)
+		if (sessionUserCache) {
+			const updateSessionCache = await setHashRedisClientWithEx(
+				'sessions',
+				sessionKeyField,
+				jsonCacheData
+			)
+
+			if (
+				typeof updateSessionCache === 'object' &&
+				'message' in updateSessionCache
+			)
+				return updateSessionCache
+
+			const getSessionTokenCache = await getRedisClientHashKey(
+				'sessions',
+				sessionKeyField
+			)
+
+			if (!getSessionTokenCache)
+				return ApiError.InternalServer('Error cache is not save!')
+
+			token = JSON.parse(getSessionTokenCache) as TokenWithStateAuthType | null
+		} else {
+			token = await this.tokenModel.save(
+				userId,
+				existsToken,
+				refreshToken,
+				hashToken,
+				expireToken,
+				stateAuth
+			)
+
+			const newSessionCache = await setHashRedisClientWithEx(
+				'sessions',
+				sessionKeyField,
+				token
+			)
+
+			if (typeof newSessionCache === 'object' && 'message' in newSessionCache)
+				return newSessionCache
+		}
 
 		if (!token) {
 			this.logger.error(`Error save token to user-id: ${userId}`)
 
 			return { message: `Do not save session for user-id: ${userId}` }
-		}
-
-		const isRemoveOdlSession = await clientRedis.hDel(
-			'sessions',
-			`user:id:${userId}`
-		)
-
-		if (isRemoveOdlSession) {
-			this.logger.info('Old session has success remove!')
-
-			const newSessionCache = await clientRedis.hSetEx(
-				'sessions',
-				{
-					keys: `user:id:${userId}`,
-					set: JSON.stringify(token),
-				},
-				{
-					expiration: {
-						type: 'PX',
-						value: Number(APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS),
-					},
-				}
-			)
-
-			if (newSessionCache) {
-				this.logger.info('New session-cache has success added!')
-			}
-		} else {
-			this.logger.warn('Old session is not has been remove!')
 		}
 
 		return token
