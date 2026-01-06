@@ -43,3 +43,7 @@ export const APP_OAUTH_TELEGRAM_CONFIG = {
 	TELEGRAM_BOT_ID: process.env.TELEGRAM_BOT_ID,
 	TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
 } as const
+
+export const APP_REDIS_CONFIG = {
+	DEFAULT_EXPIRES_TIME_REDIS: process.env.DEFAULT_EXPIRES_TIME_REDIS,
+} as const

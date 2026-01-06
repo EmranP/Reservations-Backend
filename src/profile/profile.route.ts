@@ -4,10 +4,10 @@ import {
 	PROFILE_ME_GET,
 	PROFILE_REMOVE_IMAGE,
 	PROFILE_UPLOAD_IMAGE,
-} from '../../../common/constants/profile.constant'
-import type { IAppQueryParams } from '../../../common/types/app/app.type'
-import { responseBadRequest } from '../../../common/utils/app/errorResponse.utils'
-import { ApiError } from '../../../common/utils/log/exists-error.log'
+} from '../common/constants/profile.constant'
+import type { IAppQueryParams } from '../common/types/app/app.type'
+import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
+import { ApiError } from '../common/utils/log/exists-error.log'
 
 export const profileRouter = async (
 	isAuth: ApiError | undefined,

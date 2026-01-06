@@ -2,6 +2,7 @@ import fs from 'fs/promises'
 import { exportJWK, importSPKI } from 'jose'
 import path from 'path'
 import { v4 } from 'uuid'
+import { clientRedis } from '../..'
 import { JSON_BIN_CONFIG, JWKS_CONFIG } from '../../common/config/token.config'
 import { fetchJson } from '../../common/utils/app/fetchJson.util'
 import { logger } from '../../common/utils/log/logger.log'
@@ -47,8 +48,16 @@ export const genJwks = async () => {
 	}
 }
 
-export const getJwks = async (): Promise<IJwksData[] | null> => {
+export const getJwks = async (): Promise<IJwksData | null> => {
 	if (!JWKS_CONFIG.JWKS_URL) return null
+
+	const redisKeysJwks = await clientRedis.hGet('jsonBin', 'keys')
+
+	if (redisKeysJwks) {
+		const jsonData = JSON.parse(redisKeysJwks) as IJwksData
+
+		return jsonData
+	}
 
 	const jwks = await fetchJson<IResponseJwks>(JWKS_CONFIG.JWKS_URL, {
 		method: 'GET',
@@ -59,7 +68,7 @@ export const getJwks = async (): Promise<IJwksData[] | null> => {
 		},
 	})
 
-	return jwks.record.keys
+	return jwks.record.keys[0] ?? null
 }
 
 // Local jwks
@@ -99,6 +108,14 @@ export const genJwksLocal = async (): Promise<void> => {
 
 export const getJwksLocal = async (): Promise<IJwksData | null> => {
 	try {
+		const redisKeysJwks = await clientRedis.hGet('jsonBin', 'keys')
+
+		if (redisKeysJwks) {
+			const parseRedisData = JSON.parse(redisKeysJwks) as IJwksData
+
+			return parseRedisData
+		}
+
 		const pathJwksFiles = path.join(__dirname, '../../../jwks.json')
 		const jwksFile = await fs.readFile(pathJwksFiles, 'utf8')
 

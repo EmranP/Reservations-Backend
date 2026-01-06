@@ -1,16 +1,16 @@
 import type { IncomingMessage, ServerResponse } from 'http'
-import { hasRole } from '../../../auth/middleware/hasRole.auth'
+import { hasRole } from '../auth/middleware/hasRole.auth'
 
+import { ROLES } from '../app/enums'
 import {
 	USER_DELETE_URL,
 	USER_GET_URL,
 	USER_UPDATE_URL,
-} from '../../../common/constants/admin.constant'
-import type { IAppQueryParams } from '../../../common/types/app/app.type'
-import { responseBadRequest } from '../../../common/utils/app/errorResponse.utils'
-import { ApiError } from '../../../common/utils/log/exists-error.log'
-import { userController } from '../../../user/index.user'
-import { ROLES } from '../../enums'
+} from '../common/constants/admin.constant'
+import type { IAppQueryParams } from '../common/types/app/app.type'
+import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
+import { ApiError } from '../common/utils/log/exists-error.log'
+import { userController } from '../user/index.user'
 
 export const userRouter = async (
 	isAuth: ApiError | undefined,

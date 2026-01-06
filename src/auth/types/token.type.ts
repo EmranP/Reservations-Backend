@@ -34,6 +34,15 @@ export interface IRequestUserApp extends IncomingMessage {
 	user: IUserJwtPayload | undefined
 }
 
+export type ExistTokenType = Omit<
+	IResponseTokens,
+	'user_id' | 'created_at' | 'updated_at'
+> | null
+
+export type TokenWithStateAuthType =
+	| IResponseTokens
+	| Omit<IResponseTokens, 'state_auth'>
+
 export interface IUserGoogleJwtPayload extends JWTPayload {
 	email: string
 	email_verified: boolean

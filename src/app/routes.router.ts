@@ -1,15 +1,15 @@
 import { URL } from 'url'
-import { authRouter } from '../../auth/auth.router'
-import { isAuth } from '../../auth/middleware/isAuth.auth'
-import { rootUserRouter } from '../../common/constants/admin.constant'
-import { rootAuthRouter } from '../../common/constants/auth.constant'
-import { isPathWithQuery } from '../../common/constants/global.constant'
-import { rootProfileRouter } from '../../common/constants/profile.constant'
-import type { IAppQueryParams } from '../../common/types/app/app.type'
-import type { Middleware } from '../../common/types/middlewares/app.types-middleware'
-import { responseNotFoundApi } from '../../common/utils/app/errorResponse.utils'
-import { profileRouter } from './profile/profile.route'
-import { userRouter } from './user/admin.route'
+import { userRouter } from '../admin/admin.route'
+import { authRouter } from '../auth/auth.router'
+import { isAuth } from '../auth/middleware/isAuth.auth'
+import { rootUserRouter } from '../common/constants/admin.constant'
+import { rootAuthRouter } from '../common/constants/auth.constant'
+import { isPathWithQuery } from '../common/constants/global.constant'
+import { rootProfileRouter } from '../common/constants/profile.constant'
+import type { IAppQueryParams } from '../common/types/app/app.type'
+import type { Middleware } from '../common/types/middlewares/app.types-middleware'
+import { responseNotFoundApi } from '../common/utils/app/errorResponse.utils'
+import { profileRouter } from '../profile/profile.route'
 
 export const routerApp: Middleware<unknown> = async (
 	ctx,
@@ -31,8 +31,6 @@ export const routerApp: Middleware<unknown> = async (
 	})
 	const pathOption: IAppQueryParams = JSON.parse(convertQueryParams)
 
-	// Query Route:
-
 	// Search
 	const searchAuthActivateQuery = pathOption.path.search('activate/')
 	const searchAuthActivateRepaidQuery = pathOption.path.search('repaid/')
@@ -46,7 +44,6 @@ export const routerApp: Middleware<unknown> = async (
 
 	// Checking
 	const isAuthActivatePath = path.slice(0, searchAuthActivateQuery + 8)
-	const isAuthActivateRepaid = path.slice(0, searchAuthActivateRepaidQuery + 15)
 	const isAuthActivateForget = path.slice(0, searchAuthActivateForgetQuery + 15)
 
 	if (searchAuthActivateQuery !== -1) {

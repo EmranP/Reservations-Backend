@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import type { Pool, QueryResult } from 'pg'
 import { DB_TABLE_TOKENS } from '../../common/constants/table-db.constant'
-import type { IResponseTokens } from '../types/token.type'
+import type { ExistTokenType, IResponseTokens } from '../types/token.type'
 
 export class TokenModel {
 	constructor(private pool: Pool) {}
@@ -64,25 +64,13 @@ export class TokenModel {
 
 	async save(
 		userId: string,
+		existsToken: ExistTokenType,
 		oldRefresh: string,
 		newRefresh: string,
 		expireToken: Date,
 		state_auth?: string
 	): Promise<IResponseTokens | Omit<IResponseTokens, 'state_auth'> | null> {
-		const client = await this.pool.connect()
 		try {
-			await client.query('BEGIN')
-
-			const queryExistsToken = `
-			SELECT id, refresh_token 
-			FROM ${DB_TABLE_TOKENS} 
-			WHERE user_id = $1`
-			const existsTokenResult = await client.query<
-				Pick<IResponseTokens, 'id' | 'refresh_token'>
-			>(queryExistsToken, [userId])
-
-			const existsToken = existsTokenResult.rows[0]
-
 			if (existsToken) {
 				const isMatch = await bcrypt.compare(
 					oldRefresh,
@@ -136,20 +124,12 @@ export class TokenModel {
 			const newSession = queryCreateResult.rows[0]
 
 			if (!newSession) {
-				await client.query('ROLLBACK')
-
 				return null
 			}
 
-			await client.query('COMMIT')
-
 			return newSession
 		} catch (error) {
-			await client.query('ROLLBACK')
-
 			return null
-		} finally {
-			client.release()
 		}
 	}
 
