@@ -1,9 +1,5 @@
 -- ========================
-<<<<<<< HEAD:src/db/migrations/trigger.db.sql
--- 4. TRIGGERS
-=======
 -- 5. TRIGGERS
->>>>>>> dev:db/migrations/trigger.db.sql
 -- ========================
 
 -- Обновление updated_at на изменение в каждой таблице

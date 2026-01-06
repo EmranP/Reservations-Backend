@@ -1,5 +1,5 @@
-import type { ROLES } from '../../../app/roles'
-import type { ISharedModelApp } from './app.types'
+import type { ROLES } from '../../../app/enums'
+import type { ISharedModelApp } from './app.interface'
 
 export interface IUser extends ISharedModelApp {
 	first_name: string

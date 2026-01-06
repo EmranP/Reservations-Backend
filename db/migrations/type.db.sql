@@ -1,12 +1,4 @@
 -- ========================
-<<<<<<< HEAD:src/db/migrations/type.db.sql
--- 2. TYPES
--- ========================
-
-DROP TYPE IF EXISTS status_mood CASCADE;
-
-CREATE TYPE status_mood AS ENUM ('FREE', 'BUYS');
-=======
 -- 3. TYPES
 -- ========================
 
@@ -33,4 +25,3 @@ BEGIN
 END
 $$;
 
->>>>>>> dev:db/migrations/type.db.sql

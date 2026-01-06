@@ -1,5 +1,5 @@
 import type { STATUS_ROOM } from '../../../app/status.app'
-import type { ISharedModelApp } from './app.types'
+import type { ISharedModelApp } from './app.interface'
 
 export interface IRooms extends ISharedModelApp {
 	price: number
