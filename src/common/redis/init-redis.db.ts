@@ -1,6 +1,6 @@
 import type { Logger } from 'winston'
 import type { IJwksData } from '../../auth/types/jwks.types'
-import { APP_REDIS_CONFIG } from '../../common/config/app.config'
+import { APP_REDIS_CONFIG } from '../config/app.config'
 import type { AppRedisClientType } from './types/redis.types'
 
 export const initRedisDB = async (
@@ -19,9 +19,6 @@ export const initRedisDB = async (
 			await clientRedis.hDel('jsonBin', 'keys')
 		}
 
-		const redisUsers = await clientRedis.exists('users')
-		const redisSession = await clientRedis.exists('sessions')
-
 		const redisJsonBin = await clientRedis.hSet(
 			'jsonBin',
 			'keys',
@@ -31,21 +28,6 @@ export const initRedisDB = async (
 		redisJsonBin
 			? logger.info('✅ "𝓡" accounts-hash has been added!')
 			: logger.info('✅ "𝓡" accounts-hash has been empty!')
-
-		// Expires
-		if (redisUsers) {
-			await clientRedis.expire(
-				'users',
-				Number(APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS)
-			)
-		}
-
-		if (redisSession) {
-			await clientRedis.expire(
-				'sessions',
-				Number(APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS)
-			)
-		}
 
 		await clientRedis.expire(
 			'jsonBin',

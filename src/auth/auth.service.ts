@@ -18,7 +18,11 @@ import {
 import { renderSendActivationLink } from '../common/utils/format/render.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 
-import { clientRedis } from '../index'
+import { checkCacheRedisClient } from '../common/redis/utils/check-cache.util'
+import {
+	getRedisClientHashKey,
+	setHashRedisClientWithEx,
+} from '../common/redis/utils/grud-redis.util'
 import { UserDto } from '../user/dto/user.dto'
 import type { UserModel } from '../user/user.model'
 import type { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
@@ -56,32 +60,30 @@ export class AuthService extends AuthBaseConfig {
 		const now = new Date()
 		// User
 		let user: IUser | null | undefined
-		let userEmailRedis: string | null | undefined
-		let userPhoneRedis: string | null | undefined
 		if (dto.email) {
-			userEmailRedis = await clientRedis.hGet(
-				'users',
+			const userEmailRedis = await getRedisClientHashKey(
+				'users:emails',
 				`user:email:${dto.email}`
 			)
 
-			if (userEmailRedis) {
-				const parseUserEmailRedis = JSON.parse(userEmailRedis) as IUser
-				user = parseUserEmailRedis
-			} else {
-				user = await this.model.getUserByEmail(dto.email)
-			}
+			user = await checkCacheRedisClient(
+				userEmailRedis,
+				() => this.model.getUserByEmail(dto.email),
+				this.logger.info('user-email cache', user?.email),
+				this.logger.info('user-email no cache', user?.email)
+			)
 		} else if (dto.phone) {
-			userPhoneRedis = await clientRedis.hGet(
-				'users',
+			const userPhoneRedis = await getRedisClientHashKey(
+				'users:phones',
 				`user:phone:${dto.phone}`
 			)
 
-			if (userPhoneRedis) {
-				const parseUserPhoneRedis = JSON.parse(userPhoneRedis) as IUser
-				user = parseUserPhoneRedis
-			} else {
-				user = await this.model.getUserByPhone(dto.phone)
-			}
+			user = await checkCacheRedisClient(
+				userPhoneRedis,
+				() => this.model.getUserByPhone(dto.phone),
+				this.logger.info('user-phone cache', user?.phone),
+				this.logger.info('user-phone no cache', user?.phone)
+			)
 		}
 
 		if (!user || !user.id) return { message: 'User not founded', status: 404 }
@@ -192,42 +194,34 @@ export class AuthService extends AuthBaseConfig {
 			}
 		}
 
-		if (dto.email && !userEmailRedis) {
-			const newUserEmailCache = await clientRedis.hSetEx(
-				'users',
-				{
-					keys: `user:email:${dto.email}`,
-					set: JSON.stringify(user),
-				},
-				{
-					expiration: {
-						type: 'PX',
-						value: Number(APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS),
-					},
-				}
+		if (dto.email) {
+			const userEmailField = `user:email:${dto.email}`
+			const newUserEmailCacheWithEx = await setHashRedisClientWithEx(
+				'users:emails',
+				userEmailField,
+				user
 			)
 
-			if (!newUserEmailCache)
-				return ApiError.InternalServer('Error from save new user cache')
+			if (
+				typeof newUserEmailCacheWithEx === 'object' &&
+				'message' in newUserEmailCacheWithEx
+			)
+				return newUserEmailCacheWithEx
 		}
 
 		if (dto.phone) {
-			const newUserPhoneCache = await clientRedis.hSetEx(
-				'users',
-				{
-					keys: `user:phone:${dto.phone}`,
-					set: JSON.stringify(user),
-				},
-				{
-					expiration: {
-						type: 'PX',
-						value: Number(APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS),
-					},
-				}
+			const userPhoneField = `user:phone:${dto.phone}`
+			const newUserPhoneCacheWithEx = await setHashRedisClientWithEx(
+				'users:phones',
+				userPhoneField,
+				user
 			)
 
-			if (!newUserPhoneCache)
-				return ApiError.InternalServer('Error from save new user cache')
+			if (
+				typeof newUserPhoneCacheWithEx === 'object' &&
+				'message' in newUserPhoneCacheWithEx
+			)
+				return newUserPhoneCacheWithEx
 		}
 
 		const tokens = await this.tokenService.generateTokens({
@@ -268,13 +262,33 @@ export class AuthService extends AuthBaseConfig {
 			now.getTime() >= this.expiresRemoveVerify.getTime()
 		const isRemoveExpireVerifyMessage =
 			!isTimeRemoveCheck || this.expiresRemoveVerify === null
-
 		// Candidate
 		let candidate: IUser | null | undefined
+
 		if (dto.email) {
-			candidate = await this.model.getUserByEmail(dto.email)
+			const candidateEmailCache = await getRedisClientHashKey(
+				'users:emails',
+				`user:email:${dto.email}`
+			)
+
+			candidate = await checkCacheRedisClient(
+				candidateEmailCache,
+				() => this.model.getUserByEmail(dto.email),
+				this.logger.info('Candidate founded from cache'),
+				this.logger.info('Candidate founded from Database')
+			)
 		} else if (dto.phone) {
-			candidate = await this.model.getUserByPhone(dto.phone)
+			const candidatePhoneCache = await getRedisClientHashKey(
+				'users:phones',
+				`user:phone:${dto.phone}`
+			)
+
+			candidate = await checkCacheRedisClient(
+				candidatePhoneCache,
+				() => this.model.getUserByPhone(dto.phone),
+				this.logger.info('Candidate founded from cache'),
+				this.logger.info('Candidate founded from Database')
+			)
 		}
 
 		// Message
@@ -559,7 +573,18 @@ export class AuthService extends AuthBaseConfig {
 	): TypeAuthServiceMessageWithApiError {
 		const now = new Date()
 		const { resetPassLink } = genLinks(uuidV4)
-		const user = await this.model.getUserByEmail(dto.email)
+		const userCache = await getRedisClientHashKey(
+			'users:emails',
+			`user:email:${dto.email}`
+		)
+		let user: undefined | null | IUser
+
+		if (userCache) {
+			const parserUserCache = JSON.parse(userCache) as IUser
+			user = parserUserCache
+		} else {
+			user = await this.model.getUserByEmail(dto.email)
+		}
 
 		if (!user || !user.id) return ApiError.NotFound('User not founded')
 

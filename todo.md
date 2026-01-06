@@ -92,9 +92,13 @@
 
 ## Redis
 
-1. Add users: ❌
-2. Add json-bin: ❌
-3. get all rooms: ❌
+### Redis-Auth
+
+1. Add users login: ✅
+2. Add user sessions: ✅
+3. Add json-bin: ✅
+4. Add user registration: ✅
+5. Add user refresh-token: ✅
 
 ## Storage for files
 
