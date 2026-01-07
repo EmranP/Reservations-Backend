@@ -1,11 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
-import {
-	isErrorHandler,
-	responseBadRequest,
-} from '../../../common/utils/app/errorResponse.utils'
-import { ApiError } from '../../../common/utils/log/exists-error.log'
+import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
 import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthGoogleService } from './oauth.google.service'
@@ -39,14 +35,12 @@ export class OAuthGoogleController extends AuthBaseConfig {
 				return
 			}
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from oAuth get google url'
+				res,
+				'Internal-server from oAuth get google-url',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -88,14 +82,12 @@ export class OAuthGoogleController extends AuthBaseConfig {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from oAuth google-callback'
+				res,
+				'Internal-server from oAuth google-callback',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -104,50 +96,61 @@ export class OAuthGoogleController extends AuthBaseConfig {
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	) {
-		if (!cookies || !cookies.googleRefreshToken) {
-			const error = JSON.stringify({
-				message: 'Bad-request Cookie is not have',
-			})
+		try {
+			if (!cookies || !cookies.googleRefreshToken) {
+				const error = JSON.stringify({
+					message: 'Bad-request Cookie is not have',
+				})
 
-			res.writeHead(400, this.headData.contentData)
-			res.end(error)
+				res.writeHead(400, this.headData.contentData)
+				res.end(error)
 
-			return
+				return
+			}
+
+			const { googleRefreshToken } = cookies
+
+			const newRefresh = await this.service.googleRefreshToken(
+				googleRefreshToken
+			)
+
+			if ('message' in newRefresh) {
+				const errorData = JSON.stringify({ message: newRefresh.message })
+
+				res.writeHead(newRefresh.status ?? 500, this.headData.contentData)
+				res.end(errorData)
+
+				return
+			}
+
+			if (!newRefresh.expiresIn) {
+				const errorJsonData = JSON.stringify({
+					message: 'Error expire-refresh token is not set',
+				})
+
+				res.writeHead(500, this.headData.contentData)
+				res.end(errorJsonData)
+
+				return
+			}
+
+			const jsonData = JSON.stringify({ accessToken: newRefresh.accessToken })
+
+			res.setHeader(
+				'Set-cookie',
+				`googleRefreshToken=${
+					newRefresh?.refreshToken
+				}; httpOnly; path=/api; Expires=${newRefresh.expiresIn.toUTCString()}; SameSite=Strict`
+			)
+			res.writeHead(200, this.headData.contentData)
+			res.end(jsonData)
+		} catch (error) {
+			await responseInternalServer(
+				error,
+				res,
+				'Internal-server update refresh token from google',
+				this.logger
+			)
 		}
-
-		const { googleRefreshToken } = cookies
-
-		const newRefresh = await this.service.googleRefreshToken(googleRefreshToken)
-
-		if ('message' in newRefresh) {
-			const errorData = JSON.stringify({ message: newRefresh.message })
-
-			res.writeHead(newRefresh.status ?? 500, this.headData.contentData)
-			res.end(errorData)
-
-			return
-		}
-
-		if (!newRefresh.expiresIn) {
-			const errorJsonData = JSON.stringify({
-				message: 'Error expire-refresh token is not set',
-			})
-
-			res.writeHead(500, this.headData.contentData)
-			res.end(errorJsonData)
-
-			return
-		}
-
-		const jsonData = JSON.stringify({ accessToken: newRefresh.accessToken })
-
-		res.setHeader(
-			'Set-cookie',
-			`googleRefreshToken=${
-				newRefresh?.refreshToken
-			}; httpOnly; path=/api; Expires=${newRefresh.expiresIn.toUTCString()}; SameSite=Strict`
-		)
-		res.writeHead(200, this.headData.contentData)
-		res.end(jsonData)
 	}
 }

@@ -10,6 +10,7 @@ export const json: Middleware<unknown> = async (ctx, next): Promise<void> => {
 	if (
 		req.method === 'POST' ||
 		req.method === 'PUT' ||
+		req.method === 'PATCH' ||
 		req.method === 'GET' ||
 		req.method === 'DELETE'
 	) {
