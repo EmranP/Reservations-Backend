@@ -1,11 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 
 import type { Logger } from 'winston'
-import {
-	isErrorHandler,
-	responseBadRequest,
-} from '../common/utils/app/errorResponse.utils'
-import { ApiError } from '../common/utils/log/exists-error.log'
+import { responseInternalServer } from '../common/utils/app/errorResponse.utils'
 import { AuthBaseConfig } from './abstract/auth-config.base'
 import { AuthService } from './auth.service'
 import type { ForgetDto } from './dto/forget.dto'
@@ -77,11 +73,12 @@ export class AuthController extends AuthBaseConfig {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(error, 'Bad-request from login controller')
-			const errorRes = ApiError.BadRequest(isError)
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
+			await responseInternalServer(
+				error,
+				res,
+				'Internal-server from login controller',
+				this.logger
+			)
 		}
 	}
 
@@ -107,15 +104,12 @@ export class AuthController extends AuthBaseConfig {
 			res.writeHead(201, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from registration controller :('
+				res,
+				'Internal-server from registration controller :(',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -174,15 +168,12 @@ export class AuthController extends AuthBaseConfig {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from refresh controller'
+				res,
+				'Internal-server from refresh controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -214,15 +205,12 @@ export class AuthController extends AuthBaseConfig {
 				return
 			}
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from verify-account controller'
+				res,
+				'Internal-server from verify-account controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -260,15 +248,12 @@ export class AuthController extends AuthBaseConfig {
 			res.writeHead(resultLogoutService.status, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from logout controller'
+				res,
+				'Internal-server from logout controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -286,15 +271,12 @@ export class AuthController extends AuthBaseConfig {
 			res.writeHead(repaidSendMail.status, this.headData.contentData)
 			res.end(data)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from get-link controller'
+				res,
+				'Internal-server from get-link controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -312,15 +294,12 @@ export class AuthController extends AuthBaseConfig {
 			res.writeHead(resetSendMail.status, this.headData.contentData)
 			res.end(data)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from get reset-link controller'
+				res,
+				'Internal-server from get reset-link controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -352,15 +331,12 @@ export class AuthController extends AuthBaseConfig {
 				return
 			}
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from verify-forget controller'
+				res,
+				'Internal-server from verify-forget controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -376,15 +352,12 @@ export class AuthController extends AuthBaseConfig {
 			res.writeHead(newUserData.status, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from new-password controller'
+				res,
+				'Internal-server from new-password controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 }
