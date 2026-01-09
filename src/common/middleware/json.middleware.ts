@@ -27,8 +27,10 @@ export const json: Middleware<unknown> = async (ctx, next): Promise<void> => {
 				ctx.body = JSON.parse(raw)
 			} catch (err) {
 				const data: TypeErrorContextBody = { error: 'Invalid JSON' }
+
 				ctx.res.statusCode = 400
 				ctx.res.end(JSON.stringify(data))
+
 				return
 			}
 		}

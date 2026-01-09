@@ -125,6 +125,7 @@
 
 ## Storage for files
 
+1. Add without s3 storage first-time, add local-storage example save one folder on mac-book: ❌
 1. Add s3 storage: ❌
 
 ## Admin panel
