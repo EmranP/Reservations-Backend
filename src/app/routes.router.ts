@@ -15,7 +15,7 @@ export const routerApp: Middleware<unknown> = async (
 	ctx,
 	next
 ): Promise<void> => {
-	const { req, res, body, cookies } = ctx
+	const { req, res, body, cookies, file } = ctx
 	if (!req.url) return
 
 	const authMiddleware = await isAuth(req, res)
@@ -133,7 +133,16 @@ export const routerApp: Middleware<unknown> = async (
 	}
 
 	if (rootProfileRouter.includes(path)) {
-		await profileRouter(authMiddleware, path, pathOption, req, res, body, next)
+		await profileRouter(
+			authMiddleware,
+			path,
+			pathOption,
+			req,
+			res,
+			body,
+			file,
+			next
+		)
 	}
 
 	await next()

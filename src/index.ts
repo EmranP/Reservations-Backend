@@ -16,6 +16,7 @@ import { cookieParser } from './common/middleware/cookie-parser.middleware'
 import { cors } from './common/middleware/cors.middleware'
 import { helmetMiddleware } from './common/middleware/helmet.middleware'
 import { json } from './common/middleware/json.middleware'
+import { multer } from './common/middleware/multer.middleware'
 import { initRedisDB } from './common/redis/init-redis.db'
 import { logger } from './common/utils/log/logger.log'
 
@@ -31,6 +32,7 @@ app.use(helmetMiddleware)
 app.use(cookieParser)
 app.use(cors)
 app.use(json)
+app.use(multer)
 // Routes
 app.use(routerApp)
 
