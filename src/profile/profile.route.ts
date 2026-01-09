@@ -6,12 +6,15 @@ import {
 	PROFILE_REMOVE_IMAGE,
 	PROFILE_UPLOAD_IMAGE,
 } from '../common/constants/profile.constant'
+import { readFilesApi } from '../common/pipe/chunk.pipe'
 import type { IAppQueryParams } from '../common/types/app/app.type'
+import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
 import { isRequestUserApp } from '../common/utils/app/checkType.utils'
 import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { profileController } from './index.profile'
 import { isEditProfileDto } from './pipe/profile-edit.pipe'
+import { isUploadProfileDto } from './pipe/profile-upload.pipe'
 
 export const profileRouter = async (
 	isAuth: ApiError | undefined,
@@ -20,6 +23,7 @@ export const profileRouter = async (
 	req: IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
 	body?: unknown,
+	file?: IContextFiles | undefined,
 	next?: () => Promise<void>
 ): Promise<void> => {
 	// Profile GET ============
@@ -79,6 +83,18 @@ export const profileRouter = async (
 
 			return
 		}
+
+		// Add file read
+
+		await readFilesApi(req, file)
+
+		if (!isUploadProfileDto(file)) {
+			await responseBadRequest('User file is not founded!', res, 404)
+
+			return
+		}
+
+		await profileController.uploadProfile(req, res, file)
 	}
 	// Profile Remove Image ============
 	else if (path === PROFILE_REMOVE_IMAGE && req.method === 'DELETE') {
