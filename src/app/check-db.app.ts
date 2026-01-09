@@ -1,7 +1,7 @@
 import { Pool } from 'pg'
-import { DB_CONFIG } from '../config/db.config'
-import { ApiError } from '../utils/log/exists-error.log'
-import { logger } from '../utils/log/logger.log'
+import { DB_CONFIG } from '../common/config/db.config'
+import { ApiError } from '../common/utils/log/exists-error.log'
+import { logger } from '../common/utils/log/logger.log'
 
 export const pool = new Pool(DB_CONFIG)
 
