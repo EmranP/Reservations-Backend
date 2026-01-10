@@ -92,7 +92,7 @@ export class ProfileController extends AuthBaseConfig {
 		try {
 			const userId = req.user?.sub
 			const pathAssets = '../../assets'
-			console.log('controller', fileBody)
+
 			if (
 				fileBody.fileBufferData === null ||
 				typeof fileBody.fileBufferData === 'undefined'
