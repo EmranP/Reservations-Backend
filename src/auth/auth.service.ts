@@ -199,7 +199,8 @@ export class AuthService extends AuthBaseConfig {
 			const newUserEmailCacheWithEx = await setHashRedisClientWithEx(
 				'users:emails',
 				userEmailField,
-				user
+				user,
+				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
 			)
 
 			if (
@@ -214,7 +215,8 @@ export class AuthService extends AuthBaseConfig {
 			const newUserPhoneCacheWithEx = await setHashRedisClientWithEx(
 				'users:phones',
 				userPhoneField,
-				user
+				user,
+				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
 			)
 
 			if (
