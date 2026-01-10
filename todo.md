@@ -113,8 +113,8 @@
 5. Add endpoint get profile data: ✅
 6. Add endpoint update profile data: ✅
 7. Add if user just edit some data other must be state old: ✅
-8. Add upload profile image && add validate files: ❌
-9. Add endpoint upload image profile data: ❌
+8. Add endpoint upload image profile data: ✅
+9. Add upload profile image && add validate files includes(format, size, width, height & position): **Add upload profile validate not have yet**
 10. Add endpoint remove image profile data: ❌
 
 ### Profile forget password function how use client
