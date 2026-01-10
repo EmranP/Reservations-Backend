@@ -121,6 +121,7 @@ export class TokenService extends AuthBaseConfig {
 	async verifyToken(
 		token: string
 	): Promise<IUserJwtPayload | Pick<IErrorResponseApp, 'message'>> {
+		// Add redis cache
 		if (this.jwksCache && Date.now() - this.jwksCacheAt < 60 * 60 * 1000)
 			return this.jwksCache
 

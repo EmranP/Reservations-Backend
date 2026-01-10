@@ -5,8 +5,7 @@ export type TypeErrorContextBody = {
 }
 
 export interface IContextFiles {
-	filename: string | undefined | null
-	fileBufferData: Buffer<ArrayBuffer> | undefined | null
+	fileBufferData: Buffer<ArrayBufferLike> | undefined
 }
 
 export interface IContext<T> {
