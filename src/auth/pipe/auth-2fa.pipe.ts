@@ -19,20 +19,15 @@ export const isAuthVerifyTwoFactory = (
 ): obj is VerifyTwoFactoryAuthDto => {
 	const isCommonValidVerifyObj = typeof obj === 'object' && obj !== null
 
-	const isCodeValidVerifyObj =
-		isCommonValidVerifyObj && 'code' in obj && typeof obj.code === 'number'
+	if (!isCommonValidVerifyObj) return false
+
+	const isCodeValidVerifyObj = 'code' in obj && typeof obj.code === 'number'
 
 	const isEmailValidVerifyObj =
-		isCommonValidVerifyObj &&
-		isCodeValidVerifyObj &&
-		'email' in obj &&
-		typeof obj.email === 'string'
+		isCodeValidVerifyObj && 'email' in obj && typeof obj.email === 'string'
 
 	const isPhoneValidVerifyObj =
-		isCommonValidVerifyObj &&
-		isCodeValidVerifyObj &&
-		'phone' in obj &&
-		typeof obj.phone === 'string'
+		isCodeValidVerifyObj && 'phone' in obj && typeof obj.phone === 'string'
 
 	return isPhoneValidVerifyObj || isEmailValidVerifyObj
 }

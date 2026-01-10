@@ -1,10 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
-import {
-	isErrorHandler,
-	responseBadRequest,
-} from '../../common/utils/app/errorResponse.utils'
-import { ApiError } from '../../common/utils/log/exists-error.log'
+import { responseInternalServer } from '../../common/utils/app/errorResponse.utils'
 import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type {
 	EnableTwoFactoryChallenge,
@@ -66,15 +62,12 @@ export class AuthTwoFactoryController extends AuthBaseConfig {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from new-password controller'
+				res,
+				'Internal-server from new-password controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -121,15 +114,12 @@ export class AuthTwoFactoryController extends AuthBaseConfig {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from 2FA verify-code controller'
+				res,
+				'Internal-server from 2FA verify-code controller',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 }

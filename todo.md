@@ -100,22 +100,33 @@
 4. Add user registration: ✅
 5. Add user refresh-token: ✅
 
-## Storage for files
+### Redis-Profile
 
-1. Add s3 storage: ❌
+1. Get profile me: ✅
 
 ## Profile
 
-1. All api must be with token: ❌
-2. Add model profile: ❌
-3. Add service profile: ❌
-4. Add controller profile: ❌
-5. Add endpoint get profile data: ❌
-6. Add endpoint upload image profile data: ❌
-7. Add endpoint remove image profile data: ❌
-8. Add endpoint update profile data: ❌
-9. Add upload profile image && add validate files: ❌
-10. Add if user just edit some data other must be state old: ❌
+1. All api must be with token: ✅
+2. Add model profile: ✅
+3. Add service profile: ✅
+4. Add controller profile: ✅
+5. Add endpoint get profile data: ✅
+6. Add endpoint update profile data: ✅
+7. Add if user just edit some data other must be state old: ✅
+8. Add endpoint upload image profile data: ✅
+9. Add upload profile image && add validate files includes(format, size, width, height & position): **Add upload profile validate not have yet**
+10. Add endpoint remove image profile data: ❌
+
+### Profile forget password function how use client
+
+1. When user want change password client must be send resetPassLink api example click the button
+2. After verify resetPassLink client redirect to set new password and email save to localStorage when enable-rest password active
+3. After set new password client redirect to login page.
+
+## Storage for files
+
+1. Add without s3 storage first-time, add local-storage example save one folder on mac-book: ❌
+1. Add s3 storage: ❌
 
 ## Admin panel
 

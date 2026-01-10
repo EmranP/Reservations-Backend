@@ -1,11 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
-import {
-	isErrorHandler,
-	responseBadRequest,
-} from '../../../common/utils/app/errorResponse.utils'
-import { ApiError } from '../../../common/utils/log/exists-error.log'
+import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
 import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthGithubService } from './oauth.github.service'
@@ -39,14 +35,12 @@ export class OAuthGithubController extends AuthBaseConfig {
 				return
 			}
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from oAuth get github url'
+				res,
+				'Internal-server from oAuth get github-url',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 
@@ -88,14 +82,12 @@ export class OAuthGithubController extends AuthBaseConfig {
 			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
-			const isError = isErrorHandler(
+			await responseInternalServer(
 				error,
-				'Bad-request from oAuth github-callback'
+				res,
+				'Internal-server from oAuth github-callback',
+				this.logger
 			)
-			const errorRes = ApiError.BadRequest(isError)
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res, 500)
 		}
 	}
 }
