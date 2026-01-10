@@ -116,6 +116,7 @@
 8. Add endpoint upload image profile data: ✅
 9. Add upload profile image && add validate files includes(format, size, width, height & position): **Add upload profile validate not have yet**
 10. Add endpoint remove image profile data: ❌
+11. Add endpoint profile get me with media: **Just add Profile get without media**
 
 ### Profile forget password function how use client
 
