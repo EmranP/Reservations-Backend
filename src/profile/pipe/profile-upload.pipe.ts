@@ -6,7 +6,6 @@ export const isUploadProfileDto = (
 	const isCommonValidObj = typeof obj === 'object' && obj !== null
 
 	if (!isCommonValidObj) return false
-	console.log('obj', obj)
 	const isValidFile = 'fileBufferData' in obj
 
 	return isValidFile
