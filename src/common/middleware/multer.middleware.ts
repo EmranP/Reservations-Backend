@@ -1,5 +1,6 @@
 import fs from 'fs/promises'
 import type { Middleware } from '../types/middlewares/app.types-middleware'
+import { responseBadRequest } from '../utils/app/errorResponse.utils'
 import { assetsPath } from '../utils/format/path.util'
 import { logger } from '../utils/log/logger.log'
 
@@ -18,8 +19,17 @@ export const multer: Middleware<unknown> = async (ctx, next): Promise<void> => {
 		fileBufferData: undefined,
 	}
 
-	if (req.method === 'POST' || req.method === 'DELETE') {
-		if (contentTypeMedias.imagePng || contentTypeMedias.imageJpg) {
+	if (
+		(contentType.includes('image') && req.method === 'POST') ||
+		(contentType.includes('vide') && req.method === 'POST') ||
+		(contentType.includes('image') && req.method === 'DELETE') ||
+		(contentType.includes('vide') && req.method === 'DELETE')
+	) {
+		if (
+			contentTypeMedias.imagePng ||
+			contentTypeMedias.imageJpg ||
+			contentTypeMedias.imageJpeg
+		) {
 			try {
 				await fs.mkdir(assetsPath(__dirname, `${pathAssets}/img/user`), {
 					recursive: true,
@@ -74,6 +84,13 @@ export const multer: Middleware<unknown> = async (ctx, next): Promise<void> => {
 			if (ctx.file.fileBufferData === undefined) {
 				ctx.file.fileBufferData = buffer
 			}
+		} else {
+			await responseBadRequest(
+				'File format is not correct must be: png, jpg, jpeg',
+				res
+			)
+
+			return
 		}
 	}
 
