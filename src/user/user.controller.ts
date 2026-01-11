@@ -1,7 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
-import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
-import { ApiError } from '../common/utils/log/exists-error.log'
+import { responseInternalServer } from '../common/utils/app/errorResponse.utils'
 import type { UserService } from './user.service'
 
 export class UserController {
@@ -39,19 +38,12 @@ export class UserController {
 			})
 			res.end(jsonData)
 		} catch (error) {
-			let errorRes: ApiError | undefined
-			if (error instanceof Error) {
-				errorRes = ApiError.BadRequest(error.message)
-
-				this.logger.error(errorRes.message)
-				await responseBadRequest(errorRes.message, res)
-			} else {
-				errorRes = ApiError.BadRequest(
-					'Bad-request from get all users controller'
-				)
-
-				await responseBadRequest(errorRes.message, res)
-			}
+			await responseInternalServer(
+				error,
+				res,
+				'Internal-server from get all users controller',
+				this.logger
+			)
 		}
 	}
 
@@ -76,13 +68,12 @@ export class UserController {
 			const userId = ''
 			const removeUser = await this.userService.deleteUser(userId)
 		} catch (error) {
-			const errorRes = ApiError.BadRequest(
-				'Bad-request from delete user controller'
+			await responseInternalServer(
+				error,
+				res,
+				'Internal-server from delete user controller',
+				this.logger
 			)
-
-			this.logger.error(errorRes.message)
-
-			await responseBadRequest(errorRes.message, res)
 		}
 	}
 }

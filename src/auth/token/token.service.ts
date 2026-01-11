@@ -39,9 +39,6 @@ export class TokenService extends AuthBaseConfig {
 	private kidJwks = JWKS_CONFIG.KID
 	private issuerApp = JWKS_CONFIG.ISSUER
 	private audienceApp = JWKS_CONFIG.AUDIENCE
-	// Cache
-	private jwksCache: IUserJwtPayload | null = null
-	private jwksCacheAt = 0
 
 	constructor(private tokenModel: TokenModel, private logger: Logger) {
 		super()
@@ -121,9 +118,6 @@ export class TokenService extends AuthBaseConfig {
 	async verifyToken(
 		token: string
 	): Promise<IUserJwtPayload | Pick<IErrorResponseApp, 'message'>> {
-		if (this.jwksCache && Date.now() - this.jwksCacheAt < 60 * 60 * 1000)
-			return this.jwksCache
-
 		try {
 			if (token.startsWith('Bearer ')) token = token.slice(7).trim()
 
@@ -201,9 +195,6 @@ export class TokenService extends AuthBaseConfig {
 				audience: JWKS_CONFIG.AUDIENCE,
 			})
 
-			this.jwksCache = resultJwtVerify.payload
-			this.jwksCacheAt = Date.now()
-
 			return resultJwtVerify.payload
 		} catch (error) {
 			return {
@@ -240,8 +231,8 @@ export class TokenService extends AuthBaseConfig {
 		existsToken = await checkCacheRedisClient(
 			sessionUserCache,
 			() => this.tokenModel.findOne(userId),
-			this.logger.info('token cache'),
-			this.logger.info('token not cache')
+			'token cache',
+			'token not cache'
 		)
 
 		if (existsToken?.id && stateAuth && stateAuth !== existsToken?.state_auth) {

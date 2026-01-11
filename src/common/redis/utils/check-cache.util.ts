@@ -1,16 +1,16 @@
-import type { Logger } from 'winston'
+import { logger } from '../../utils/log/logger.log'
 
 export const checkCacheRedisClient = async <T>(
 	cacheData: string | null,
 	cb: () => Promise<T>,
-	loggerCache: Logger,
-	logger: Logger
+	loggerCacheMessage: string,
+	loggerMessage: string
 ): Promise<T> => {
 	if (cacheData) {
-		loggerCache
+		logger.info(loggerCacheMessage)
 		return JSON.parse(cacheData) as T
 	}
 
-	logger
+	logger.info(loggerMessage)
 	return await cb()
 }

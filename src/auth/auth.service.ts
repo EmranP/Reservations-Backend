@@ -69,8 +69,8 @@ export class AuthService extends AuthBaseConfig {
 			user = await checkCacheRedisClient(
 				userEmailRedis,
 				() => this.model.getUserByEmail(dto.email),
-				this.logger.info('user-email cache', user?.email),
-				this.logger.info('user-email no cache', user?.email)
+				`user-email cache ${user?.email}`,
+				`user-email no cache ${user?.email}`
 			)
 		} else if (dto.phone) {
 			const userPhoneRedis = await getRedisClientHashKey(
@@ -81,8 +81,8 @@ export class AuthService extends AuthBaseConfig {
 			user = await checkCacheRedisClient(
 				userPhoneRedis,
 				() => this.model.getUserByPhone(dto.phone),
-				this.logger.info('user-phone cache', user?.phone),
-				this.logger.info('user-phone no cache', user?.phone)
+				`user-phone cache ${user?.phone}`,
+				`user-phone no cache ${user?.phone}`
 			)
 		}
 
@@ -199,7 +199,8 @@ export class AuthService extends AuthBaseConfig {
 			const newUserEmailCacheWithEx = await setHashRedisClientWithEx(
 				'users:emails',
 				userEmailField,
-				user
+				user,
+				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
 			)
 
 			if (
@@ -214,7 +215,8 @@ export class AuthService extends AuthBaseConfig {
 			const newUserPhoneCacheWithEx = await setHashRedisClientWithEx(
 				'users:phones',
 				userPhoneField,
-				user
+				user,
+				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
 			)
 
 			if (
@@ -274,8 +276,8 @@ export class AuthService extends AuthBaseConfig {
 			candidate = await checkCacheRedisClient(
 				candidateEmailCache,
 				() => this.model.getUserByEmail(dto.email),
-				this.logger.info('Candidate founded from cache'),
-				this.logger.info('Candidate founded from Database')
+				'Candidate founded from cache',
+				'Candidate founded from Database'
 			)
 		} else if (dto.phone) {
 			const candidatePhoneCache = await getRedisClientHashKey(
@@ -286,8 +288,8 @@ export class AuthService extends AuthBaseConfig {
 			candidate = await checkCacheRedisClient(
 				candidatePhoneCache,
 				() => this.model.getUserByPhone(dto.phone),
-				this.logger.info('Candidate founded from cache'),
-				this.logger.info('Candidate founded from Database')
+				'Candidate founded from cache',
+				'Candidate founded from Database'
 			)
 		}
 
