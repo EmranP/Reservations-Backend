@@ -48,4 +48,11 @@ export abstract class AuthBaseConfig {
 	protected headData = writeHeadData(400)
 	protected clientGrantTypeRefresh = 'refresh_token'
 	protected defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
+	protected devMode = 'development'
+	protected pathAssets = '../../assets'
+	// Validate size
+	protected MAX_FILE_SIZE = 5 * 1024 * 1024
+	protected MIN_SIZE = 200
+	protected MAX_SIZE = 2048
+	protected ASPECT_RATIO = 1
 }
