@@ -11,7 +11,7 @@ export const isAuth = async (
 	req: IRequestUserApp | IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
 	next?: (parm?: ApiError) => Promise<void>
-) => {
+): Promise<undefined | ApiError> => {
 	const authHeader = req.headers.authorization
 
 	if (!authHeader) return ApiError.UnauthorizedError()

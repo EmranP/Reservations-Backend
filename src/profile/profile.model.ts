@@ -57,7 +57,32 @@ export class ProfileModel {
 		}
 	}
 
-	async uploadProfileImage(userId: string) {}
+	async updateProfileImage(
+		userId: string,
+		profileImagePath: string | null
+	): Promise<IUser | null> {
+		try {
+			const query = `UPDATE ${DB_TABLE_USERS} SET 
+				picture = $1 
+				WHERE id = $2
+				RETURNING *;
+			`
 
-	async removeProfileImage(userId: string) {}
+			const queryResult = await this.pool.query<IUser>(query, [
+				profileImagePath,
+				userId,
+			])
+
+			if (queryResult.rowCount === 0) return null
+
+			return queryResult.rows[0] ?? null
+		} catch (error) {
+			this.logger.error(
+				'Error update profile-edit:',
+				error instanceof Error ? error.message : 'Internal server'
+			)
+
+			return null
+		}
+	}
 }
