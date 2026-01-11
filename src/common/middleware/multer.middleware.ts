@@ -84,8 +84,6 @@ export const multer: Middleware<unknown> = async (ctx, next): Promise<void> => {
 			if (ctx.file.fileBufferData === undefined) {
 				ctx.file.fileBufferData = buffer
 			}
-<<<<<<< HEAD
-=======
 		} else {
 			await responseBadRequest(
 				'File format is not correct must be: png, jpg, jpeg',
@@ -93,7 +91,6 @@ export const multer: Middleware<unknown> = async (ctx, next): Promise<void> => {
 			)
 
 			return
->>>>>>> feature-/profile
 		}
 	}
 
