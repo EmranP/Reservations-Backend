@@ -27,7 +27,7 @@ export const profileRouter = async (
 ): Promise<void> => {
 	// Profile GET ============
 	if (path === PROFILE_ME_GET && req.method === 'GET') {
-		if (isAuth) {
+		if (typeof isAuth !== 'undefined' && 'message' in isAuth) {
 			await responseBadRequest(isAuth.message, res, isAuth.status)
 
 			return
@@ -104,6 +104,8 @@ export const profileRouter = async (
 
 			return
 		}
+
+		await profileController.removeProfileImage(req, res)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from user router')
 

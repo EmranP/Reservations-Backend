@@ -12,9 +12,5 @@ export const isEditProfileDto = (obj: unknown): obj is EditProfileDto => {
 
 	const isValidPhone = 'phone' in obj && typeof obj.phone === 'string'
 
-	console.log(isValidFirstName)
-	console.log(isValidLastName)
-	console.log(isValidPhone)
-
 	return isValidFirstName || isValidLastName || isValidPhone
 }
