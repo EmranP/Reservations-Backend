@@ -1,5 +1,5 @@
 {
-	"name": "hotel-reservations-backend",
+	"name": "reservations-backend",
 	"module": "src/index.ts",
 	"type": "module",
 	"private": true,

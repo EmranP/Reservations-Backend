@@ -25,7 +25,7 @@ export class ProfileService extends AuthBaseConfig {
 		userId: string | undefined
 	): Promise<IProfile | ApiError> {
 		if (!userId) return ApiError.NotFound('User ID not founded!')
-		console.log(userId)
+		
 		const userProfileCache = await getRedisClientHashKey(
 			'users:ids',
 			`user:id:${userId}`
@@ -158,6 +158,7 @@ export class ProfileService extends AuthBaseConfig {
 				return ApiError.BadRequest(errorMessage)
 			}
 		} else {
+			// Add s3 storage
 		}
 
 		const messageBadRequest = `Bad-request profile-image is not success upload!`
