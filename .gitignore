@@ -6,6 +6,7 @@ out
 dist
 *.tgz
 build
+assets
 
 # code coverage
 coverage
@@ -38,6 +39,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Key
 private.pem
 google-jwks.json
+minio.license
 
 # Todo
 # todo.md

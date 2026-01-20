@@ -1,6 +1,6 @@
+import { adminUserModel } from '../admin/user/index.user'
 import { pool } from '../app/check-db.app'
 import { logger } from '../common/utils/log/logger.log'
-import { userModel } from '../user/index.user'
 import { AuthTwoFactoryController } from './2fa/auth-2fa.controller'
 import { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
 import { AuthTwoFactoryChallengeService } from './2fa/auth-2fa.service'
@@ -42,7 +42,7 @@ export const authService = new AuthService(
 	authModel,
 	authTwoFactoryModel,
 	authTwoFactoryService,
-	userModel,
+	adminUserModel,
 	tokenService,
 	logger
 )

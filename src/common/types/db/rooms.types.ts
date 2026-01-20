@@ -8,3 +8,5 @@ export interface IRooms extends ISharedModelApp {
 	status: typeof STATUS_ROOM
 	image_url: string
 }
+
+export type TypeRoomId = Pick<IRooms, 'id'>

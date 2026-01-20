@@ -1,8 +1,8 @@
 import type { Pool } from 'pg'
 import type { Logger } from 'winston'
-import type { IUser } from '../app/db/types/user.types'
-import { DB_TABLE_USERS } from '../common/constants/table-db.constant'
-import type { IAppMessage } from '../common/types/app/app.type'
+import type { IUser } from '../../app/db/types/user.types'
+import { DB_TABLE_USERS } from '../../common/constants/table-db.constant'
+import type { IAppMessage } from '../../common/types/app/app.type'
 
 export class UserModel {
 	constructor(private pool: Pool, private logger: Logger) {}

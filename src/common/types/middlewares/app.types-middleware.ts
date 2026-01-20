@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 export type TypeErrorContextBody = {
-	error: 'Invalid JSON' | 'File failed to save!'
+	error: string
 }
 
 export interface IContextFiles {

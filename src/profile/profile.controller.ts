@@ -95,11 +95,12 @@ export class ProfileController extends AuthBaseConfig {
 				__dirname,
 				`${this.pathAssets}/img/user/${userId}.webp`
 			)
-			const isDevMode = process.env.NODE_ENV
+			const isDev = this.mode
+
 			const resultUploadDB = await this.service.uploadProfileImage(
 				userId,
 				userProfileImage,
-				isDevMode,
+				isDev,
 				fileBody
 			)
 
@@ -119,8 +120,6 @@ export class ProfileController extends AuthBaseConfig {
 
 			res.writeHead(201, this.headData.contentData)
 			res.end(jsonData)
-
-			return
 		} catch (error) {
 			await responseInternalServer(
 				error,
