@@ -18,13 +18,13 @@ import {
 import { renderSendActivationLink } from '../common/utils/format/render.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 
+import { UserDto } from '../admin/user/dto/user.dto'
+import type { UserModel } from '../admin/user/user.model'
 import { checkCacheRedisClient } from '../common/redis/utils/check-cache.util'
 import {
 	getRedisClientHashKey,
 	setHashRedisClientWithEx,
 } from '../common/redis/utils/grud-redis.util'
-import { UserDto } from '../user/dto/user.dto'
-import type { UserModel } from '../user/user.model'
 import type { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
 import type { AuthTwoFactoryChallengeService } from './2fa/auth-2fa.service'
 import { AuthBaseConfig } from './abstract/auth-config.base'
@@ -97,13 +97,17 @@ export class AuthService extends AuthBaseConfig {
 
 		const userDto = new UserDto(user)
 
-		if (!userDto.isVerify)
+		if (typeof userDto.isVerify !== 'undefined' && !userDto.isVerify)
 			return {
 				message: 'User is account is not verify',
 				status: 400,
 			}
 
-		if (!userDto.id || !userDto.role)
+		if (
+			!userDto.id ||
+			typeof userDto.role === 'undefined' ||
+			userDto.role === null
+		)
 			return {
 				message: 'Bad-request user dto from login-email',
 				status: 500,

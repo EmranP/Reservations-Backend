@@ -32,3 +32,12 @@ export type TypeReturnUpdateOAuthUser = Pick<
 >
 
 export type TypeUserID = Pick<IUser, 'id'>
+
+export type ReturnCreateUserType = Omit<
+	IUser,
+	| 'reset_pass_link'
+	| 'created_at'
+	| 'updated_at'
+	| 'enable_two_factory_challenge'
+	| 'enable_reset_pass'
+>

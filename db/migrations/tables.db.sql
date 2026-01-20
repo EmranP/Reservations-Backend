@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS public.rooms (
   updated_at TIMESTAMP DEFAULT now()
 );
 
--- Occupied Rooms
+-- Occupied Rooms (Orders)
 CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
+
 
 -- Reviews
 CREATE TABLE IF NOT EXISTS public.reviews (
