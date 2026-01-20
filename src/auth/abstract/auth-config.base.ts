@@ -1,6 +1,9 @@
+import type sharp from 'sharp'
 import { APP_CONFIG } from '../../common/config/app.config'
 import { TOKEN_CONFIG } from '../../common/config/token.config'
+import type { IAppMessage } from '../../common/types/app/app.type'
 import { writeHeadData } from '../../common/utils/app/writeHeadData.utils'
+import { logger } from '../../common/utils/log/logger.log'
 
 export abstract class AuthBaseConfig {
 	protected refreshConfig = TOKEN_CONFIG.REFRESH_EXPIRE
@@ -49,10 +52,50 @@ export abstract class AuthBaseConfig {
 	protected clientGrantTypeRefresh = 'refresh_token'
 	protected defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
 	protected devMode = 'development'
+	protected mode = APP_CONFIG.MODE
 	protected pathAssets = '../../assets'
 	// Validate size
 	protected MAX_FILE_SIZE = 5 * 1024 * 1024
 	protected MIN_SIZE = 200
 	protected MAX_SIZE = 2048
 	protected ASPECT_RATIO = 1
+
+	protected validateImageFile(
+		size: number | undefined,
+		format: keyof sharp.FormatEnum,
+		width: number,
+		height: number
+	): IAppMessage | void {
+		if (size && size > this.MAX_FILE_SIZE) {
+			logger.warn('Image is too large!')
+
+			return { message: 'Image is too large!' }
+		}
+
+		if (!format) {
+			logger.warn('File data is must be type file media!')
+
+			return { message: 'File data is must be type file media!' }
+		}
+
+		if (width < 200 || height < 200) {
+			logger.warn('Image width or height is too small')
+
+			return { message: 'Image width or height is too small' }
+		}
+
+		if (width > 2048 || height > 2048) {
+			logger.warn('Image width or height is too large')
+
+			return { message: 'Image width or height is too large' }
+		}
+
+		//? Optional validate
+		// const ratio = width / height
+		// if (Math.abs(ratio - 1) > 0.05) {
+		// 	this.logger.warn('Image must be square')
+
+		// 	return ApiError.BadRequest('Image must be square')
+		// }
+	}
 }

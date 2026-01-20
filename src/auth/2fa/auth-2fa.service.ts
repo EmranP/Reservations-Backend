@@ -5,9 +5,9 @@ import type {
 	VerifyTwoFactoryAuthDto,
 } from '../dto/2fa.dto'
 
+import { UserDto } from '../../admin/user/dto/user.dto'
 import type { IUser } from '../../app/db/types/user.types'
 import { setDateUtil } from '../../common/utils/app/date.util'
-import { UserDto } from '../../user/dto/user.dto'
 import type { AuthModel } from '../auth.model'
 import type { TokenService } from '../token/token.service'
 import type {
@@ -90,7 +90,7 @@ export class AuthTwoFactoryChallengeService extends AuthBaseConfig {
 
 		const userDto = new UserDto(user)
 
-		if (!userDto.id || userDto.role === undefined)
+		if (!userDto.id || userDto.role === undefined || userDto.role === null)
 			return {
 				message: 'User is not founded!',
 				status: 404,

@@ -6,19 +6,17 @@ import {
 	PROFILE_REMOVE_IMAGE,
 	PROFILE_UPLOAD_IMAGE,
 } from '../common/constants/profile.constant'
-import type { IAppQueryParams } from '../common/types/app/app.type'
+import { isUploadDto } from '../common/pipe/upload.pipe'
 import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
 import { isRequestUserApp } from '../common/utils/app/checkType.utils'
 import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { profileController } from './index.profile'
 import { isEditProfileDto } from './pipe/profile-edit.pipe'
-import { isUploadProfileDto } from './pipe/profile-upload.pipe'
 
 export const profileRouter = async (
 	isAuth: ApiError | undefined,
 	path: string,
-	query: IAppQueryParams,
 	req: IncomingMessage,
 	res: ServerResponse<IncomingMessage>,
 	body?: unknown,
@@ -83,7 +81,7 @@ export const profileRouter = async (
 			return
 		}
 
-		if (!isUploadProfileDto(file)) {
+		if (!isUploadDto(file)) {
 			await responseBadRequest('User file is not founded!', res, 404)
 
 			return

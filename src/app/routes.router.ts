@@ -1,8 +1,12 @@
 import { URL } from 'url'
-import { userRouter } from '../admin/admin.route'
+import { adminRoomRouter } from '../admin/route/admin.route'
+import { userRouter } from '../admin/route/user.route'
 import { authRouter } from '../auth/auth.router'
 import { isAuth } from '../auth/middleware/isAuth.auth'
-import { rootUserRouter } from '../common/constants/admin.constant'
+import {
+	rootRoomRouter,
+	rootUserRouter,
+} from '../common/constants/admin.constant'
 import { rootAuthRouter } from '../common/constants/auth.constant'
 import { isPathWithQuery } from '../common/constants/global.constant'
 import { rootProfileRouter } from '../common/constants/profile.constant'
@@ -21,6 +25,7 @@ export const routerApp: Middleware<unknown> = async (
 	const authMiddleware = await isAuth(req, res)
 
 	const parserURL = new URL(req.url, `http://${req.headers.host}`)
+	const pathOrigin = parserURL.origin
 	const pathWithQuery = `${parserURL.pathname}${parserURL.search}`
 	const path = parserURL.search ? pathWithQuery : parserURL.pathname
 
@@ -33,7 +38,6 @@ export const routerApp: Middleware<unknown> = async (
 
 	// Search
 	const searchAuthActivateQuery = pathOption.path.search('activate/')
-	const searchAuthActivateRepaidQuery = pathOption.path.search('repaid/')
 	const searchAuthActivateForgetQuery = pathOption.path.search('forget/')
 
 	// Convert
@@ -56,38 +60,71 @@ export const routerApp: Middleware<unknown> = async (
 
 	// Add isPath for rooms && other where need query params
 	const isPathUserHref = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'user',
 		pathOption.searchParams
 	)
 	const isPathAuthHref = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/activate',
 		`/${pathOption.query}`
 	)
 	const isPathAuthRepaidHref = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/repaid/activate',
 		`/${pathOption.query}`
 	)
 	const isPathAuthForgetHref = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/forget/activate',
 		pathOption.query !== null ? `/${pathOption.query}` : ''
 	)
+	// OAuth
 	const isPathAuthGoogleUrlWithState = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/google/url',
 		pathOption.searchParams
 	)
 	const isPathAuthGithubUrlWithState = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/github/url',
 		pathOption.searchParams
 	)
 	const isPathAuthYandexUrlWithState = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/yandex/url',
+		pathOption.searchParams
+	)
+	// Room
+	const isPathGetAllRoom = isPathWithQuery(
+		pathOrigin,
+		'rooms',
+		pathOption.searchParams
+	)
+	const isPathGetOneRoom = isPathWithQuery(
+		pathOrigin,
+		'room',
+		pathOption.searchParams
+	)
+	const isPathEditOneRoom = isPathWithQuery(
+		pathOrigin,
+		'room/edit',
+		pathOption.searchParams
+	)
+	const isPathRemoveRoom = isPathWithQuery(
+		pathOrigin,
+		'room/remove',
+		pathOption.searchParams
+	)
+	// Rooms Image
+	const isPathUploadImageRoom = isPathWithQuery(
+		pathOrigin,
+		'room/upload/image',
+		pathOption.searchParams
+	)
+	const isPathDeleteImageRoom = isPathWithQuery(
+		pathOrigin,
+		'room/delete/image',
 		pathOption.searchParams
 	)
 
@@ -95,13 +132,22 @@ export const routerApp: Middleware<unknown> = async (
 		!rootAuthRouter.includes(path) &&
 		!rootUserRouter.includes(path) &&
 		!rootProfileRouter.includes(path) &&
+		!rootRoomRouter.includes(path) &&
 		parserURL.href !== isPathUserHref &&
 		parserURL.href !== isPathAuthHref &&
 		parserURL.href !== isPathAuthRepaidHref &&
 		parserURL.href !== isPathAuthForgetHref &&
+		// OAuth
 		parserURL.href !== isPathAuthGoogleUrlWithState &&
 		parserURL.href !== isPathAuthGithubUrlWithState &&
-		parserURL.href !== isPathAuthYandexUrlWithState
+		parserURL.href !== isPathAuthYandexUrlWithState &&
+		// Room
+		parserURL.href !== isPathGetAllRoom &&
+		parserURL.href !== isPathGetOneRoom &&
+		parserURL.href !== isPathEditOneRoom &&
+		parserURL.href !== isPathRemoveRoom &&
+		parserURL.href !== isPathUploadImageRoom &&
+		parserURL.href !== isPathDeleteImageRoom
 	) {
 		await responseNotFoundApi('Not founded auth api', res)
 	}
@@ -133,15 +179,26 @@ export const routerApp: Middleware<unknown> = async (
 	}
 
 	if (rootProfileRouter.includes(path)) {
-		await profileRouter(
+		await profileRouter(authMiddleware, path, req, res, body, file, next)
+	}
+
+	if (
+		rootRoomRouter.includes(path) ||
+		parserURL.href === isPathGetAllRoom ||
+		parserURL.href === isPathGetOneRoom ||
+		parserURL.href === isPathEditOneRoom ||
+		parserURL.href === isPathRemoveRoom ||
+		parserURL.href === isPathUploadImageRoom ||
+		parserURL.href === isPathDeleteImageRoom
+	) {
+		await adminRoomRouter(
 			authMiddleware,
 			path,
 			pathOption,
 			req,
 			res,
 			body,
-			file,
-			next
+			file
 		)
 	}
 

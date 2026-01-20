@@ -1,8 +1,8 @@
 export const APP_CONFIG = {
 	PORT: Number(process.env.PORT),
+	MODE: process.env.NODE_ENV,
 	HOSTNAME: process.env.HOSTNAME,
 	CLIENT_URL: process.env.CLIENT_URL,
-	ADMIN_PASS: process.env.ADMIN_PASS,
 	API_URL: process.env.API_URL,
 	EXPIRES_USER_VERIFY: process.env.EXPIRES_USER_VERIFY,
 	EXPIRES_USER_REMOVE_VERIFY: process.env.EXPIRES_USER_REMOVE_VERIFY,
@@ -11,6 +11,13 @@ export const APP_CONFIG = {
 	EXPIRES_USER_TWO_FACTORY_CHALLENGE:
 		process.env.EXPIRES_USER_TWO_FACTORY_CHALLENGE,
 	USER_DEFAULT_PASS: process.env.USER_DEFAULT_PASS,
+} as const
+
+export const ADMIN_CONFIG = {
+	ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+	ADMIN_PASS: process.env.ADMIN_PASS,
+	ADMIN_PHONE: process.env.ADMIN_PHONE,
+	ADMIN_IS_VERIFY: Boolean(process.env.ADMIN_IS_VERIFY) ?? false,
 } as const
 
 export const EMAIL_CONFIG = {

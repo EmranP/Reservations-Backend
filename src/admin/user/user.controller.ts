@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
-import { responseInternalServer } from '../common/utils/app/errorResponse.utils'
+import { responseInternalServer } from '../../common/utils/app/errorResponse.utils'
 import type { UserService } from './user.service'
 
 export class UserController {
