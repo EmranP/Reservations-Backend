@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import sharp from 'sharp'
 import type { Logger } from 'winston'
 import { UserDto } from '../admin/user/dto/user.dto'
-import { AuthBaseConfig } from '../auth/abstract/auth-config.base'
+import { BaseConfig } from '../common/abstract/auth-config.base'
 import { checkCacheRedisClient } from '../common/redis/utils/check-cache.util'
 import {
 	getRedisClientHashKey,
@@ -16,7 +16,7 @@ import type { EditProfileDto } from './dto/edit-profile.dto'
 import type { ProfileModel } from './profile.model'
 import type { IProfile } from './types/types.profile'
 
-export class ProfileService extends AuthBaseConfig {
+export class ProfileService extends BaseConfig {
 	constructor(private model: ProfileModel, private logger: Logger) {
 		super()
 	}
@@ -104,7 +104,7 @@ export class ProfileService extends AuthBaseConfig {
 			fileBody.fileBufferData === null ||
 			typeof fileBody.fileBufferData === 'undefined'
 		)
-			return ApiError.BadRequest('file-buffer data is not founded!')
+			return ApiError.BadRequest('file data is not founded!')
 
 		if (isDevMode === this.devMode) {
 			try {

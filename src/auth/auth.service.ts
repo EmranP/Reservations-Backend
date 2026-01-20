@@ -20,6 +20,7 @@ import { ApiError } from '../common/utils/log/exists-error.log'
 
 import { UserDto } from '../admin/user/dto/user.dto'
 import type { UserModel } from '../admin/user/user.model'
+import { BaseConfig } from '../common/abstract/auth-config.base'
 import { checkCacheRedisClient } from '../common/redis/utils/check-cache.util'
 import {
 	getRedisClientHashKey,
@@ -27,7 +28,6 @@ import {
 } from '../common/redis/utils/grud-redis.util'
 import type { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
 import type { AuthTwoFactoryChallengeService } from './2fa/auth-2fa.service'
-import { AuthBaseConfig } from './abstract/auth-config.base'
 import { AuthModel } from './auth.model'
 import type { ForgetDto } from './dto/forget.dto'
 import type { LoginDto } from './dto/login.dto'
@@ -40,7 +40,7 @@ import type {
 	TypeAuthUserService,
 } from './types/types.auth'
 
-export class AuthService extends AuthBaseConfig {
+export class AuthService extends BaseConfig {
 	constructor(
 		private model: AuthModel,
 		private authTwoFactoryModel: AuthTwoFactoryChallengeModel,

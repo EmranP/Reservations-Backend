@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 
 import type { Logger } from 'winston'
+import { BaseConfig } from '../common/abstract/auth-config.base'
 import { responseInternalServer } from '../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from './abstract/auth-config.base'
 import { AuthService } from './auth.service'
 import type { ForgetDto } from './dto/forget.dto'
 import type { LoginDto } from './dto/login.dto'
@@ -10,7 +10,7 @@ import type { RegistrationDto } from './dto/registration.dto'
 import type { RepaidVerifyDto } from './dto/verify.dto'
 import type { EmailService } from './mail/email.service'
 
-export class AuthController extends AuthBaseConfig {
+export class AuthController extends BaseConfig {
 	constructor(
 		private authService: AuthService,
 		private emailService: EmailService,

@@ -4,6 +4,7 @@ import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
 import type { IUserDto } from '../../admin/user/dto/user.dto'
 import { isDev } from '../../app/app'
+import { BaseConfig } from '../../common/abstract/auth-config.base'
 import { APP_REDIS_CONFIG } from '../../common/config/app.config'
 import { JWKS_CONFIG, TOKEN_CONFIG } from '../../common/config/token.config'
 import { checkCacheRedisClient } from '../../common/redis/utils/check-cache.util'
@@ -17,7 +18,6 @@ import { setDateUtil } from '../../common/utils/app/date.util'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
-import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type { IJwksData } from '../types/jwks.types'
 import type {
 	ExistTokenType,
@@ -32,7 +32,7 @@ import type {
 import { getJwks, getJwksLocal } from './jwks.service'
 import type { TokenModel } from './token.model'
 
-export class TokenService extends AuthBaseConfig {
+export class TokenService extends BaseConfig {
 	// Base-config
 	private accessExpire = TOKEN_CONFIG.ACCESS_EXPIRE
 	private refreshExpire = TOKEN_CONFIG.REFRESH_EXPIRE

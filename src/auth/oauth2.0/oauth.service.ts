@@ -1,17 +1,17 @@
 import { jwtVerify, type JWTVerifyGetKey } from 'jose'
 import { UserDto } from '../../admin/user/dto/user.dto'
 import type { IUser } from '../../app/db/types/user.types'
+import { BaseConfig } from '../../common/abstract/auth-config.base'
 import type { IAppEnCrypto } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { setDateUtil } from '../../common/utils/app/date.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
-import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type { IUserAccountDto, IUserWithoutAccountDto } from '../dto/oauth.dto'
 import type { TokenService } from '../token/token.service'
 import type { IUserOAuth } from '../types/types.auth'
 import type { OAuthModel } from './oauth.model'
 
-export class OAuthService extends AuthBaseConfig {
+export class OAuthService extends BaseConfig {
 	public async getOauthUrl(
 		state: string | undefined,
 		clientId: string | undefined,

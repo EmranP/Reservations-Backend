@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import { v4 as uuid } from 'uuid'
 import type { Logger } from 'winston'
-import { AuthBaseConfig } from '../auth/abstract/auth-config.base'
 import type { IRequestUserApp } from '../auth/types/token.type'
+import { BaseConfig } from '../common/abstract/auth-config.base'
 import type { IAppQueryParams } from '../common/types/app/app.type'
 import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
 import {
@@ -13,7 +13,7 @@ import { assetsPath } from '../common/utils/format/path.util'
 import type { AdminService } from './admin.service'
 import type { RoomDto } from './dto/room.dto'
 
-export class AdminController extends AuthBaseConfig {
+export class AdminController extends BaseConfig {
 	constructor(private service: AdminService, private logger: Logger) {
 		super()
 	}

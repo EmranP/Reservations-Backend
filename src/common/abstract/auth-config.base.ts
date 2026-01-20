@@ -1,11 +1,11 @@
 import type sharp from 'sharp'
-import { APP_CONFIG } from '../../common/config/app.config'
-import { TOKEN_CONFIG } from '../../common/config/token.config'
-import type { IAppMessage } from '../../common/types/app/app.type'
-import { writeHeadData } from '../../common/utils/app/writeHeadData.utils'
-import { logger } from '../../common/utils/log/logger.log'
+import { APP_CONFIG } from '../config/app.config'
+import { TOKEN_CONFIG } from '../config/token.config'
+import type { IAppMessage } from '../types/app/app.type'
+import { writeHeadData } from '../utils/app/writeHeadData.utils'
+import { logger } from '../utils/log/logger.log'
 
-export abstract class AuthBaseConfig {
+export abstract class BaseConfig {
 	protected refreshConfig = TOKEN_CONFIG.REFRESH_EXPIRE
 	protected verifyConfig: string | undefined = APP_CONFIG.EXPIRES_USER_VERIFY
 	protected verifyRemoveConfig: string | undefined =

@@ -1,5 +1,6 @@
 import { createTransport, type Transporter } from 'nodemailer'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../common/abstract/auth-config.base'
 import { APP_CONFIG, EMAIL_CONFIG } from '../../common/config/app.config'
 import {
 	activationLinkHandler,
@@ -13,13 +14,12 @@ import {
 } from '../../common/utils/format/render.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
 import type { AuthTwoFactoryChallengeModel } from '../2fa/auth-2fa.model'
-import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type { AuthModel } from '../auth.model'
 import type { RepaidVerifyDto } from '../dto/verify.dto'
 import type { IResponseEmail } from '../types/mail.types'
 import type { TypeAuthServiceMessageWithApiError } from '../types/types.auth'
 
-export class EmailService extends AuthBaseConfig {
+export class EmailService extends BaseConfig {
 	private transporter: Transporter
 
 	constructor(

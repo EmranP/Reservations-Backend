@@ -1,16 +1,15 @@
 import fs from 'fs/promises'
 import sharp from 'sharp'
 import type { Logger } from 'winston'
-import { AuthBaseConfig } from '../auth/abstract/auth-config.base'
+import { BaseConfig } from '../common/abstract/auth-config.base'
 import type { IAppMessage } from '../common/types/app/app.type'
 import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
-import { assetsPath } from '../common/utils/format/path.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import type { AdminModel } from './admin.model'
 import type { RoomDto } from './dto/room.dto'
 import type { IGetAllRoomsWithMeta } from './types/admin.interface'
 
-export class AdminService extends AuthBaseConfig {
+export class AdminService extends BaseConfig {
 	constructor(private model: AdminModel, private logger: Logger) {
 		super()
 	}
@@ -27,7 +26,7 @@ export class AdminService extends AuthBaseConfig {
 			fileBody.fileBufferData === null ||
 			typeof fileBody.fileBufferData === 'undefined'
 		)
-			return ApiError.BadRequest('file-buffer data is not founded!')
+			return ApiError.BadRequest('file data is not founded!')
 
 		if (isDev === this.devMode) {
 			try {
@@ -43,7 +42,7 @@ export class AdminService extends AuthBaseConfig {
 				const imageData = await sharp(fileBody.fileBufferData)
 					.resize(512, 512, { fit: 'cover', position: 'center' })
 					.webp({ quality: 85 })
-					.toFile(assetsPath(__dirname, imagePath))
+					.toFile(imagePath)
 
 				if (!imageData)
 					return ApiError.InternalServer('The file was not compressed!')

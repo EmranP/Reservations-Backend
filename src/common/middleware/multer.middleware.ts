@@ -15,16 +15,15 @@ export const multer: Middleware<unknown> = async (ctx, next): Promise<void> => {
 	}
 	const pathAssets = '../../../assets'
 
-	ctx.file = {
-		fileBufferData: undefined,
-	}
-
 	if (
 		(contentType.includes('image') && req.method === 'POST') ||
 		(contentType.includes('vide') && req.method === 'POST') ||
 		(contentType.includes('image') && req.method === 'DELETE') ||
 		(contentType.includes('vide') && req.method === 'DELETE')
 	) {
+		ctx.file = {
+			fileBufferData: undefined,
+		}
 		if (
 			contentTypeMedias.imagePng ||
 			contentTypeMedias.imageJpg ||
@@ -98,12 +97,11 @@ export const multerFormData: Middleware<unknown> = async (
 	const contentType = req.headers['content-type'] || ''
 	const pathAssets = '../../../assets'
 
-	ctx.file = {
-		fileBufferData: undefined,
-	}
-	ctx.body = {}
-
 	if (contentType.includes('multipart/form-data') && req.method === 'POST') {
+		ctx.file = {
+			fileBufferData: undefined,
+		}
+		ctx.body = {}
 		const match = contentType.match(/boundary=(.+)$/)
 
 		if (!match) {
@@ -176,17 +174,14 @@ export const multerFormData: Middleware<unknown> = async (
 			if (nameMatch) {
 				const fieldName = nameMatch[1]
 				const fieldValue = bodyParser.toString()
-				let parsed: any = fieldValue
+				let parsed = fieldValue
 
 				try {
 					parsed = JSON.parse(fieldValue)
 				} catch (error) {}
 
 				if (fieldName) {
-					ctx.body = {
-						...(ctx.body ?? {}),
-						[fieldName]: parsed,
-					}
+					ctx.body = parsed
 				}
 			}
 		}

@@ -1,5 +1,5 @@
 import type { Logger } from 'winston'
-import { AuthBaseConfig } from '../abstract/auth-config.base'
+import { BaseConfig } from '../../common/abstract/auth-config.base'
 import type {
 	EnableTwoFactoryChallenge,
 	VerifyTwoFactoryAuthDto,
@@ -17,7 +17,7 @@ import type {
 } from '../types/types.auth'
 import type { AuthTwoFactoryChallengeModel } from './auth-2fa.model'
 
-export class AuthTwoFactoryChallengeService extends AuthBaseConfig {
+export class AuthTwoFactoryChallengeService extends BaseConfig {
 	constructor(
 		private model: AuthTwoFactoryChallengeModel,
 		private authMode: AuthModel,

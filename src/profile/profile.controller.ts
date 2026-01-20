@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
-import { AuthBaseConfig } from '../auth/abstract/auth-config.base'
 import type { IRequestUserApp } from '../auth/types/token.type'
+import { BaseConfig } from '../common/abstract/auth-config.base'
 import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
 import {
 	responseBadRequest,
@@ -11,7 +11,7 @@ import { assetsPath } from '../common/utils/format/path.util'
 import type { EditProfileDto } from './dto/edit-profile.dto'
 import type { ProfileService } from './profile.service'
 
-export class ProfileController extends AuthBaseConfig {
+export class ProfileController extends BaseConfig {
 	constructor(private service: ProfileService, private logger: Logger) {
 		super()
 	}

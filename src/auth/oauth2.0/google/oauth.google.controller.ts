@@ -1,12 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../../common/abstract/auth-config.base'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthGoogleService } from './oauth.google.service'
 
-export class OAuthGoogleController extends AuthBaseConfig {
+export class OAuthGoogleController extends BaseConfig {
 	constructor(private service: OAuthGoogleService, private logger: Logger) {
 		super()
 	}
