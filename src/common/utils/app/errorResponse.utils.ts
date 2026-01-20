@@ -46,3 +46,16 @@ export const responseInternalServer = async (
 
 	await responseBadRequest(errorRes.message, res, 500)
 }
+
+export const responseErrorDB = (
+	logger: Logger,
+	error: unknown,
+	titleMessage: string
+): null => {
+	logger.error(
+		titleMessage,
+		error instanceof Error ? error.message : 'Internal-server database'
+	)
+
+	return null
+}

@@ -1,16 +1,17 @@
 import type { IncomingMessage, ServerResponse } from 'http'
-import { hasRole } from '../auth/middleware/hasRole.auth'
+import { hasRole } from '../../auth/middleware/hasRole.auth'
 
-import { ROLES } from '../app/enums'
+import { ROLES } from '../../app/enums'
 import {
 	USER_DELETE_URL,
-	USER_GET_URL,
 	USER_UPDATE_URL,
-} from '../common/constants/admin.constant'
-import type { IAppQueryParams } from '../common/types/app/app.type'
-import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
-import { ApiError } from '../common/utils/log/exists-error.log'
-import { userController } from '../user/index.user'
+	USERS_GET_ALL_URL,
+	USERS_GET_ONE_URL,
+} from '../../common/constants/admin.constant'
+import type { IAppQueryParams } from '../../common/types/app/app.type'
+import { responseBadRequest } from '../../common/utils/app/errorResponse.utils'
+import { ApiError } from '../../common/utils/log/exists-error.log'
+import { adminUserController } from '../user/index.user'
 
 export const userRouter = async (
 	isAuth: ApiError | undefined,
@@ -26,7 +27,7 @@ export const userRouter = async (
 
 	if (
 		path === `${query.path}${query.searchParams}` ||
-		(path === USER_GET_URL && req.method === 'GET')
+		(path === USERS_GET_ALL_URL && req.method === 'GET')
 	) {
 		if (isAuth) {
 			await responseBadRequest(isAuth.message, res, isAuth.status)
@@ -40,14 +41,14 @@ export const userRouter = async (
 			return
 		}
 
-		await userController.getAllUser(req, res, body)
-	} else if (path === USER_GET_URL && req.method === 'GET') {
+		await adminUserController.getAllUser(req, res, body)
+	} else if (path === USERS_GET_ONE_URL && req.method === 'GET') {
 		//! Add query params for by id
-		await userController.getByIdUser(req, res, body)
+		await adminUserController.getByIdUser(req, res, body)
 	} else if (path === USER_UPDATE_URL && req.method === 'PATCH') {
-		await userController.editUser(req, res, body)
+		await adminUserController.editUser(req, res, body)
 	} else if (path === USER_DELETE_URL && req.method === 'DELETE') {
-		await userController.deleteUser(req, res, body)
+		await adminUserController.deleteUser(req, res, body)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from user router')
 

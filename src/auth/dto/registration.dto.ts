@@ -1,10 +1,10 @@
 export class RegistrationDto {
 	firstName: string | undefined
-	lastName: string | undefined
 	email: string | undefined
-	picture: string | undefined
 	phone: string | undefined
 	password: string | undefined
+	lastName?: string | undefined
+	picture?: string | undefined
 }
 
 export const isAuthRegistrationDto = (obj: unknown): obj is RegistrationDto => {

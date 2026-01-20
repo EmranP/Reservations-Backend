@@ -1,5 +1,5 @@
-import type { IUser } from '../../app/db/types/user.types'
-import type { ROLES } from '../../app/enums'
+import type { IUser } from '../../../app/db/types/user.types'
+import type { ROLES } from '../../../app/enums'
 
 export interface IUserDto {
 	id: string

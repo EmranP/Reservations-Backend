@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import sharp from 'sharp'
 import type { Logger } from 'winston'
+import { UserDto } from '../admin/user/dto/user.dto'
 import { AuthBaseConfig } from '../auth/abstract/auth-config.base'
 import { checkCacheRedisClient } from '../common/redis/utils/check-cache.util'
 import {
@@ -11,7 +12,6 @@ import type { IAppMessage } from '../common/types/app/app.type'
 import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
 import { assetsPath } from '../common/utils/format/path.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
-import { UserDto } from '../user/dto/user.dto'
 import type { EditProfileDto } from './dto/edit-profile.dto'
 import type { ProfileModel } from './profile.model'
 import type { IProfile } from './types/types.profile'
@@ -25,7 +25,7 @@ export class ProfileService extends AuthBaseConfig {
 		userId: string | undefined
 	): Promise<IProfile | ApiError> {
 		if (!userId) return ApiError.NotFound('User ID not founded!')
-		
+
 		const userProfileCache = await getRedisClientHashKey(
 			'users:ids',
 			`user:id:${userId}`
@@ -112,42 +112,17 @@ export class ProfileService extends AuthBaseConfig {
 					fileBody.fileBufferData
 				).metadata()
 
-				if (size && size > this.MAX_FILE_SIZE) {
-					this.logger.warn('Image is too large!')
+				const isValid = this.validateImageFile(size, format, width, height)
 
-					return ApiError.BadRequest('Image is too large!')
-				}
-
-				if (!format) {
-					this.logger.warn('File data is must be type file media!')
-
-					return ApiError.BadRequest('File data is must be type file media!')
-				}
-
-				if (width < 200 || height < 200) {
-					this.logger.warn('Image width or height is too small')
-
-					return ApiError.BadRequest('Image width or height is too small')
-				}
-
-				if (width > 2048 || height > 2048) {
-					this.logger.warn('Image width or height is too large')
-
-					return ApiError.BadRequest('Image width or height is too large')
-				}
-
-				//? Optional validate
-				// const ratio = width / height
-				// if (Math.abs(ratio - 1) > 0.05) {
-				// 	this.logger.warn('Image must be square')
-
-				// 	return ApiError.BadRequest('Image must be square')
-				// }
+				if (typeof isValid === 'object' && 'message' in isValid)
+					return ApiError.BadRequest(isValid.message)
 
 				const imageData = await sharp(fileBody.fileBufferData)
 					.resize(512, 512, { fit: 'cover', position: 'center' })
 					.webp({ quality: 85 })
-					.toFile(assetsPath(__dirname, `../../assets/img/user/${userId}.webp`))
+					.toFile(
+						assetsPath(__dirname, `${this.pathAssets}/img/user/${userId}.webp`)
+					)
 
 				if (!imageData)
 					return ApiError.InternalServer('The file was not compressed!')
