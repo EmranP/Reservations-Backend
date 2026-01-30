@@ -1,4 +1,4 @@
-import type { UserDto } from '../../admin/user/dto/user.dto'
+import type { UserDto } from '../../admin/users/dto/user.dto'
 import type { IAppService } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 

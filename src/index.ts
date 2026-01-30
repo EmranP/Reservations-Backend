@@ -1,9 +1,19 @@
+/* ========================================================================
+
+	||=========== 	||===        ===||	||===========		  //\\	 ||\\   ||
+	||				   		||  \\      //  ||	||				||		 // \\	 || \\  ||
+	||===========		||   \\    //		||	||==========		//  \\   ||  \\ ||
+  ||				  		||    \\  //		||	||     \\			 //===\\   ||   \\||
+	||===========		||		 ===			||	||      \\		//    \\   ||    \\|
+																								  
+=========================================================================== */
+
 import dotenv from 'dotenv'
-import { createClient } from 'redis'
 import { App, isDev } from './app/app'
 import { checkDB } from './app/check-db.app'
 import { initDB } from './app/db/init-db.app'
 import { routerApp } from './app/routes.router'
+import { initCloudStorage } from './app/s3/init-cloud-storage.app'
 import {
 	genJwks,
 	genJwksLocal,
@@ -17,7 +27,7 @@ import { cors } from './common/middleware/cors.middleware'
 import { helmetMiddleware } from './common/middleware/helmet.middleware'
 import { json } from './common/middleware/json.middleware'
 import { multer, multerFormData } from './common/middleware/multer.middleware'
-import { initRedisDB } from './common/redis/init-redis.db'
+import { clientRedis, initRedisDB } from './common/redis/init-redis.db'
 import { logger } from './common/utils/log/logger.log'
 
 dotenv.config({ path: '../.env' })
@@ -25,7 +35,6 @@ dotenv.config({ path: '../.env' })
 const app = new App()
 const port = APP_CONFIG.PORT
 const hostname = APP_CONFIG.HOSTNAME
-export const clientRedis = createClient()
 
 // Middlewares
 app.use(helmetMiddleware)
@@ -40,6 +49,8 @@ app.use(routerApp)
 // Start app
 const startApp = async (): Promise<void> => {
 	try {
+		if (!port || !hostname) return
+
 		clientRedis.on('error', err => {
 			if (err) {
 				console.error('Redis Client Error')
@@ -77,9 +88,8 @@ const startApp = async (): Promise<void> => {
 			process.exit(1)
 		}
 
-		await initRedisDB(clientRedis, logger, jwksData)
-		if (!port || !hostname) return
-
+		await initRedisDB(logger, jwksData)
+		await initCloudStorage(logger)
 		app.listen(port, hostname)
 	} catch (error) {
 		console.error(

@@ -1,4 +1,4 @@
-import { adminUserModel } from '../admin/user/index.user'
+import { adminUserModel } from '../admin/users/index.user'
 import { pool } from '../app/check-db.app'
 import { logger } from '../common/utils/log/logger.log'
 import { AuthTwoFactoryController } from './2fa/auth-2fa.controller'
