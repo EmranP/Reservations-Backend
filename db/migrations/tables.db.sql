@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 	phone VARCHAR(20) NOT NULL DEFAULT '+993',
 	password TEXT NOT NULL,
 	picture TEXT,
+	expire_picture_url TIMESTAMP DEFAULT NULL,
 	role INTEGER NOT NULL DEFAULT 1 CHECK (role in (0, 1)),
 	activation_link TEXT,
 	reset_pass_link TEXT,
@@ -59,12 +60,13 @@ CREATE TABLE IF NOT EXISTS public.rooms (
 	quality VARCHAR(35) NOT NULL,
 	description VARCHAR(500) NOT NULL,
 	status status_mood NOT NULL DEFAULT 'FREE',
-	image_url TEXT,
+	picture TEXT,
+	expire_picture_url TIMESTAMP DEFAULT NULL,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
 
--- Occupied Rooms
+-- Occupied Rooms (Orders)
 CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
@@ -75,6 +77,7 @@ CREATE TABLE IF NOT EXISTS public.occupied_rooms (
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
+
 
 -- Reviews
 CREATE TABLE IF NOT EXISTS public.reviews (

@@ -1,8 +1,9 @@
+// Base-config
 export const APP_CONFIG = {
 	PORT: Number(process.env.PORT),
+	MODE: process.env.NODE_ENV,
 	HOSTNAME: process.env.HOSTNAME,
 	CLIENT_URL: process.env.CLIENT_URL,
-	ADMIN_PASS: process.env.ADMIN_PASS,
 	API_URL: process.env.API_URL,
 	EXPIRES_USER_VERIFY: process.env.EXPIRES_USER_VERIFY,
 	EXPIRES_USER_REMOVE_VERIFY: process.env.EXPIRES_USER_REMOVE_VERIFY,
@@ -13,6 +14,13 @@ export const APP_CONFIG = {
 	USER_DEFAULT_PASS: process.env.USER_DEFAULT_PASS,
 } as const
 
+export const ADMIN_CONFIG = {
+	ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+	ADMIN_PASS: process.env.ADMIN_PASS,
+	ADMIN_PHONE: process.env.ADMIN_PHONE,
+	ADMIN_IS_VERIFY: Boolean(process.env.ADMIN_IS_VERIFY) ?? false,
+} as const
+
 export const EMAIL_CONFIG = {
 	HOST: process.env.SMTP_HOST,
 	PORT: Number(process.env.SMTP_PORT),
@@ -20,6 +28,7 @@ export const EMAIL_CONFIG = {
 	PASSWORD: process.env.SMTP_PASSWORD,
 } as const
 
+// OAuth config
 export const APP_OAUTH_GOOGLE_CONFIG = {
 	GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 	GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
@@ -44,7 +53,16 @@ export const APP_OAUTH_TELEGRAM_CONFIG = {
 	TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
 } as const
 
+// Redis
 export const APP_REDIS_CONFIG = {
 	DEFAULT_EXPIRES_TIME_REDIS: process.env.DEFAULT_EXPIRES_TIME_REDIS,
 	ONE_DAY_EXPIRES_TIME_REDIS: 86400000,
+} as const
+
+export const APP_MINIO_S3_CONFIG = {
+	MINIO_END_POINT: process.env.MINIO_END_POINT,
+	MINIO_PORT: process.env.MINIO_PORT,
+	MINIO_USE_SSL: process.env.MINIO_USE_SSL,
+	MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
+	MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
 } as const

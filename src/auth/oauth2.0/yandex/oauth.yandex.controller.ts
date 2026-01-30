@@ -1,12 +1,12 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../../common/abstract/base-config.common'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthYandexService } from './oauth.yandex.service'
 
-export class OAuthYandexController extends AuthBaseConfig {
+export class OAuthYandexController extends BaseConfig {
 	constructor(private service: OAuthYandexService, private logger: Logger) {
 		super()
 	}

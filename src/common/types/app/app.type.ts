@@ -18,3 +18,13 @@ export interface IAppEnCrypto {
 	iv: string
 	tag: string
 }
+
+export interface IAppCountShared {
+	count: string
+}
+
+export interface IPaginationConfig {
+	total: number
+	limit: number
+	offset: number
+}

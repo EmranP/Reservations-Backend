@@ -1,5 +1,6 @@
-import type { IUser } from '../../app/db/types/user.types'
-import type { ROLES } from '../../app/enums'
+import type { IUser, TypeUserClientRes } from '../../../app/db/types/user.types'
+import type { ROLES } from '../../../app/enums'
+import type { AUTH_METHOD } from '../../../common/constants/enum.constant'
 
 export interface IUserDto {
 	id: string
@@ -15,6 +16,11 @@ export interface IUserDto {
 	enableTwoFactoryChallenge: boolean
 	createdAt: string | Date
 	updatedAt: string | Date
+}
+
+export interface IAdminUserDto
+	extends Omit<IUserDto, 'enableResetPass' | 'enableTwoFactoryChallenge'> {
+	method: typeof AUTH_METHOD
 }
 
 export class UserDto {
@@ -57,6 +63,50 @@ export class UserDto {
 			isVerify: this.isVerify,
 			enableResetPass: this.enableResetPass,
 			enableTwoFactoryChallenge: this.enableTwoFactoryChallenge,
+			role: this.role,
+			createdAt: this.createdAt,
+			updatedAt: this.updatedAt,
+		}
+	}
+}
+
+export class AdminUsersDto {
+	id: string | undefined
+	firstName: string | undefined
+	lastName: string | null | undefined
+	email: string | undefined
+	phone: string | undefined
+	picture: string | null | undefined
+	role: typeof ROLES | undefined
+	isVerify: boolean | undefined
+	method: typeof AUTH_METHOD | undefined
+	createdAt: string | Date | undefined
+	updatedAt: string | Date | undefined
+
+	constructor(data: TypeUserClientRes) {
+		this.id = data.id
+		this.firstName = data.first_name
+		this.lastName = data.last_name
+		this.email = data.email
+		this.phone = data.phone
+		this.picture = data.picture
+		this.role = data.role
+		this.isVerify = data.is_verify
+		this.method = data.method
+		this.createdAt = data.created_at
+		this.updatedAt = data.updated_at
+	}
+
+	toPlain(): Partial<IAdminUserDto> {
+		return {
+			id: this.id,
+			firstName: this.firstName,
+			lastName: this.lastName,
+			email: this.email,
+			phone: this.phone,
+			picture: this.picture,
+			isVerify: this.isVerify,
+			method: this.method,
 			role: this.role,
 			createdAt: this.createdAt,
 			updatedAt: this.updatedAt,

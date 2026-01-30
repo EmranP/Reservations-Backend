@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import type { IUser } from '../app/db/types/user.types'
+
 import { APP_CONFIG, APP_REDIS_CONFIG } from '../common/config/app.config'
 import { AUTH_METHOD } from '../common/constants/enum.constant'
 import {
@@ -18,16 +18,17 @@ import {
 import { renderSendActivationLink } from '../common/utils/format/render.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 
+import { UserDto } from '../admin/users/dto/user.dto'
+import type { UserModel } from '../admin/users/user.model'
+import { BaseConfig } from '../common/abstract/base-config.common'
 import { checkCacheRedisClient } from '../common/redis/utils/check-cache.util'
 import {
 	getRedisClientHashKey,
 	setHashRedisClientWithEx,
 } from '../common/redis/utils/grud-redis.util'
-import { UserDto } from '../user/dto/user.dto'
-import type { UserModel } from '../user/user.model'
+
 import type { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
 import type { AuthTwoFactoryChallengeService } from './2fa/auth-2fa.service'
-import { AuthBaseConfig } from './abstract/auth-config.base'
 import { AuthModel } from './auth.model'
 import type { ForgetDto } from './dto/forget.dto'
 import type { LoginDto } from './dto/login.dto'
@@ -39,8 +40,9 @@ import type {
 	TypeAuthServiceMessageWithApiError,
 	TypeAuthUserService,
 } from './types/types.auth'
+import type { IUser } from '../app/db/types/user.types'
 
-export class AuthService extends AuthBaseConfig {
+export class AuthService extends BaseConfig {
 	constructor(
 		private model: AuthModel,
 		private authTwoFactoryModel: AuthTwoFactoryChallengeModel,
@@ -97,13 +99,17 @@ export class AuthService extends AuthBaseConfig {
 
 		const userDto = new UserDto(user)
 
-		if (!userDto.isVerify)
+		if (typeof userDto.isVerify !== 'undefined' && !userDto.isVerify)
 			return {
 				message: 'User is account is not verify',
 				status: 400,
 			}
 
-		if (!userDto.id || !userDto.role)
+		if (
+			!userDto.id ||
+			typeof userDto.role === 'undefined' ||
+			userDto.role === null
+		)
 			return {
 				message: 'Bad-request user dto from login-email',
 				status: 500,

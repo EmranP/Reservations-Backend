@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../common/abstract/base-config.common'
 import { responseInternalServer } from '../../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type {
 	EnableTwoFactoryChallenge,
 	VerifyTwoFactoryAuthDto,
@@ -11,7 +11,7 @@ import type { EmailService } from '../mail/email.service'
 import type { IRequestUserApp } from '../types/token.type'
 import type { AuthTwoFactoryChallengeService } from './auth-2fa.service'
 
-export class AuthTwoFactoryController extends AuthBaseConfig {
+export class AuthTwoFactoryController extends BaseConfig {
 	constructor(
 		protected authTwoFactoryService: AuthTwoFactoryChallengeService,
 		protected authEmailService: EmailService,

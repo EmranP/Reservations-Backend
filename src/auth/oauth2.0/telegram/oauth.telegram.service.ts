@@ -2,13 +2,13 @@ import bcrypt from 'bcrypt'
 import crypto from 'crypto'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
+import { UserDto } from '../../../admin/users/dto/user.dto'
 import { APP_OAUTH_TELEGRAM_CONFIG } from '../../../common/config/app.config'
 import { AUTH_METHOD } from '../../../common/constants/enum.constant'
 import { genLinks } from '../../../common/constants/link.constant'
 import { isVerifyTokenError } from '../../../common/utils/app/checkType.utils'
 import { setDateUtil } from '../../../common/utils/app/date.util'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
-import { UserDto } from '../../../user/dto/user.dto'
 import type { AuthModel } from '../../auth.model'
 import type {
 	IUserAccountDto,
@@ -216,7 +216,7 @@ export class OAuthTelegramService extends OAuthService {
 		if (isVerifyTokenError(isVerifyToken))
 			return ApiError.BadRequest(isVerifyToken.message)
 
-		if (!isVerifyToken.sub || !isVerifyToken.role)
+		if (!isVerifyToken.sub || typeof isVerifyToken.role === 'undefined')
 			return ApiError.BadRequest('ID or Role is not have from verify token')
 
 		const user = await this.authModel.getUserById(isVerifyToken.sub)
