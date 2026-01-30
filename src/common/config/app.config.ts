@@ -1,3 +1,4 @@
+// Base-config
 export const APP_CONFIG = {
 	PORT: Number(process.env.PORT),
 	MODE: process.env.NODE_ENV,
@@ -27,6 +28,7 @@ export const EMAIL_CONFIG = {
 	PASSWORD: process.env.SMTP_PASSWORD,
 } as const
 
+// OAuth config
 export const APP_OAUTH_GOOGLE_CONFIG = {
 	GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
 	GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
@@ -51,7 +53,16 @@ export const APP_OAUTH_TELEGRAM_CONFIG = {
 	TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
 } as const
 
+// Redis
 export const APP_REDIS_CONFIG = {
 	DEFAULT_EXPIRES_TIME_REDIS: process.env.DEFAULT_EXPIRES_TIME_REDIS,
 	ONE_DAY_EXPIRES_TIME_REDIS: 86400000,
+} as const
+
+export const APP_MINIO_S3_CONFIG = {
+	MINIO_END_POINT: process.env.MINIO_END_POINT,
+	MINIO_PORT: process.env.MINIO_PORT,
+	MINIO_USE_SSL: process.env.MINIO_USE_SSL,
+	MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
+	MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
 } as const

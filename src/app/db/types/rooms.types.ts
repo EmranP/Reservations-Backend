@@ -3,10 +3,11 @@ import type { STATUS_ROOM } from '../../enums'
 
 export interface IRooms extends ISharedModelApp {
 	price: number
-	quality: number
+	quality: string
 	description: string
 	status: typeof STATUS_ROOM
-	image_url: string
+	picture: string
+	expire_picture_url: Date | null
 }
 
 export interface IOccupiedRooms extends ISharedModelApp {

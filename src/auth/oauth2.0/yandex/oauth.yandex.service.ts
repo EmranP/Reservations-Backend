@@ -278,7 +278,7 @@ export class OAuthYandexService extends OAuthService {
 		if (isVerifyTokenError(isVerifyToken))
 			return ApiError.BadRequest(isVerifyToken.message)
 
-		if (!isVerifyToken.sub || !isVerifyToken.role)
+		if (!isVerifyToken.sub || typeof isVerifyToken.role === 'undefined')
 			return ApiError.BadRequest('ID or Role is not have from verify token')
 
 		const userAccount = await this.model.findUserAccount(isVerifyToken.sub)
