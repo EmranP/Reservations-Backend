@@ -166,7 +166,7 @@ export class ProfileService extends BaseConfig {
 		let imagePath: string | undefined
 		const filename = `${userId}.${format}`
 
-		if (isDevMode !== this.devMode) {
+		if (isDevMode === this.devMode) {
 			try {
 				imagePath = assetsPath(
 					__dirname,
@@ -263,7 +263,7 @@ export class ProfileService extends BaseConfig {
 		let imagePath: string | undefined
 		const filename = `${userId}.png`
 
-		if (isDevMode !== this.devMode) {
+		if (isDevMode === this.devMode) {
 			imagePath = assetsPath(
 				__dirname,
 				`${this.pathAssets}/img/user/${filename}`
