@@ -1,8 +1,8 @@
 import type { Pool } from 'pg'
 import type { Logger } from 'winston'
-import type { IUser } from '../app/db/types/user.types'
 import { DB_TABLE_USERS } from '../common/constants/table-db.constant'
 import type { EditProfileDto } from './dto/edit-profile.dto'
+import type { IUser } from '../app/db/types/user.types'
 
 export class ProfileModel {
 	constructor(private pool: Pool, private logger: Logger) {}
@@ -59,17 +59,20 @@ export class ProfileModel {
 
 	async updateProfileImage(
 		userId: string,
-		profileImagePath: string | null
+		profileImagePath: string | null,
+		expireImageUrl: Date | null
 	): Promise<IUser | null> {
 		try {
 			const query = `UPDATE ${DB_TABLE_USERS} SET 
-				picture = $1 
-				WHERE id = $2
+				picture = $1,
+				expire_picture_url = $2
+				WHERE id = $3
 				RETURNING *;
 			`
 
 			const queryResult = await this.pool.query<IUser>(query, [
 				profileImagePath,
+				expireImageUrl,
 				userId,
 			])
 

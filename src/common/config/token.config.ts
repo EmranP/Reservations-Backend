@@ -12,15 +12,15 @@ export const JWKS_CONFIG = {
 	AUDIENCE: process.env.AUDIENCE || 'api',
 	JWKS_URL: process.env.JWKS_URL || 'https://api',
 	KID: process.env.KID || `kid-${uuidV4()}`,
-}
+} as const
 
 export const TOKEN_CONFIG = {
 	ACCESS_EXPIRE: process.env.JWT_ACCESS_EXPIRES,
 	REFRESH_EXPIRE: process.env.JWT_REFRESH_EXPIRES,
-}
+} as const
 
 export const JSON_BIN_CONFIG = {
 	API_KEY: process.env.JSON_BIN_API_KEY || '',
 	API_ACCESS_KEY: process.env.JSON_BIN_API_ACCESS_KEY || '',
 	API_ID: process.env.JSON_BIN_API_ID || '',
-}
+} as const

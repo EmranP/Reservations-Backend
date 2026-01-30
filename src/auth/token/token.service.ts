@@ -2,9 +2,9 @@ import bcrypt from 'bcrypt'
 import { importJWK, jwtVerify, SignJWT } from 'jose'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import type { IUserDto } from '../../admin/user/dto/user.dto'
+import type { IUserDto } from '../../admin/users/dto/user.dto'
 import { isDev } from '../../app/app'
-import { BaseConfig } from '../../common/abstract/auth-config.base'
+import { BaseConfig } from '../../common/abstract/base-config.common'
 import { APP_REDIS_CONFIG } from '../../common/config/app.config'
 import { JWKS_CONFIG, TOKEN_CONFIG } from '../../common/config/token.config'
 import { checkCacheRedisClient } from '../../common/redis/utils/check-cache.util'
@@ -311,7 +311,7 @@ export class TokenService extends BaseConfig {
 		if (isVerifyTokenError(isVerifyToken))
 			return ApiError.BadRequest(isVerifyToken.message)
 
-		if (!isVerifyToken.sub || !isVerifyToken.role)
+		if (!isVerifyToken.sub || typeof isVerifyToken.role === 'undefined')
 			return ApiError.BadRequest('ID or Role is not have from verify token')
 
 		const tokens = await this.generateTokens({

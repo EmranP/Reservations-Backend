@@ -97,7 +97,10 @@ export const multerFormData: Middleware<unknown> = async (
 	const contentType = req.headers['content-type'] || ''
 	const pathAssets = '../../../assets'
 
-	if (contentType.includes('multipart/form-data') && req.method === 'POST') {
+	if (
+		(contentType.includes('multipart/form-data') && req.method === 'POST') ||
+		(contentType.includes('multipart/form-data') && req.method === 'PATCH')
+	) {
 		ctx.file = {
 			fileBufferData: undefined,
 		}

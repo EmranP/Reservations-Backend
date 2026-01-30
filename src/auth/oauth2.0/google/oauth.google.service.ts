@@ -248,11 +248,11 @@ export class OAuthGoogleService extends OAuthService {
 			const newUserGoogle = await this.createOAuth(
 				this.model,
 				this.tokenService,
-				refreshHash,
 				dataCreateGoogleDto,
 				resetPassLink,
 				AUTH_METHOD.GOOGLE,
-				state
+				state,
+				refreshHash
 			)
 
 			if ('message' in newUserGoogle) return newUserGoogle
@@ -272,7 +272,7 @@ export class OAuthGoogleService extends OAuthService {
 		if (isVerifyTokenError(isVerifyToken))
 			return ApiError.BadRequest(isVerifyToken.message)
 
-		if (!isVerifyToken.sub || !isVerifyToken.role)
+		if (!isVerifyToken.sub || typeof isVerifyToken.role === 'undefined')
 			return ApiError.BadRequest('ID or Role is not have from verify token')
 
 		const userAccount = await this.model.findUserAccount(isVerifyToken.sub)

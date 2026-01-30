@@ -3,7 +3,7 @@ import type { Logger } from 'winston'
 import type {
 	IUser,
 	ReturnCreateUserType,
-	TypeUserID,
+	TypeUserIDWithRole,
 } from '../app/db/types/user.types'
 import {
 	DB_TABLE_TOKENS,
@@ -87,15 +87,15 @@ export class AuthModel {
 		isVerify: boolean,
 		role: number,
 		authMethod: string
-	): Promise<TypeUserID | undefined> {
+	): Promise<TypeUserIDWithRole | undefined> {
 		const query = `
 				INSERT INTO ${DB_TABLE_USERS} 
 				(first_name, last_name, email, phone, password, picture, activation_link, reset_pass_link, is_verify, method, role)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-				RETURNING id
+				RETURNING id, role
 			`
 
-		const queryResult = await this.pool.query<TypeUserID>(query, [
+		const queryResult = await this.pool.query<TypeUserIDWithRole>(query, [
 			dto.firstName,
 			dto.lastName,
 			dto.email,

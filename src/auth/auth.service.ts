@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
-import type { IUser } from '../app/db/types/user.types'
+
 import { APP_CONFIG, APP_REDIS_CONFIG } from '../common/config/app.config'
 import { AUTH_METHOD } from '../common/constants/enum.constant'
 import {
@@ -18,14 +18,15 @@ import {
 import { renderSendActivationLink } from '../common/utils/format/render.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 
-import { UserDto } from '../admin/user/dto/user.dto'
-import type { UserModel } from '../admin/user/user.model'
-import { BaseConfig } from '../common/abstract/auth-config.base'
+import { UserDto } from '../admin/users/dto/user.dto'
+import type { UserModel } from '../admin/users/user.model'
+import { BaseConfig } from '../common/abstract/base-config.common'
 import { checkCacheRedisClient } from '../common/redis/utils/check-cache.util'
 import {
 	getRedisClientHashKey,
 	setHashRedisClientWithEx,
 } from '../common/redis/utils/grud-redis.util'
+
 import type { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
 import type { AuthTwoFactoryChallengeService } from './2fa/auth-2fa.service'
 import { AuthModel } from './auth.model'
@@ -39,6 +40,7 @@ import type {
 	TypeAuthServiceMessageWithApiError,
 	TypeAuthUserService,
 } from './types/types.auth'
+import type { IUser } from '../app/db/types/user.types'
 
 export class AuthService extends BaseConfig {
 	constructor(

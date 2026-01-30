@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 
 import type { Logger } from 'winston'
-import { BaseConfig } from '../common/abstract/auth-config.base'
+import { BaseConfig } from '../common/abstract/base-config.common'
 import { responseInternalServer } from '../common/utils/app/errorResponse.utils'
 import { AuthService } from './auth.service'
 import type { ForgetDto } from './dto/forget.dto'

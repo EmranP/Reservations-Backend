@@ -3,9 +3,11 @@ import { ROLES } from '../../app/enums'
 import { hasRole } from '../../auth/middleware/hasRole.auth'
 import {
 	ROOMS_CREATE_URL,
+	ROOMS_DELETE_IMAGE_URL,
 	ROOMS_EDIT_URL,
 	ROOMS_GET_ALL_URL,
 	ROOMS_GET_ONE_URL,
+	ROOMS_REMOVE_URL,
 } from '../../common/constants/admin.constant'
 import { isUploadDto } from '../../common/pipe/upload.pipe'
 import type { IAppQueryParams } from '../../common/types/app/app.type'
@@ -14,7 +16,7 @@ import { isRequestUserApp } from '../../common/utils/app/checkType.utils'
 import { responseBadRequest } from '../../common/utils/app/errorResponse.utils'
 import { ApiError } from '../../common/utils/log/exists-error.log'
 import { adminController } from '../index.admin'
-import { isCreateRoomDto } from '../pipe/room.pipe'
+import { isCreateRoomDto, isEditRoomDto } from '../pipe/room.pipe'
 
 export const adminRoomRouter = async (
 	isAuth: ApiError | undefined,
@@ -58,19 +60,19 @@ export const adminRoomRouter = async (
 			return
 		}
 
-		await adminController.createRoom(req, res, body, file)
+		await adminController.createRoom(res, body, file)
 	}
 	// GET
 	else if (
 		path === `${ROOMS_GET_ALL_URL}${query.searchParams}` &&
 		req.method === 'GET'
 	) {
-		await adminController.getAllRoom(req, res, query)
+		await adminController.getAllRoom(res, query)
 	} else if (
 		path === `${ROOMS_GET_ONE_URL}${query.searchParams}` &&
 		req.method === 'GET'
 	) {
-		await adminController.getOneRoom(req, res, query)
+		await adminController.getOneRoom(res, query)
 	} else if (
 		path === `${ROOMS_EDIT_URL}${query.searchParams}` &&
 		req.method === 'PATCH'
@@ -94,6 +96,70 @@ export const adminRoomRouter = async (
 
 			return
 		}
+
+		if (!isEditRoomDto(body)) {
+			await responseBadRequest('Invalid data from body edit-room', res)
+
+			return
+		}
+
+		if (file && !isUploadDto(file)) {
+			await responseBadRequest('Invalid file from edit-room!', res)
+
+			return
+		}
+
+		await adminController.editRoom(res, query, body, file)
+	} else if (
+		path === `${ROOMS_DELETE_IMAGE_URL}${query.searchParams}` &&
+		req.method === 'POST'
+	) {
+		if (typeof isAuth !== 'undefined' && 'message' in isAuth) {
+			await responseBadRequest(isAuth.message, res, isAuth.status)
+
+			return
+		}
+
+		if (!isRequestUserApp(req)) {
+			await responseBadRequest('User data is not founded!', res, 404)
+
+			return
+		}
+
+		const accessAdminRole = await hasRole([ROLES.ADMIN], req, res)
+
+		if (accessAdminRole) {
+			await responseBadRequest(accessAdminRole, res, 403)
+
+			return
+		}
+
+		await adminController.removeImageRoom(res, query)
+	} else if (
+		path === `${ROOMS_REMOVE_URL}${query.searchParams}` &&
+		req.method === 'DELETE'
+	) {
+		if (typeof isAuth !== 'undefined' && 'message' in isAuth) {
+			await responseBadRequest(isAuth.message, res, isAuth.status)
+
+			return
+		}
+
+		if (!isRequestUserApp(req)) {
+			await responseBadRequest('User data is not founded!', res, 404)
+
+			return
+		}
+
+		const accessAdminRole = await hasRole([ROLES.ADMIN], req, res)
+
+		if (accessAdminRole) {
+			await responseBadRequest(accessAdminRole, res, 403)
+
+			return
+		}
+
+		await adminController.deleteRoom(res, query)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from room router')
 

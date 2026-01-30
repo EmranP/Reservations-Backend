@@ -2,8 +2,9 @@ import fs from 'fs/promises'
 import { exportJWK, importSPKI } from 'jose'
 import path from 'path'
 import { v4 } from 'uuid'
-import { clientRedis } from '../..'
+
 import { JSON_BIN_CONFIG, JWKS_CONFIG } from '../../common/config/token.config'
+import { getRedisClientHashKey } from '../../common/redis/utils/grud-redis.util'
 import { fetchJson } from '../../common/utils/app/fetchJson.util'
 import { logger } from '../../common/utils/log/logger.log'
 import type {
@@ -51,7 +52,7 @@ export const genJwks = async () => {
 export const getJwks = async (): Promise<IJwksData | null> => {
 	if (!JWKS_CONFIG.JWKS_URL) return null
 
-	const redisKeysJwks = await clientRedis.hGet('jsonBin', 'keys')
+	const redisKeysJwks = await getRedisClientHashKey('jsonBin', 'keys')
 
 	if (redisKeysJwks) {
 		const jsonData = JSON.parse(redisKeysJwks) as IJwksData
@@ -108,7 +109,7 @@ export const genJwksLocal = async (): Promise<void> => {
 
 export const getJwksLocal = async (): Promise<IJwksData | null> => {
 	try {
-		const redisKeysJwks = await clientRedis.hGet('jsonBin', 'keys')
+		const redisKeysJwks = await getRedisClientHashKey('jsonBin', 'keys')
 
 		if (redisKeysJwks) {
 			const parseRedisData = JSON.parse(redisKeysJwks) as IJwksData

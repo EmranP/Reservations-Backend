@@ -8,3 +8,5 @@ export interface IErrorResponseApp {
 	message: string
 	status: number
 }
+
+export type TypeAppID = Pick<ISharedModelApp, 'id'>
