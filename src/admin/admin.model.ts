@@ -1,32 +1,35 @@
 import type { Pool } from 'pg'
 import type { Logger } from 'winston'
+import type { IRooms } from '../app/db/types/rooms.types'
 import { DB_TABLE_ROOMS } from '../common/constants/table-db.constant'
-import type { IAppCountShared } from '../common/types/app/app.type'
-import type { IRooms, TypeRoomId } from '../common/types/db/rooms.types'
+import type { TypeAppID } from '../common/types/db/app.interface'
 import { responseErrorDB } from '../common/utils/app/errorResponse.utils'
-import type { RoomDto } from './dto/room.dto'
+import type { IRoomDto } from './dto/room.dto'
+import type { TypeUpdateRoomResult } from './types/admin.interface'
 
 export class AdminModel {
 	constructor(private pool: Pool, private logger: Logger) {}
 
 	async createRoom(
 		id: string,
-		dto: RoomDto,
-		imageUrl: string
-	): Promise<TypeRoomId | null> {
+		dto: IRoomDto,
+		imageUrl: string,
+		expireImageUrl: Date | null = null
+	): Promise<TypeAppID | null> {
 		try {
 			const query = `INSERT INTO ${DB_TABLE_ROOMS}
-				(id, price, quality, description, status, image_url)
-				VALUES ($1, $2, $3, $4, $5, $6)
+				(id, price, quality, description, status, picture, expire_picture_url)
+				VALUES ($1, $2, $3, $4, $5, $6, $7)
 				RETURNING id
 			`
-			const queryResult = await this.pool.query<TypeRoomId>(query, [
+			const queryResult = await this.pool.query<TypeAppID>(query, [
 				id,
 				dto.price,
 				dto.quality,
 				dto.description,
 				dto.status,
 				imageUrl,
+				expireImageUrl,
 			])
 
 			if (!queryResult.rows[0]) return null
@@ -45,39 +48,19 @@ export class AdminModel {
 
 	async getAllRooms(limit: number, offset: number): Promise<IRooms[] | null> {
 		try {
-			const query = `SELECT * FROM ${DB_TABLE_ROOMS} ORDER BY created_at DESC LIMIT $1 OFFSET $2`
-			const queryResult = await this.pool.query<IRooms[]>(query, [
-				limit,
-				offset,
-			])
+			const query = `SELECT * FROM ${DB_TABLE_ROOMS} 
+			ORDER BY created_at DESC 
+			LIMIT $1 OFFSET $2`
+			const queryResult = await this.pool.query<IRooms>(query, [limit, offset])
 
-			if (!queryResult.rows[0]) return null
+			if (queryResult.rowCount === 0) return null
 
-			return queryResult.rows[0]
+			return queryResult.rows ?? null
 		} catch (error) {
 			const errorMessage = responseErrorDB(
 				this.logger,
 				error,
 				'Error get-all rooms:'
-			)
-
-			return errorMessage
-		}
-	}
-
-	async getRoomsCount(): Promise<number | null> {
-		try {
-			const query = `SELECT COUNT(*) FROM ${DB_TABLE_ROOMS}`
-			const result = await this.pool.query<IAppCountShared>(query)
-
-			if (!result.rows[0]?.count) return null
-
-			return Number(result.rows[0].count)
-		} catch (error) {
-			const errorMessage = responseErrorDB(
-				this.logger,
-				error,
-				'Error get-all counts to rooms:'
 			)
 
 			return errorMessage
@@ -105,21 +88,21 @@ export class AdminModel {
 
 	async editRoomById(
 		roomId: string,
-		dto: RoomDto,
-		imageUrl: string | null = null
-	): Promise<TypeRoomId | null> {
+		dto: IRoomDto,
+		imageUrl: string | null
+	): Promise<TypeAppID | null> {
 		try {
 			const query = `UPDATE ${DB_TABLE_ROOMS} SET 
 				price = COALESCE($1, price),
 				quality = COALESCE($2, quality),
 				description = COALESCE($3, description),
 				status = COALESCE($4, status),
-				image_url = COALESCE($5, image_url)
+				picture = COALESCE($5, picture)
 				WHERE id = $6
 				RETURNING id
 			`
 
-			const queryResult = await this.pool.query<TypeRoomId>(query, [
+			const queryResult = await this.pool.query<TypeAppID>(query, [
 				dto.price,
 				dto.quality,
 				dto.description,
@@ -127,7 +110,7 @@ export class AdminModel {
 				imageUrl,
 				roomId,
 			])
-
+			console.log(queryResult)
 			if (!queryResult.rows[0]) return null
 
 			return queryResult.rows[0]
@@ -142,24 +125,26 @@ export class AdminModel {
 		}
 	}
 
-	async updateRoomImage(
+	async updateRoomImage<T extends '*' | 'id'>(
 		roomId: string,
-		dto: string
-	): Promise<TypeRoomId | null> {
+		dto: null | string,
+		expireImageUrl: Date | null,
+		isAll: T
+	): Promise<TypeUpdateRoomResult<T> | null> {
 		try {
-			const query = `UPDATE ${DB_TABLE_ROOMS} SET 
-			image_url = COALESCE($1, image_url)
-			WHERE id = $2
-			RETURNING id
+			const query = `UPDATE ${DB_TABLE_ROOMS} 
+			SET picture = $1,
+				expire_picture_url = $2
+			WHERE id = $3
+			RETURNING ${isAll}
 			`
-			const queryResult = await this.pool.query<TypeRoomId>(query, [
-				roomId,
+			const queryResult = await this.pool.query(query, [
 				dto,
+				expireImageUrl,
+				roomId,
 			])
 
-			if (!queryResult.rows[0]) return null
-
-			return queryResult.rows[0]
+			return queryResult.rows[0] ?? null
 		} catch (error) {
 			const errorMessage = responseErrorDB(
 				this.logger,
@@ -171,11 +156,11 @@ export class AdminModel {
 		}
 	}
 
-	async removeRoomById(roomId: string): Promise<TypeRoomId | null> {
+	async removeRoomById(roomId: string): Promise<TypeAppID | null> {
 		try {
-			const query = `DELETE FROM ${DB_TABLE_ROOMS} WHERE id = $1`
+			const query = `DELETE FROM ${DB_TABLE_ROOMS} WHERE id = $1 RETURNING id`
 
-			const queryResult = await this.pool.query<TypeRoomId>(query, [roomId])
+			const queryResult = await this.pool.query<TypeAppID>(query, [roomId])
 
 			if (!queryResult.rows[0]) return null
 

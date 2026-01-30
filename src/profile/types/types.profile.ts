@@ -1,4 +1,4 @@
-import type { UserDto } from '../../admin/user/dto/user.dto'
+import type { UserDto } from '../../admin/users/dto/user.dto'
 
 export interface IProfile {
 	profile: UserDto

@@ -1,11 +1,13 @@
 import type sharp from 'sharp'
-import { APP_CONFIG } from '../../common/config/app.config'
-import { TOKEN_CONFIG } from '../../common/config/token.config'
-import type { IAppMessage } from '../../common/types/app/app.type'
-import { writeHeadData } from '../../common/utils/app/writeHeadData.utils'
-import { logger } from '../../common/utils/log/logger.log'
+import { pool } from '../../app/check-db.app'
+import { APP_CONFIG } from '../config/app.config'
+import { TOKEN_CONFIG } from '../config/token.config'
+import type { IAppCountShared, IAppMessage } from '../types/app/app.type'
+import { responseErrorDB } from '../utils/app/errorResponse.utils'
+import { writeHeadData } from '../utils/app/writeHeadData.utils'
+import { logger } from '../utils/log/logger.log'
 
-export abstract class AuthBaseConfig {
+export abstract class BaseConfig {
 	protected refreshConfig = TOKEN_CONFIG.REFRESH_EXPIRE
 	protected verifyConfig: string | undefined = APP_CONFIG.EXPIRES_USER_VERIFY
 	protected verifyRemoveConfig: string | undefined =
@@ -15,10 +17,11 @@ export abstract class AuthBaseConfig {
 	protected twoFactoryConfig: string | undefined =
 		APP_CONFIG.EXPIRES_USER_TWO_FACTORY_CHALLENGE
 	// Expire
-	// protected expiresForgetVerify: Date | null = null
 	protected expiresVerify: Date | null = null
 	protected expiresRemoveVerify: Date | null = null
 	protected expiresRemoveRefresh = new Date(0).toUTCString()
+	protected expireS3Image = 60 * 60 * 24 * 7
+
 	// Age
 	protected maxAgeVerify: number =
 		this.verifyConfig === '2m' ? 2 : this.verifyConfig === '5m' ? 5 : 0
@@ -84,7 +87,7 @@ export abstract class AuthBaseConfig {
 			return { message: 'Image width or height is too small' }
 		}
 
-		if (width > 2048 || height > 2048) {
+		if (width > 2500 || height > 1500) {
 			logger.warn('Image width or height is too large')
 
 			return { message: 'Image width or height is too large' }
@@ -97,5 +100,24 @@ export abstract class AuthBaseConfig {
 
 		// 	return ApiError.BadRequest('Image must be square')
 		// }
+	}
+
+	protected async getModelCount(table: string): Promise<number | null> {
+		try {
+			const query = `SELECT COUNT(*) FROM ${table}`
+			const result = await pool.query<IAppCountShared>(query)
+
+			if (!result.rows[0]?.count) return null
+
+			return Number(result.rows[0].count)
+		} catch (error) {
+			const errorMessage = responseErrorDB(
+				logger,
+				error,
+				'Error get-all counts to rooms:'
+			)
+
+			return errorMessage
+		}
 	}
 }

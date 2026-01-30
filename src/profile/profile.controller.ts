@@ -1,17 +1,16 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
-import { AuthBaseConfig } from '../auth/abstract/auth-config.base'
 import type { IRequestUserApp } from '../auth/types/token.type'
+import { BaseConfig } from '../common/abstract/base-config.common'
 import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
 import {
 	responseBadRequest,
 	responseInternalServer,
 } from '../common/utils/app/errorResponse.utils'
-import { assetsPath } from '../common/utils/format/path.util'
 import type { EditProfileDto } from './dto/edit-profile.dto'
 import type { ProfileService } from './profile.service'
 
-export class ProfileController extends AuthBaseConfig {
+export class ProfileController extends BaseConfig {
 	constructor(private service: ProfileService, private logger: Logger) {
 		super()
 	}
@@ -83,7 +82,7 @@ export class ProfileController extends AuthBaseConfig {
 			)
 		}
 	}
-	// Add main logic put the service example created/remove fs
+
 	async uploadProfile(
 		req: IRequestUserApp,
 		res: ServerResponse<IncomingMessage>,
@@ -91,15 +90,12 @@ export class ProfileController extends AuthBaseConfig {
 	): Promise<void> {
 		try {
 			const userId = req.user?.sub
-			const userProfileImage = assetsPath(
-				__dirname,
-				`${this.pathAssets}/img/user/${userId}.webp`
-			)
+
 			const isDev = this.mode
 
 			const resultUploadDB = await this.service.uploadProfileImage(
 				userId,
-				userProfileImage,
+
 				isDev,
 				fileBody
 			)
@@ -136,14 +132,10 @@ export class ProfileController extends AuthBaseConfig {
 	): Promise<void> {
 		try {
 			const userId = req.user?.sub
-			const userProfileImage = assetsPath(
-				__dirname,
-				`${this.pathAssets}/img/user/${userId}.webp`
-			)
 			const isDevMode = process.env.NODE_ENV
 			const resultRemoveProfileImage = await this.service.removeProfileImage(
 				userId,
-				userProfileImage,
+
 				null,
 				isDevMode
 			)

@@ -3,10 +3,7 @@ import { adminRoomRouter } from '../admin/route/admin.route'
 import { userRouter } from '../admin/route/user.route'
 import { authRouter } from '../auth/auth.router'
 import { isAuth } from '../auth/middleware/isAuth.auth'
-import {
-	rootRoomRouter,
-	rootUserRouter,
-} from '../common/constants/admin.constant'
+import { rootRoomRouter } from '../common/constants/admin.constant'
 import { rootAuthRouter } from '../common/constants/auth.constant'
 import { isPathWithQuery } from '../common/constants/global.constant'
 import { rootProfileRouter } from '../common/constants/profile.constant'
@@ -58,12 +55,6 @@ export const routerApp: Middleware<unknown> = async (
 		pathOption.query = null
 	}
 
-	// Add isPath for rooms && other where need query params
-	const isPathUserHref = isPathWithQuery(
-		pathOrigin,
-		'user',
-		pathOption.searchParams
-	)
 	const isPathAuthHref = isPathWithQuery(
 		pathOrigin,
 		'auth/activate',
@@ -127,13 +118,33 @@ export const routerApp: Middleware<unknown> = async (
 		'room/delete/image',
 		pathOption.searchParams
 	)
+	// Users
+	const isPathUsersAllHref = isPathWithQuery(
+		pathOrigin,
+		'users',
+		pathOption.searchParams
+	)
+	const isPathUserOneHref = isPathWithQuery(
+		pathOrigin,
+		'user',
+		pathOption.searchParams
+	)
+	const isPathUserEditHref = isPathWithQuery(
+		pathOrigin,
+		'user/edit',
+		pathOption.searchParams
+	)
+	const isPathUserDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'user/remove',
+		pathOption.searchParams
+	)
 
 	if (
 		!rootAuthRouter.includes(path) &&
-		!rootUserRouter.includes(path) &&
 		!rootProfileRouter.includes(path) &&
 		!rootRoomRouter.includes(path) &&
-		parserURL.href !== isPathUserHref &&
+		// Auth
 		parserURL.href !== isPathAuthHref &&
 		parserURL.href !== isPathAuthRepaidHref &&
 		parserURL.href !== isPathAuthForgetHref &&
@@ -147,7 +158,12 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href !== isPathEditOneRoom &&
 		parserURL.href !== isPathRemoveRoom &&
 		parserURL.href !== isPathUploadImageRoom &&
-		parserURL.href !== isPathDeleteImageRoom
+		parserURL.href !== isPathDeleteImageRoom &&
+		// Users
+		parserURL.href !== isPathUsersAllHref &&
+		parserURL.href !== isPathUserOneHref &&
+		parserURL.href !== isPathUserEditHref &&
+		parserURL.href !== isPathUserDeleteHref
 	) {
 		await responseNotFoundApi('Not founded auth api', res)
 	}
@@ -174,8 +190,22 @@ export const routerApp: Middleware<unknown> = async (
 		)
 	}
 
-	if (rootUserRouter.includes(path) || parserURL.href === isPathUserHref) {
-		await userRouter(authMiddleware, path, pathOption, req, res, body, next)
+	if (
+		parserURL.href === isPathUsersAllHref ||
+		parserURL.href === isPathUserOneHref ||
+		parserURL.href === isPathUserEditHref ||
+		parserURL.href === isPathUserDeleteHref
+	) {
+		await userRouter(
+			authMiddleware,
+			path,
+			pathOption,
+			req,
+			res,
+			body,
+			file,
+			next
+		)
 	}
 
 	if (rootProfileRouter.includes(path)) {

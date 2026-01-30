@@ -116,7 +116,7 @@
 8. Add endpoint upload image profile data: ✅
 9. Add upload profile image && add validate files includes(format, size, width, height & position): ✅
 10. Add endpoint remove image profile data: ✅
-11. Add endpoint profile get me with media: **Just add Profile get without media**
+11. Add endpoint profile get me with media: ✅
 
 ### Profile forget password function how use client
 
@@ -126,12 +126,12 @@
 
 ## Storage for files
 
-1. Add without s3 storage first-time, add local-storage example save one folder on mac-book: ❌
-1. Add s3 storage: ❌
+1. Add without s3 storage first-time, add local-storage example save one folder on mac-book: ✅
+1. Add s3 storage: ✅
 
 ## Admin panel
 
-1. Add get all users for admin: **50%**
+1. Add get all users for admin: ✅
 
 ## Deploy
 
