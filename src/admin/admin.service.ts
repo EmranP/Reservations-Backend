@@ -59,7 +59,7 @@ export class AdminService extends BaseConfig {
 		let imagePath: string | undefined
 		const filename = `${roomId}.${format}`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			imagePath = assetsPath(
 				__dirname,
 				`${this.pathAssets}/img/rooms/${filename}`
@@ -372,7 +372,7 @@ export class AdminService extends BaseConfig {
 
 		const filename = `${roomId}.png`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			const imagePath = assetsPath(
 				__dirname,
 				`../../assets/img/rooms/${filename}`
@@ -473,7 +473,7 @@ export class AdminService extends BaseConfig {
 
 		const filename = `${roomId}.png`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			const imagePath = assetsPath(
 				__dirname,
 				`../../assets/img/rooms/${filename}`

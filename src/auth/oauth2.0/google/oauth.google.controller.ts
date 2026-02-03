@@ -12,7 +12,6 @@ export class OAuthGoogleController extends BaseConfig {
 	}
 
 	async googleUrl(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		query: IAppQueryParams
 	): Promise<void> {
@@ -45,7 +44,6 @@ export class OAuthGoogleController extends BaseConfig {
 	}
 
 	async googleCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthCallback
 	): Promise<void> {
@@ -92,7 +90,6 @@ export class OAuthGoogleController extends BaseConfig {
 	}
 
 	async refreshToken(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	) {

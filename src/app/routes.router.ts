@@ -19,7 +19,7 @@ export const routerApp: Middleware<unknown> = async (
 	const { req, res, body, cookies, file } = ctx
 	if (!req.url) return
 
-	const authMiddleware = await isAuth(req, res)
+	const authMiddleware = await isAuth(req)
 
 	const parserURL = new URL(req.url, `http://${req.headers.host}`)
 	const pathOrigin = parserURL.origin

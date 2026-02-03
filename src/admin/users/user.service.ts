@@ -8,6 +8,7 @@ import { BaseConfig } from '../../common/abstract/base-config.common'
 import { DB_TABLE_USERS } from '../../common/constants/table-db.constant'
 import { checkCacheRedisClient } from '../../common/redis/utils/check-cache.util'
 import {
+	delHashRedisClient,
 	getAllListRedisClient,
 	getRedisClientHashKey,
 	setListRedisClientWIthEx,
@@ -135,7 +136,7 @@ export class UserService extends BaseConfig {
 
 			const filename = `${userId}.${format}`
 
-			if (isDev !== this.devMode) {
+			if (isDev === this.devMode) {
 				imagePath = assetsPath(
 					__dirname,
 					`../../../assets/img/user/${filename}`
@@ -172,7 +173,7 @@ export class UserService extends BaseConfig {
 					const getProfileImageUrl = await this.clientS3.presignedGetObject(
 						userBucketName,
 						filename,
-						this.expireS3ProfileImage,
+						this.expireS3Image,
 						{
 							'Content-Type': `image/${format}`,
 							'response-content-disposition': 'inline',
@@ -247,13 +248,17 @@ export class UserService extends BaseConfig {
 
 		if (!getUser) return ApiError.NotFound('User not founded from db!')
 
+		const removeUser = await this.model.removeUserModel(getUser.id)
+
+		if (!removeUser) return ApiError.BadRequest('Error from update user!')
+
 		let imagePath: string | undefined
 		const filename = `${userId}.png`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			imagePath = assetsPath(
 				__dirname,
-				`${this.pathAssets}/img/user/${filename}`
+				`../${this.pathAssets}/img/user/${filename}`
 			)
 			try {
 				await fs.access(imagePath)
@@ -284,11 +289,16 @@ export class UserService extends BaseConfig {
 			}
 		}
 
-		const removeUser = await this.model.removeUserModel(getUser.id)
-
-		if (!removeUser) return ApiError.BadRequest('Error from update user!')
-
 		try {
+			const resetUserIds = await delHashRedisClient(
+				'users:ids',
+				`user:id:${getUser.id}`
+			)
+
+			if (typeof resetUserIds === 'object' && 'message' in resetUserIds) {
+				this.logger.warn('User is not success delete from cache!')
+			}
+
 			const getAllUsers = await this.model.getAllUserModel(10, 0)
 
 			if (getAllUsers?.length) {

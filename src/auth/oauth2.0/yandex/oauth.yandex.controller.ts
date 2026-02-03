@@ -12,7 +12,6 @@ export class OAuthYandexController extends BaseConfig {
 	}
 
 	public async yandexUrl(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		query: IAppQueryParams
 	): Promise<void> {
@@ -45,7 +44,6 @@ export class OAuthYandexController extends BaseConfig {
 	}
 
 	public async yandexCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthCallback
 	): Promise<void> {
@@ -92,7 +90,6 @@ export class OAuthYandexController extends BaseConfig {
 	}
 
 	public async refreshToken(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	): Promise<void> {
