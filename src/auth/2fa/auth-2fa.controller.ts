@@ -72,7 +72,6 @@ export class AuthTwoFactoryController extends BaseConfig {
 	}
 
 	async verifyCode(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		dto: VerifyTwoFactoryAuthDto
 	) {

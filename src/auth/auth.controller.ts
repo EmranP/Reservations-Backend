@@ -20,7 +20,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async login(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: LoginDto
 	): Promise<void> {
@@ -83,7 +82,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async registration(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: RegistrationDto
 	): Promise<void> {
@@ -114,7 +112,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async refresh(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	) {
@@ -178,7 +175,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async verifyAccount(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		link: string | null
 	) {
@@ -215,7 +211,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async logout(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	): Promise<void> {
@@ -258,7 +253,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async getLink(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: RepaidVerifyDto
 	): Promise<void> {
@@ -282,7 +276,6 @@ export class AuthController extends BaseConfig {
 
 	// Forget
 	async getForgetLink(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: RepaidVerifyDto
 	): Promise<void> {
@@ -304,7 +297,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async verifyForgetPassword(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		link: string | null
 	) {
@@ -341,7 +333,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async newPassword(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		dto: Pick<ForgetDto, 'email' | 'newPassword'>
 	) {

@@ -14,7 +14,6 @@ export const AUTH_FORGET_NEW_PASSWORD_API_URL = `${globalPrefixUrl}/auth/forget/
 // 2FA
 export const AUTH_ENABLE_TWO_FACTORY_CHALLENGE = `${globalPrefixUrl}/auth/two-fa/enable`
 export const AUTH_VERIFY_TWO_FACTORY_CODE = `${globalPrefixUrl}/auth/two-fa/verify/code`
-
 // OAuth 2.0 Google
 export const AUTH_GET_GOOGLE_URL = `${globalPrefixUrl}/auth/google/url`
 export const AUTH_GOOGLE_CALLBACK_URL = `${globalPrefixUrl}/auth/google/callback`
@@ -22,6 +21,8 @@ export const AUTH_GOOGLE_REFRESH_TOKEN = `${globalPrefixUrl}/auth/google/refresh
 export const googleUrl = 'https://accounts.google.com'
 export const googlePublicJwksUrl = 'https://www.googleapis.com/oauth2/v3/certs'
 export const googleTokenUrl = 'https://oauth2.googleapis.com/token'
+export const googleRecaptchaVerify =
+	'https://www.google.com/recaptcha/api/siteverify'
 
 // OAuth 2.0 Github
 export const AUTH_GET_GITHUB_URL = `${globalPrefixUrl}/auth/github/url`
