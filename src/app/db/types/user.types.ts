@@ -1,4 +1,6 @@
+import type { AUTH_METHOD } from '../../../common/constants/enum.constant'
 import type { ISharedModelApp } from '../../../common/types/db/app.interface'
+import type { ROLES } from '../../enums'
 
 export interface IUser extends ISharedModelApp {
 	first_name: string
