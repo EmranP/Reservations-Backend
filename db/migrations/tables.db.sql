@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS public.rooms (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	price NUMERIC(10,2) NOT NULL,
 	quality VARCHAR(35) NOT NULL,
-	description VARCHAR(500) NOT NULL,
+	description VARCHAR(500),
 	status status_mood NOT NULL DEFAULT 'FREE',
 	picture TEXT,
 	expire_picture_url TIMESTAMP DEFAULT NULL,
@@ -66,14 +66,35 @@ CREATE TABLE IF NOT EXISTS public.rooms (
   updated_at TIMESTAMP DEFAULT now()
 );
 
--- Occupied Rooms (Orders)
-CREATE TABLE IF NOT EXISTS public.occupied_rooms (
+-- Orders
+CREATE TABLE IF NOT EXISTS public.orders (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
 	room_id UUID UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
-	status status_mood NOT NULL DEFAULT 'BUYS',
 	total_price NUMERIC(10, 2) NOT NULL,
 	residence_time TIMESTAMP NOT NULL,
+	created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+-- Payment
+CREATE TABLE IF NOT EXISTS public.payment (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	order_id UUID UNIQUE REFERENCES public.orders(id) ON DELETE CASCADE,
+	type VARCHAR(150) NOT NULL DEFAULT 'notification',
+	event payment_event NOT NULL DEFAULT 'payment.waiting_for_capture',
+	status payment_status NOT NULL DEFAULT 'waiting_for_capture',
+	paid BOOLEAN NOT NULL DEFAULT TRUE,
+	amount_value DECIMAL(10, 2),
+	amount_currency TEXT,
+	description TEXT,
+	payment_method_type TEXT NOT NULL DEFAULT 'bank_card',
+	payment_method_saved BOOLEAN NOT NULL DEFAULT FALSE,
+	refundable BOOLEAN NOT NULL DEFAULT FALSE,
+	test BOOLEAN NOT NULL DEFAULT FALSE,
+	income_amount_value DECIMAL(10, 2),
+	income_amount_currency TEXT,
+	expires_at TIMESTAMP DEFAULT NULL,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
@@ -88,3 +109,4 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
+

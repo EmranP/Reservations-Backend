@@ -62,6 +62,15 @@ export abstract class BaseConfig {
 	protected MIN_SIZE = 200
 	protected MAX_SIZE = 2048
 	protected ASPECT_RATIO = 1
+	// Keys redis
+	protected keysRooms = 'rooms'
+	protected keysRoomsIds = 'rooms:id'
+	protected keysUsers = 'admin:users'
+	protected keysUsersIds = 'users:id'
+	protected keysOrdersAdmin = 'orders:admin'
+	protected keysOrdersUser = 'orders:user'
+	protected keysOrderAdminId = 'orders:admin:id'
+	protected keysOrderUserId = 'orders:user:id'
 
 	protected validateImageFile(
 		size: number | undefined,

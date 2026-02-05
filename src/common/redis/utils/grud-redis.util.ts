@@ -1,4 +1,5 @@
 import { APP_REDIS_CONFIG } from '../../config/app.config'
+import type { RedisEntityMapType } from '../../types/app/redis.types'
 import { ApiError } from '../../utils/log/exists-error.log'
 import { clientRedis } from '../init-redis.db'
 
@@ -43,27 +44,73 @@ export const setHashRedisClientWithEx = async <T>(
 }
 
 export const getAllListRedisClient = async (
-	listKeys: string
-): Promise<string[] | []> => {
-	const listData = await clientRedis.lRange(listKeys, 0, -1)
+	keys: string,
+	keysIds: string,
+	limit: number,
+	offset: number
+): Promise<string[] | null[]> => {
+	const ids: string[] = await clientRedis.zRange(keys, offset, limit)
 
-	return !listData.length ? [] : listData
+	if (!ids.length) return []
+
+	const pipeline = clientRedis.multi()
+	ids.forEach(id => pipeline.hGet(keysIds, id))
+
+	const results = await pipeline.exec()
+
+	return results
+		.map(item => {
+			try {
+				return item
+			} catch (error) {
+				return [null]
+			}
+		})
+		.filter(raw => typeof raw === 'string')
 }
 
-export const setListRedisClientWIthEx = async <T>(
+export const isSuccessReply = (reply: unknown): boolean =>
+	reply === 1 || reply === 'OK'
+
+export const setListRedisClientWIthEx = async <
+	K extends keyof RedisEntityMapType
+>(
 	listKeys: string,
-	data: T[],
+	listKeyIds: string,
+	data: RedisEntityMapType[K],
 	expire: number = Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 ): Promise<ApiError | number> => {
-	const addListData = await clientRedis.LPUSH(listKeys, JSON.stringify(data))
-	const newExpireListCache = await clientRedis.pExpire(listKeys, expire)
+	const pipeline = clientRedis.multi()
+	data?.forEach(item => {
+		pipeline.hSetEx(listKeyIds, {
+			[item.id]: JSON.stringify(item),
+		})
 
-	if (!addListData || !newExpireListCache)
-		return ApiError.BadRequest(
-			'Error from cache is not success added list-data!'
-		)
+		pipeline.zAdd(listKeys, [
+			{ score: new Date(item.created_at).getTime(), value: item.id },
+		])
+	})
+	const resultsPipeline = await pipeline.exec()
+	if (!resultsPipeline) {
+		return ApiError.InternalServer('Redis pipeline failed')
+	}
 
-	return addListData
+	const hasSuccess = resultsPipeline.some(item => {
+		if (!item) return false
+		return isSuccessReply(item)
+	})
+
+	if (!hasSuccess) {
+		return ApiError.InternalServer('Redis pipeline has no successful commands')
+	}
+
+	const expireListKeysCache = await clientRedis.pExpire(listKeys, expire)
+	const expireListKeysIdsCache = await clientRedis.pExpire(listKeyIds, expire)
+
+	if (!expireListKeysCache || !expireListKeysIdsCache)
+		return ApiError.InternalServer('Error set expires to cache-list')
+
+	return 1
 }
 
 export const delHashRedisClient = async (
@@ -71,7 +118,7 @@ export const delHashRedisClient = async (
 	fieldKey: string
 ): Promise<ApiError | number> => {
 	const removeData = await clientRedis.HDEL(hashKey, fieldKey)
-	console.log(removeData)
+
 	if (!removeData)
 		return ApiError.BadRequest('Error from remove hash-field cache')
 
