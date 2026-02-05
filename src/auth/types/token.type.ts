@@ -26,7 +26,7 @@ export interface IResponseTokens {
 }
 
 export interface IUserJwtPayload extends JWTPayload {
-	role: typeof ROLES | undefined
+	role: number | undefined
 	type: string
 }
 

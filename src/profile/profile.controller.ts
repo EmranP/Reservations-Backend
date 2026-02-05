@@ -71,7 +71,7 @@ export class ProfileController extends BaseConfig {
 
 			const jsonData = JSON.stringify(updateUserProfile)
 
-			res.writeHead(201, this.headData.contentData)
+			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
 			await responseInternalServer(
@@ -154,7 +154,7 @@ export class ProfileController extends BaseConfig {
 
 			this.logger.info(resultRemoveProfileImage.message)
 
-			res.writeHead(201, this.headData.contentData)
+			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 
 			return

@@ -26,7 +26,7 @@ BEGIN
 	IF NOT EXISTS (
 		SELECT 1 FROM pg_type t
 		JOIN pg_namespace n ON n.oid = t.typnamespace
-		WHERE t.typename = 'payment_event'
+		WHERE t.typname = 'payment_event'
 		AND n.nspname = 'public' ) THEN
 		CREATE TYPE public.payment_event AS ENUM (
 			'payment.waiting_for_capture', 
@@ -43,7 +43,7 @@ BEGIN
 	IF NOT EXISTS (
 		SELECT 1 FROM pg_type t
 		JOIN pg_namespace n ON n.oid = t.typnamespace
-		WHERE t.typename = 'payment_status'
+		WHERE t.typname = 'payment_status'
 		AND n.nspname = 'public' ) THEN
 		CREATE TYPE public.payment_status AS ENUM (
 			'pending', 

@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS public.payment (
 	expires_at TIMESTAMP DEFAULT NULL,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
-)
+);
 
 
 -- Reviews

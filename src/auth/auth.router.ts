@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http'
+import { isDev } from '../app/app'
 import {
 	AUTH_ACTIVATION_EMAIL_API_URL,
 	AUTH_ACTIVATION_EMAIL_FORGET_API_URL,
@@ -67,21 +68,23 @@ export const authRouter = async (
 ): Promise<void> => {
 	// Login =======================================
 	if (path === AUTH_LOGIN_API_URL && req.method === 'POST') {
-		if (!isRecaptchaDto(body)) {
-			await responseBadRequest('Invalid data: Recaptcha-token', res)
+		if (!isDev) {
+			if (!isRecaptchaDto(body)) {
+				await responseBadRequest('Invalid data: Recaptcha-token', res)
 
-			return
-		}
+				return
+			}
 
-		const isVerifyRecaptcha = await verifyRecaptcha(body.recaptchaToken)
+			const isVerifyRecaptcha = await verifyRecaptcha(body.recaptchaToken)
 
-		if (
-			typeof isVerifyRecaptcha === 'object' &&
-			'message' in isVerifyRecaptcha
-		) {
-			await responseBadRequest(isVerifyRecaptcha.message, res)
+			if (
+				typeof isVerifyRecaptcha === 'object' &&
+				'message' in isVerifyRecaptcha
+			) {
+				await responseBadRequest(isVerifyRecaptcha.message, res)
 
-			return
+				return
+			}
 		}
 
 		if (!isAuthLoginDto(body)) {
@@ -104,21 +107,23 @@ export const authRouter = async (
 	}
 	// Registration =======================================
 	else if (path === AUTH_REGISTRATION_API_URL && req.method === 'POST') {
-		if (!isRecaptchaDto(body)) {
-			await responseBadRequest('Invalid data: Recaptcha-token', res)
+		if (!isDev) {
+			if (!isRecaptchaDto(body)) {
+				await responseBadRequest('Invalid data: Recaptcha-token', res)
 
-			return
-		}
+				return
+			}
 
-		const isVerifyRecaptcha = await verifyRecaptcha(body.recaptchaToken)
+			const isVerifyRecaptcha = await verifyRecaptcha(body.recaptchaToken)
 
-		if (
-			typeof isVerifyRecaptcha === 'object' &&
-			'message' in isVerifyRecaptcha
-		) {
-			await responseBadRequest(isVerifyRecaptcha.message, res)
+			if (
+				typeof isVerifyRecaptcha === 'object' &&
+				'message' in isVerifyRecaptcha
+			) {
+				await responseBadRequest(isVerifyRecaptcha.message, res)
 
-			return
+				return
+			}
 		}
 
 		if (!isAuthRegistrationDto(body)) {

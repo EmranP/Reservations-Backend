@@ -65,9 +65,9 @@ export class AdminController extends BaseConfig {
 		try {
 			const page = Number(query.queryParams?.page) || 1
 			const limit = Number(query.queryParams?.limit) || 10
-			const offset = (page - 1) * limit
-
-			const roomsResult = await this.service.findAllRoom(limit, offset)
+			const start = (page - 1) * limit
+			const stop = start + limit - 1
+			const roomsResult = await this.service.findAllRoom(limit, start, stop)
 
 			if ('message' in roomsResult) {
 				const errorJsonData = JSON.stringify({
@@ -155,7 +155,7 @@ export class AdminController extends BaseConfig {
 
 			const jsonData = JSON.stringify(resultUpdateRoom)
 
-			res.writeHead(201, this.headData.contentData)
+			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
 			await responseInternalServer(
@@ -196,7 +196,7 @@ export class AdminController extends BaseConfig {
 
 			const jsonData = JSON.stringify(resultUploadImageRoom)
 
-			res.writeHead(201, this.headData.contentData)
+			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
 			await responseInternalServer(
@@ -230,7 +230,7 @@ export class AdminController extends BaseConfig {
 
 			const jsonData = JSON.stringify(resultDeleteRoom)
 
-			res.writeHead(201, this.headData.contentData)
+			res.writeHead(200, this.headData.contentData)
 			res.end(jsonData)
 		} catch (error) {
 			await responseInternalServer(
