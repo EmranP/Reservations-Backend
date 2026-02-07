@@ -17,7 +17,7 @@ export class OrderModel {
 		try {
 			const query = `
 				INSERT INTO ${DB_TABLE_ORDERS} 
-				(user_id, room_id, total_id, residence_time)
+				(user_id, room_id, total_price, residence_time)
 				VALUES ($1, $2, $3, $4)
 				RETURNING id
 			`
@@ -52,7 +52,6 @@ export class OrderModel {
 			let query: string | undefined
 			let queryResult: QueryResult<IOrders> | undefined
 
-			// ? Add join table with users for get role and made conditional him
 			if (isAdmin) {
 				query = `
 					SELECT * FROM ${DB_TABLE_ORDERS} 

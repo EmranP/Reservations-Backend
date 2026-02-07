@@ -6,7 +6,7 @@ import { isAuth } from '../auth/middleware/isAuth.auth'
 import { rootRoomRouter } from '../common/constants/admin.constant'
 import { rootAuthRouter } from '../common/constants/auth.constant'
 import { isPathWithQuery } from '../common/constants/global.constant'
-import { rootOrderRouter } from '../common/constants/order.constant'
+import { ORDER_ADD, rootOrderRouter } from '../common/constants/order.constant'
 import { rootProfileRouter } from '../common/constants/profile.constant'
 import type { IAppQueryParams } from '../common/types/app/app.type'
 import type { Middleware } from '../common/types/middlewares/app.types-middleware'
@@ -186,6 +186,7 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href !== isPathUserEditHref &&
 		parserURL.href !== isPathUserDeleteHref &&
 		// Order
+		parserURL.href !== `${pathOrigin}${ORDER_ADD}` &&
 		parserURL.href !== isPathOrderGetAllHref &&
 		parserURL.href !== isPathOrderGetOneHref &&
 		parserURL.href !== isPathOrderEditHref &&

@@ -11,6 +11,23 @@ export const getRedisClientHashKey = async (
 export const getRedisClientKey = async (key: string): Promise<string | null> =>
 	await clientRedis.get(key)
 
+export const setRedisCLient = async (
+	key: string,
+	value: string
+): Promise<string | null | ApiError> => {
+	if (!APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS)
+		return ApiError.InternalServer('Error not set redis-expire from config')
+
+	const newData = await clientRedis.set(key, value)
+
+	await clientRedis.pExpire(
+		key,
+		Number(APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS)
+	)
+
+	return newData
+}
+
 export const setHashRedisClient = async <T>(
 	key: string,
 	newFieldKey: string,
@@ -50,7 +67,6 @@ export const getAllListRedisClient = async (
 	offset: number
 ): Promise<string[] | null[]> => {
 	const ids: string[] = await clientRedis.zRange(keys, offset, limit)
-
 	if (!ids.length) return []
 
 	const pipeline = clientRedis.multi()

@@ -53,7 +53,13 @@ export class AdminService extends BaseConfig {
 			fileBody.fileBufferData
 		).metadata()
 
-		const isValid = this.validateImageFile(size, format, width, height)
+		const isValid = this.validateImageFile(
+			size,
+			format,
+			width,
+			height,
+			this.logger
+		)
 
 		if (typeof isValid === 'object' && 'message' in isValid)
 			return ApiError.BadRequest(isValid.message)
@@ -180,7 +186,7 @@ export class AdminService extends BaseConfig {
 			'Rooms success get from cache!',
 			'Rooms success get from database!'
 		)
-		const total = await this.getModelCount(DB_TABLE_ROOMS)
+		const total = await this.getModelCount(DB_TABLE_ROOMS, this.logger)
 
 		if (!allRooms?.length || !total)
 			return ApiError.NotFound('Rooms not founded!')

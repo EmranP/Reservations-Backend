@@ -49,7 +49,7 @@ export class UserService extends BaseConfig {
 			'All users get from cache',
 			'All users get from database'
 		)
-		const total = await this.getModelCount(DB_TABLE_USERS)
+		const total = await this.getModelCount(DB_TABLE_USERS, this.logger)
 
 		if (!allUser.length || !total)
 			return ApiError.NotFound('Users not founded!')
@@ -153,7 +153,13 @@ export class UserService extends BaseConfig {
 				fileBody.fileBufferData
 			).metadata()
 
-			const isValid = this.validateImageFile(size, format, width, height)
+			const isValid = this.validateImageFile(
+				size,
+				format,
+				width,
+				height,
+				this.logger
+			)
 
 			if (typeof isValid === 'object' && 'message' in isValid)
 				return ApiError.BadRequest(isValid.message)

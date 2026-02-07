@@ -1,11 +1,17 @@
 import type sharp from 'sharp'
+import type { Logger } from 'winston'
 import { pool } from '../../app/check-db.app'
+import type { IOrders } from '../../app/db/types/orders.types'
 import { APP_CONFIG } from '../config/app.config'
 import { TOKEN_CONFIG } from '../config/token.config'
+import {
+	setListRedisClientWIthEx,
+	setRedisCLient,
+} from '../redis/utils/grud-redis.util'
 import type { IAppCountShared, IAppMessage } from '../types/app/app.type'
 import { responseErrorDB } from '../utils/app/errorResponse.utils'
 import { writeHeadData } from '../utils/app/writeHeadData.utils'
-import { logger } from '../utils/log/logger.log'
+import type { ApiError } from '../utils/log/exists-error.log'
 
 export abstract class BaseConfig {
 	protected refreshConfig = TOKEN_CONFIG.REFRESH_EXPIRE
@@ -71,12 +77,15 @@ export abstract class BaseConfig {
 	protected keysOrdersUser = 'orders:user'
 	protected keysOrderAdminId = 'orders:admin:id'
 	protected keysOrderUserId = 'orders:user:id'
+	protected keysOrdersAdminCount = 'orders:admin:count'
+	protected keysOrdersUserCount = 'orders:user:count'
 
 	protected validateImageFile(
 		size: number | undefined,
 		format: keyof sharp.FormatEnum,
 		width: number,
-		height: number
+		height: number,
+		logger: Logger
 	): IAppMessage | void {
 		if (size && size > this.MAX_FILE_SIZE) {
 			logger.warn('Image is too large!')
@@ -111,10 +120,19 @@ export abstract class BaseConfig {
 		// }
 	}
 
-	protected async getModelCount(table: string): Promise<number | null> {
+	protected async getModelCount(
+		table: string,
+		logger: Logger,
+		where: string | null = null,
+		whereValue: string | number | null = null
+	): Promise<number | null> {
 		try {
-			const query = `SELECT COUNT(*) FROM ${table}`
-			const result = await pool.query<IAppCountShared>(query)
+			const query = where
+				? `SELECT COUNT(*) FROM ${table} WHERE ${where} = $1`
+				: `SELECT COUNT(*) FROM ${table}`
+			const result = where
+				? await pool.query(query, [whereValue])
+				: await pool.query<IAppCountShared>(query)
 
 			if (!result.rows[0]?.count) return null
 
@@ -127,6 +145,65 @@ export abstract class BaseConfig {
 			)
 
 			return errorMessage
+		}
+	}
+
+	protected async updateOrdersCache(
+		ordersCount: number | null,
+		isAdmin: boolean,
+		getAllOrders: IOrders[],
+		logger: Logger
+	) {
+		let addNewOrderUsersListCache: number | ApiError | undefined
+		let updateOrderUserCountCache: undefined | ApiError | string | null
+
+		if (!isAdmin) {
+			addNewOrderUsersListCache = await setListRedisClientWIthEx(
+				this.keysOrdersUser,
+				this.keysOrderUserId,
+				getAllOrders
+			)
+
+			updateOrderUserCountCache = await setRedisCLient(
+				this.keysOrdersUserCount,
+				String(ordersCount)
+			)
+		}
+
+		const addNewOrderAdminListCache = await setListRedisClientWIthEx(
+			this.keysOrdersAdmin,
+			this.keysOrderAdminId,
+			getAllOrders
+		)
+		const updateOrderAdminCacheListOrders = await setRedisCLient(
+			this.keysOrdersAdminCount,
+			String(ordersCount)
+		)
+
+		if (
+			typeof addNewOrderUsersListCache === 'object' &&
+			'message' in addNewOrderUsersListCache
+		) {
+			logger.error('Error from add new list-orders to users cache!')
+		} else if (
+			typeof addNewOrderAdminListCache === 'object' &&
+			'message' in addNewOrderAdminListCache
+		) {
+			logger.error('Error from add new list-orders to admin cache!')
+		}
+
+		if (
+			updateOrderUserCountCache &&
+			typeof updateOrderUserCountCache === 'object' &&
+			'message' in updateOrderUserCountCache
+		) {
+			logger.warn('Update user-count orders-data to cache')
+		} else if (
+			updateOrderAdminCacheListOrders &&
+			typeof updateOrderAdminCacheListOrders === 'object' &&
+			'message' in updateOrderAdminCacheListOrders
+		) {
+			logger.warn('Update admin-count orders-data to cache')
 		}
 	}
 }

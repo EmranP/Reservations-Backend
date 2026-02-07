@@ -158,7 +158,13 @@ export class ProfileService extends BaseConfig {
 		const { format, size, width, height } = await sharp(
 			fileBody.fileBufferData
 		).metadata()
-		const isValid = this.validateImageFile(size, format, width, height)
+		const isValid = this.validateImageFile(
+			size,
+			format,
+			width,
+			height,
+			this.logger
+		)
 
 		if (typeof isValid === 'object' && 'message' in isValid)
 			return ApiError.BadRequest(isValid.message)
