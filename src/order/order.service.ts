@@ -9,6 +9,7 @@ import {
 	delHashRedisClient,
 	getAllListRedisClient,
 	getRedisClientHashKey,
+	getRedisClientKey,
 	setHashRedisClientWithEx,
 	setListRedisClientWIthEx,
 } from '../common/redis/utils/grud-redis.util'
@@ -31,6 +32,17 @@ export class OrderService extends BaseConfig {
 		private logger: Logger
 	) {
 		super()
+	}
+
+	private logInfoCache(
+		orderUserId: number | ApiError | undefined,
+		orderAdminId: number | ApiError | undefined
+	): void {
+		if (typeof orderUserId === 'object' && 'status' in orderUserId) {
+			this.logger.warn(orderUserId.message)
+		} else if (typeof orderAdminId === 'object' && 'status' in orderAdminId) {
+			this.logger.warn(orderAdminId.message)
+		}
 	}
 
 	async addOrder(
@@ -57,21 +69,20 @@ export class OrderService extends BaseConfig {
 		if (!newOrder)
 			return ApiError.InternalServer('Error from created new order!')
 
+		const ordersCount = await this.getModelCount(
+			DB_TABLE_ORDERS,
+			this.logger,
+			!isAdmin ? 'user_id' : null,
+			!isAdmin ? userId : null
+		)
 		const getAllOrders = await this.model.getAllOrders(user.id, isAdmin, 10, 0)
-
 		if (getAllOrders?.length) {
-			const addNewOrderListCache = setListRedisClientWIthEx(
-				isAdmin ? this.keysOrdersAdmin : this.keysOrdersUser,
-				isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
-				getAllOrders
+			await this.updateOrdersCache(
+				ordersCount,
+				isAdmin,
+				getAllOrders,
+				this.logger
 			)
-
-			if (
-				typeof addNewOrderListCache === 'object' &&
-				'message' in addNewOrderListCache
-			) {
-				this.logger.error('Error from add new list-orders to cache!')
-			}
 		}
 
 		return {
@@ -88,12 +99,15 @@ export class OrderService extends BaseConfig {
 		if (!userId || typeof role === 'undefined')
 			return ApiError.UnauthorizedError()
 
-		const isAdmin = this.isAdminHandler(ROLES.ADMIN)
+		const isAdmin = this.isAdminHandler(role)
 		const getListOrdersCache = await getAllListRedisClient(
 			isAdmin ? this.keysOrdersAdmin : this.keysOrdersUser,
 			isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
 			limit,
 			offset
+		)
+		const getTotalOrdersCache = await getRedisClientKey(
+			isAdmin ? this.keysOrdersAdminCount : this.keysOrdersUserCount
 		)
 		const allOrders = await checkCacheRedisClient(
 			getListOrdersCache,
@@ -101,21 +115,24 @@ export class OrderService extends BaseConfig {
 			'Orders success get from cache!',
 			'Orders success get from database!'
 		)
-		const total = await this.getModelCount(DB_TABLE_ORDERS)
+		const totalOrders = await checkCacheRedisClient(
+			getTotalOrdersCache,
+			() =>
+				this.getModelCount(
+					DB_TABLE_ORDERS,
+					this.logger,
+					!isAdmin ? 'user_id' : null,
+					!isAdmin ? userId : null
+				),
+			'Orders-count success get from cache!',
+			'Orders-count success get from database!'
+		)
 
-		if (!allOrders?.length || !total)
+		if (!allOrders?.length || !totalOrders)
 			return ApiError.NotFound('Orders is not founded!')
 
 		if (!getListOrdersCache.length) {
-			const addListOrders = await setListRedisClientWIthEx(
-				isAdmin ? this.keysOrdersAdmin : this.keysOrdersUser,
-				isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
-				allOrders
-			)
-
-			if (typeof addListOrders === 'object' && 'message' in addListOrders) {
-				this.logger.error('Error from add new list-orders to cache!')
-			}
+			await this.updateOrdersCache(totalOrders, isAdmin, allOrders, this.logger)
 		}
 
 		const allOrdersDto = allOrders.map(order => new OrderDto(order).toPlain())
@@ -125,7 +142,7 @@ export class OrderService extends BaseConfig {
 			meta: {
 				limit,
 				offset,
-				total,
+				total: Number(totalOrders),
 			},
 		}
 	}
@@ -140,7 +157,7 @@ export class OrderService extends BaseConfig {
 		if (!userId || typeof role === 'undefined')
 			return ApiError.NotFound('User-data not founded!')
 
-		const isAdmin = this.isAdminHandler(ROLES.ADMIN)
+		const isAdmin = this.isAdminHandler(role)
 		const getOrderByIdCache = await getRedisClientHashKey(
 			isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
 			orderId
@@ -152,19 +169,28 @@ export class OrderService extends BaseConfig {
 			'Get order by id from database!'
 		)
 
-		if (!getOneOrder) return ApiError.NotFound('Room not founded!')
+		if (!getOneOrder) return ApiError.NotFound('Order not founded!')
 
 		if (!getOrderByIdCache) {
-			const addNewOrderById = await setHashRedisClientWithEx(
-				isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
+			let addNewOrderUserById: 1 | ApiError | undefined
+
+			if (!isAdmin) {
+				addNewOrderUserById = await setHashRedisClientWithEx(
+					this.keysOrderUserId,
+					getOneOrder.id,
+					JSON.stringify(getOneOrder),
+					APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+				)
+			}
+
+			const addNewOrderAdminById = await setHashRedisClientWithEx(
+				this.keysOrderAdminId,
 				getOneOrder.id,
 				JSON.stringify(getOneOrder),
 				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
 			)
 
-			if (typeof addNewOrderById === 'object' && 'status' in addNewOrderById) {
-				this.logger.warn(addNewOrderById.message)
-			}
+			this.logInfoCache(addNewOrderUserById, addNewOrderAdminById)
 
 			this.logger.info(
 				`New room have success added to cache: ID-${getOneOrder.id}`
@@ -187,7 +213,7 @@ export class OrderService extends BaseConfig {
 		if (!userId || typeof role === 'undefined')
 			return ApiError.NotFound('User-data not founded!')
 
-		const isAdmin = this.isAdminHandler(ROLES.ADMIN)
+		const isAdmin = this.isAdminHandler(role)
 		const getOrderByIdCache = await getRedisClientHashKey(
 			isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
 			orderId
@@ -215,18 +241,23 @@ export class OrderService extends BaseConfig {
 			const getAllOrders = await this.model.getAllOrders(userId, isAdmin, 10, 0)
 
 			if (getAllOrders?.length) {
-				const updateCacheListOrders = await setListRedisClientWIthEx(
-					isAdmin ? this.keysOrdersAdmin : this.keysOrdersUser,
-					isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
+				let updateUserCacheListOrders: ApiError | number | undefined
+
+				if (!isAdmin) {
+					updateUserCacheListOrders = await setListRedisClientWIthEx(
+						this.keysOrdersUser,
+						this.keysOrderUserId,
+						getAllOrders
+					)
+				}
+
+				const updateAdminCacheListOrders = await setListRedisClientWIthEx(
+					this.keysOrdersAdmin,
+					this.keysOrderAdminId,
 					getAllOrders
 				)
 
-				if (
-					typeof updateCacheListOrders === 'object' &&
-					'message' in updateCacheListOrders
-				) {
-					this.logger.warn('Add new data order to cache')
-				}
+				this.logInfoCache(updateUserCacheListOrders, updateAdminCacheListOrders)
 			}
 		} catch (error) {
 			this.logger.warn(
@@ -244,12 +275,12 @@ export class OrderService extends BaseConfig {
 		userId: string | undefined,
 		role: number | undefined
 	): Promise<IAppMessage | ApiError> {
-		if (!orderId) return ApiError.NotFound('Order not founded!')
+		if (!orderId) return ApiError.NotFound('Order-ID not founded!')
 
 		if (!userId || typeof role === 'undefined')
 			return ApiError.NotFound('User-data not founded!')
 
-		const isAdmin = this.isAdminHandler(ROLES.ADMIN)
+		const isAdmin = this.isAdminHandler(role)
 		const getOrderByIdCache = await getRedisClientHashKey(
 			isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
 			orderId
@@ -270,35 +301,50 @@ export class OrderService extends BaseConfig {
 		)
 
 		if (!resultRemoveOrder)
-			return ApiError.InternalServer(`Error from edit-room: ID-${orderId}`)
+			return ApiError.InternalServer(`Error from delete-room: ID-${orderId}`)
 
 		try {
 			const getAllOrders = await this.model.getAllOrders(userId, isAdmin, 10, 0)
+			const ordersCount = await this.getModelCount(
+				DB_TABLE_ORDERS,
+				this.logger,
+				!isAdmin ? 'user_id' : null,
+				!isAdmin ? userId : null
+			)
 
 			if (resultRemoveOrder.id) {
+				let deleteOneUserOrderCache: undefined | number | ApiError
+
+				if (!isAdmin) {
+					deleteOneUserOrderCache = await delHashRedisClient(
+						this.keysOrderUserId,
+						resultRemoveOrder.id
+					)
+				}
+
 				const deleteOneOrderCache = await delHashRedisClient(
-					isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
-					orderId
+					this.keysOrderAdminId,
+					resultRemoveOrder.id
 				)
 
 				if (!deleteOneOrderCache) {
-					this.logger.error('Error order-data from cache not success remove!')
+					this.logger.error(
+						'Error admin order-data from cache not success remove!'
+					)
+				} else if (!deleteOneUserOrderCache) {
+					this.logger.error(
+						'Error user order-data from cache not success remove!'
+					)
 				}
 			}
 
-			if (getAllOrders?.length) {
-				const updateCacheListOrders = await setListRedisClientWIthEx(
-					isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
-					isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
-					getAllOrders
+			if (getAllOrders && getAllOrders.length) {
+				await this.updateOrdersCache(
+					ordersCount,
+					isAdmin,
+					getAllOrders,
+					this.logger
 				)
-
-				if (
-					typeof updateCacheListOrders === 'object' &&
-					'message' in updateCacheListOrders
-				) {
-					this.logger.warn('Update-list orders-data to cache')
-				}
 			}
 		} catch (error) {
 			this.logger.warn(

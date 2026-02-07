@@ -69,8 +69,8 @@ CREATE TABLE IF NOT EXISTS public.rooms (
 -- Orders
 CREATE TABLE IF NOT EXISTS public.orders (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-	room_id UUID UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
+	user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+	room_id UUID REFERENCES public.rooms(id) ON DELETE CASCADE,
 	total_price NUMERIC(10, 2) NOT NULL,
 	residence_time TIMESTAMP NOT NULL,
 	created_at TIMESTAMP DEFAULT now(),
