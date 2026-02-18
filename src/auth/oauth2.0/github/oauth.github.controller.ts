@@ -12,7 +12,6 @@ export class OAuthGithubController extends BaseConfig {
 	}
 
 	async githubUrl(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		query: IAppQueryParams
 	): Promise<void> {
@@ -45,7 +44,6 @@ export class OAuthGithubController extends BaseConfig {
 	}
 
 	async githubCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthCallback
 	): Promise<void> {

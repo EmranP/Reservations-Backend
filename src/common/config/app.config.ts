@@ -12,6 +12,7 @@ export const APP_CONFIG = {
 	EXPIRES_USER_TWO_FACTORY_CHALLENGE:
 		process.env.EXPIRES_USER_TWO_FACTORY_CHALLENGE,
 	USER_DEFAULT_PASS: process.env.USER_DEFAULT_PASS,
+	RE_CAPTCHA_SECRET_KEY: process.env.RE_CAPTCHA_SECRET_KEY,
 } as const
 
 export const ADMIN_CONFIG = {
@@ -59,10 +60,17 @@ export const APP_REDIS_CONFIG = {
 	ONE_DAY_EXPIRES_TIME_REDIS: 86400000,
 } as const
 
+// S3 Storage
 export const APP_MINIO_S3_CONFIG = {
 	MINIO_END_POINT: process.env.MINIO_END_POINT,
 	MINIO_PORT: process.env.MINIO_PORT,
 	MINIO_USE_SSL: process.env.MINIO_USE_SSL,
 	MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
 	MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,
+} as const
+
+// Payment
+export const APP_PAYMENT_CONFIG = {
+	PAYMENT_ID: process.env.PAYMENT_SHOP_ID,
+	PAYMENT_SECRET_KEY: process.env.PAYMENT_SECRET_KEY,
 } as const

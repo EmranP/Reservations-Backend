@@ -8,7 +8,7 @@ DECLARE
   tbl TEXT;
 BEGIN
   FOREACH tbl IN ARRAY ARRAY[
-    'users', 'rooms', 'occupied_rooms', 'reviews', 'tokens', 'accounts'
+    'users', 'rooms', 'orders', 'reviews', 'tokens', 'accounts', 'payment'
   ] LOOP
     EXECUTE format(
       'DROP TRIGGER IF EXISTS set_timestamp_%1$I ON %1$I; 

@@ -1,26 +1,24 @@
 import type { IRooms } from '../../app/db/types/rooms.types'
 import type { STATUS_ROOM } from '../../app/enums'
+import type { IAppSharedDto } from '../../common/types/app/app.type'
 
-export class IRoomDto {
-	id: string | undefined
+export interface IRoomDto extends IAppSharedDto {
 	price: number | undefined
 	quality: string | undefined
 	description: string | undefined
 	status: typeof STATUS_ROOM | undefined
 	picture: string | null | undefined
-	createdAt: Date | undefined
-	updatedAt: Date | undefined
 }
 
 export class RoomDto {
-	id: string | undefined
+	id: string
 	price: number | undefined
 	quality: string | undefined
 	description: string | undefined
 	status: typeof STATUS_ROOM | undefined
 	picture: string | null | undefined
-	createdAt: Date | undefined
-	updatedAt: Date | undefined
+	createdAt: Date
+	updatedAt: Date
 
 	constructor(data: IRooms) {
 		this.id = data.id
@@ -33,7 +31,7 @@ export class RoomDto {
 		this.updatedAt = data.updated_at
 	}
 
-	toPlain(): IRoomDto {
+	public toPlain(): IRoomDto {
 		return {
 			id: this.id,
 			price: this.price,

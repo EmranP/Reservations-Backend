@@ -2,23 +2,25 @@ import fs from 'fs/promises'
 import type { Client } from 'minio'
 import sharp from 'sharp'
 import type { Logger } from 'winston'
-import type { TypeUserClientRes } from '../../app/db/types/user.types'
 import { userBucketName } from '../../app/s3/init-cloud-storage.app'
 import { BaseConfig } from '../../common/abstract/base-config.common'
 import { DB_TABLE_USERS } from '../../common/constants/table-db.constant'
 import { checkCacheRedisClient } from '../../common/redis/utils/check-cache.util'
 import {
+	delHashRedisClient,
 	getAllListRedisClient,
 	getRedisClientHashKey,
 	setListRedisClientWIthEx,
 } from '../../common/redis/utils/grud-redis.util'
-import type { IAppMessage } from '../../common/types/app/app.type'
+import type {
+	IAppMessage,
+	IGetAllDataWithMeta,
+} from '../../common/types/app/app.type'
 import type { IContextFiles } from '../../common/types/middlewares/app.types-middleware'
 import { assetsPath } from '../../common/utils/format/path.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
-import type { IGetAllUsersWithMeta } from '../types/admin.interface'
 import type { AdminUserEditDto } from './dto/edit.dto'
-import { AdminUsersDto } from './dto/user.dto'
+import { AdminUsersDto, type IAdminUserDto } from './dto/user.dto'
 import type { UserModel } from './user.model'
 
 export class UserService extends BaseConfig {
@@ -32,21 +34,50 @@ export class UserService extends BaseConfig {
 
 	async findAllUser(
 		limit: number = 10,
+		limitCache: number,
 		offset: number = 0
-	): Promise<IGetAllUsersWithMeta | ApiError> {
-		const allUserCache = await getAllListRedisClient('admin:users')
+	): Promise<IGetAllDataWithMeta<Partial<IAdminUserDto>> | ApiError> {
+		const allUserCache = await getAllListRedisClient(
+			this.keysUsers,
+			this.keysUsersIds,
+			limitCache,
+			offset
+		)
 		const allUser = await checkCacheRedisClient(
 			allUserCache,
 			() => this.model.getAllUserModel(limit, offset),
 			'All users get from cache',
 			'All users get from database'
 		)
-		const total = await this.getModelCount(DB_TABLE_USERS)
+		const total = await this.getModelCount(DB_TABLE_USERS, this.logger)
 
 		if (!allUser.length || !total)
 			return ApiError.NotFound('Users not founded!')
 
 		const usersDto = allUser.map(item => new AdminUsersDto(item).toPlain())
+
+		if (!allUserCache.length) {
+			try {
+				if (allUser.length) {
+					const updateCacheListRoom = await setListRedisClientWIthEx(
+						this.keysUsers,
+						this.keysUsersIds,
+						allUser
+					)
+
+					if (
+						typeof updateCacheListRoom === 'object' &&
+						'message' in updateCacheListRoom
+					) {
+						this.logger.warn(
+							'New data admin-users is not success safe to cache'
+						)
+					}
+				}
+			} catch (error) {
+				this.logger.warn(`Get-all admin-users is not success safe to cache`)
+			}
+		}
 
 		return {
 			data: usersDto,
@@ -60,13 +91,10 @@ export class UserService extends BaseConfig {
 
 	async findOneUser(
 		userId: string | undefined
-	): Promise<TypeUserClientRes | ApiError> {
+	): Promise<AdminUsersDto | ApiError> {
 		if (!userId) return ApiError.NotFound('User-id not founded!')
 
-		const getUserCache = await getRedisClientHashKey(
-			'users:ids',
-			`user:id:${userId}`
-		)
+		const getUserCache = await getRedisClientHashKey(this.keysUsersIds, userId)
 		const getUser = await checkCacheRedisClient(
 			getUserCache,
 			() => this.model.getUserByIdModel(userId),
@@ -74,9 +102,11 @@ export class UserService extends BaseConfig {
 			'User get from database'
 		)
 
-		if (!getUser) return ApiError.NotFound('User not founded from db or cache!')
+		if (!getUser) return ApiError.NotFound('User not founded from db!')
 
-		return getUser
+		const userDto = new AdminUsersDto(getUser)
+
+		return userDto
 	}
 
 	async updateUser(
@@ -107,10 +137,7 @@ export class UserService extends BaseConfig {
 				`user:phone:${dto.phone}`
 			)
 		} else {
-			getUserCache = await getRedisClientHashKey(
-				'users:ids',
-				`user:id:${userId}`
-			)
+			getUserCache = await getRedisClientHashKey(this.keysUsersIds, userId)
 		}
 
 		const getUser = await checkCacheRedisClient(
@@ -128,14 +155,20 @@ export class UserService extends BaseConfig {
 				fileBody.fileBufferData
 			).metadata()
 
-			const isValid = this.validateImageFile(size, format, width, height)
+			const isValid = this.validateImageFile(
+				size,
+				format,
+				width,
+				height,
+				this.logger
+			)
 
 			if (typeof isValid === 'object' && 'message' in isValid)
 				return ApiError.BadRequest(isValid.message)
 
 			const filename = `${userId}.${format}`
 
-			if (isDev !== this.devMode) {
+			if (isDev === this.devMode) {
 				imagePath = assetsPath(
 					__dirname,
 					`../../../assets/img/user/${filename}`
@@ -172,7 +205,7 @@ export class UserService extends BaseConfig {
 					const getProfileImageUrl = await this.clientS3.presignedGetObject(
 						userBucketName,
 						filename,
-						this.expireS3ProfileImage,
+						this.expireS3Image,
 						{
 							'Content-Type': `image/${format}`,
 							'response-content-disposition': 'inline',
@@ -201,12 +234,13 @@ export class UserService extends BaseConfig {
 		if (!updateUser) return ApiError.BadRequest('Error from update user!')
 
 		try {
-			const getAllUsers = await this.model.getAllUserModel(10, 0)
+			const allUsers = await this.model.getAllUserModel(10, 0)
 
-			if (getAllUsers?.length) {
+			if (allUsers?.length) {
 				const updateCacheListUsers = await setListRedisClientWIthEx(
-					'admin:users',
-					getAllUsers
+					this.keysUsers,
+					this.keysUsersIds,
+					allUsers
 				)
 
 				if (
@@ -233,11 +267,7 @@ export class UserService extends BaseConfig {
 	): Promise<IAppMessage | ApiError> {
 		if (!userId) return ApiError.NotFound('User-id not founded!')
 
-		const getUserCache = await getRedisClientHashKey(
-			'users:ids',
-			`user:id:${userId}`
-		)
-
+		const getUserCache = await getRedisClientHashKey(this.keysUsersIds, userId)
 		const getUser = await checkCacheRedisClient(
 			getUserCache,
 			() => this.model.getUserByIdModel(userId),
@@ -247,13 +277,17 @@ export class UserService extends BaseConfig {
 
 		if (!getUser) return ApiError.NotFound('User not founded from db!')
 
+		const removeUser = await this.model.removeUserModel(getUser.id)
+
+		if (!removeUser) return ApiError.BadRequest('Error from update user!')
+
 		let imagePath: string | undefined
 		const filename = `${userId}.png`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			imagePath = assetsPath(
 				__dirname,
-				`${this.pathAssets}/img/user/${filename}`
+				`../${this.pathAssets}/img/user/${filename}`
 			)
 			try {
 				await fs.access(imagePath)
@@ -265,7 +299,7 @@ export class UserService extends BaseConfig {
 						? error.message
 						: 'File is not success delete: Dev-mode'
 
-				return ApiError.BadRequest(errorMessage)
+				this.logger.error(errorMessage)
 			}
 		} else {
 			try {
@@ -284,17 +318,21 @@ export class UserService extends BaseConfig {
 			}
 		}
 
-		const removeUser = await this.model.removeUserModel(getUser.id)
-
-		if (!removeUser) return ApiError.BadRequest('Error from update user!')
-
 		try {
-			const getAllUsers = await this.model.getAllUserModel(10, 0)
+			const resetUserIds = await delHashRedisClient(
+				this.keysUsersIds,
+				getUser.id
+			)
+			if (typeof resetUserIds === 'object' && 'message' in resetUserIds) {
+				this.logger.warn('User is not success delete from cache!')
+			}
 
-			if (getAllUsers?.length) {
+			const allUsers = await this.model.getAllUserModel(10, 0)
+			if (allUsers?.length) {
 				const updateCacheListUsers = await setListRedisClientWIthEx(
-					'admin:users',
-					getAllUsers
+					this.keysUsers,
+					this.keysUsersIds,
+					allUsers
 				)
 
 				if (

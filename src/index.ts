@@ -68,7 +68,7 @@ const startApp = async (): Promise<void> => {
 
 		// Generate Jwks
 		let jwksData: undefined | null | IJwksData
-		if (!isDev) {
+		if (isDev) {
 			jwksData = await getJwksLocal()
 
 			if (!jwksData) {

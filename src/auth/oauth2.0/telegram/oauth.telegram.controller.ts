@@ -11,7 +11,6 @@ export class OAuthTelegramController extends BaseConfig {
 	}
 
 	public async tgCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthTelegramCallbackDto
 	): Promise<void> {
@@ -59,7 +58,6 @@ export class OAuthTelegramController extends BaseConfig {
 	}
 
 	public async tgRefresh(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	): Promise<void> {

@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http'
 
 import type { Logger } from 'winston'
 import { BaseConfig } from '../common/abstract/base-config.common'
+import { APP_CONFIG } from '../common/config/app.config'
 import { responseInternalServer } from '../common/utils/app/errorResponse.utils'
 import { AuthService } from './auth.service'
 import type { ForgetDto } from './dto/forget.dto'
@@ -20,7 +21,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async login(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: LoginDto
 	): Promise<void> {
@@ -83,7 +83,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async registration(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: RegistrationDto
 	): Promise<void> {
@@ -114,7 +113,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async refresh(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	) {
@@ -178,12 +176,11 @@ export class AuthController extends BaseConfig {
 	}
 
 	async verifyAccount(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		link: string | null
 	) {
 		try {
-			const clientUrl = process.env.CLIENT_URL
+			const clientUrl = APP_CONFIG.CLIENT_URL
 			const verifyUser = await this.authService.verifyAccount(link)
 			const jsonData = JSON.stringify({ message: verifyUser.message })
 
@@ -215,7 +212,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async logout(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	): Promise<void> {
@@ -258,7 +254,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async getLink(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: RepaidVerifyDto
 	): Promise<void> {
@@ -282,7 +277,6 @@ export class AuthController extends BaseConfig {
 
 	// Forget
 	async getForgetLink(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: RepaidVerifyDto
 	): Promise<void> {
@@ -304,7 +298,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async verifyForgetPassword(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		link: string | null
 	) {
@@ -341,7 +334,6 @@ export class AuthController extends BaseConfig {
 	}
 
 	async newPassword(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		dto: Pick<ForgetDto, 'email' | 'newPassword'>
 	) {

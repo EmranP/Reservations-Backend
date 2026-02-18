@@ -1,21 +1,19 @@
 import type { IUser, TypeUserClientRes } from '../../../app/db/types/user.types'
 import type { ROLES } from '../../../app/enums'
 import type { AUTH_METHOD } from '../../../common/constants/enum.constant'
+import type { IAppSharedDto } from '../../../common/types/app/app.type'
 
-export interface IUserDto {
-	id: string
+export interface IUserDto extends IAppSharedDto {
 	firstName: string
 	lastName: string | null
 	email: string
 	phone: string
 	picture: string | null
-	role: typeof ROLES
+	role: typeof ROLES | number
 	isVerify: boolean
 	resetPassLink: string | undefined
 	enableResetPass: boolean
 	enableTwoFactoryChallenge: boolean
-	createdAt: string | Date
-	updatedAt: string | Date
 }
 
 export interface IAdminUserDto
@@ -34,8 +32,8 @@ export class UserDto {
 	isVerify: boolean | undefined
 	enableResetPass: boolean | undefined
 	enableTwoFactoryChallenge: boolean | undefined
-	createdAt: string | Date | undefined
-	updatedAt: string | Date | undefined
+	createdAt: Date | undefined
+	updatedAt: Date | undefined
 
 	constructor(data: Partial<IUser>) {
 		this.id = data.id
@@ -71,7 +69,7 @@ export class UserDto {
 }
 
 export class AdminUsersDto {
-	id: string | undefined
+	id: string
 	firstName: string | undefined
 	lastName: string | null | undefined
 	email: string | undefined
@@ -80,8 +78,8 @@ export class AdminUsersDto {
 	role: typeof ROLES | undefined
 	isVerify: boolean | undefined
 	method: typeof AUTH_METHOD | undefined
-	createdAt: string | Date | undefined
-	updatedAt: string | Date | undefined
+	createdAt: Date
+	updatedAt: Date
 
 	constructor(data: TypeUserClientRes) {
 		this.id = data.id

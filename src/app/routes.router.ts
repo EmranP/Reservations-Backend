@@ -6,10 +6,14 @@ import { isAuth } from '../auth/middleware/isAuth.auth'
 import { rootRoomRouter } from '../common/constants/admin.constant'
 import { rootAuthRouter } from '../common/constants/auth.constant'
 import { isPathWithQuery } from '../common/constants/global.constant'
+import { ORDER_ADD, rootOrderRouter } from '../common/constants/order.constant'
+import { CREATE_PAYMENT } from '../common/constants/payment.constant'
 import { rootProfileRouter } from '../common/constants/profile.constant'
 import type { IAppQueryParams } from '../common/types/app/app.type'
 import type { Middleware } from '../common/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../common/utils/app/errorResponse.utils'
+import { orderRouter } from '../order/order.route'
+import { paymentRouter } from '../payment/payment.route'
 import { profileRouter } from '../profile/profile.route'
 
 export const routerApp: Middleware<unknown> = async (
@@ -19,13 +23,11 @@ export const routerApp: Middleware<unknown> = async (
 	const { req, res, body, cookies, file } = ctx
 	if (!req.url) return
 
-	const authMiddleware = await isAuth(req, res)
-
+	const authMiddleware = await isAuth(req)
 	const parserURL = new URL(req.url, `http://${req.headers.host}`)
 	const pathOrigin = parserURL.origin
 	const pathWithQuery = `${parserURL.pathname}${parserURL.search}`
 	const path = parserURL.search ? pathWithQuery : parserURL.pathname
-
 	const convertQueryParams = JSON.stringify({
 		queryParams: parserURL.searchParams,
 		path: parserURL.pathname,
@@ -139,6 +141,63 @@ export const routerApp: Middleware<unknown> = async (
 		'user/remove',
 		pathOption.searchParams
 	)
+	// Order
+	const isPathOrderGetAllHref = isPathWithQuery(
+		pathOrigin,
+		'orders',
+		pathOption.searchParams
+	)
+	const isPathOrderGetOneHref = isPathWithQuery(
+		pathOrigin,
+		'order',
+		pathOption.searchParams
+	)
+	const isPathOrderEditHref = isPathWithQuery(
+		pathOrigin,
+		'order/edit',
+		pathOption.searchParams
+	)
+	const isPathOrderDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'order/remove',
+		pathOption.searchParams
+	)
+	// Payment
+	const isPathPaymentGetAllHref = isPathWithQuery(
+		pathOrigin,
+		'payments',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetOneHref = isPathWithQuery(
+		pathOrigin,
+		'payment',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetFreshHref = isPathWithQuery(
+		pathOrigin,
+		'fresh/payments',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetOneFreshHref = isPathWithQuery(
+		pathOrigin,
+		'fresh/payment',
+		pathOption.searchParams
+	)
+	const isPathPaymentConfirmHref = isPathWithQuery(
+		pathOrigin,
+		'payment/confirm',
+		pathOption.searchParams
+	)
+	const isPathPaymentCancelHref = isPathWithQuery(
+		pathOrigin,
+		'payment/cancel',
+		pathOption.searchParams
+	)
+	const isPathPaymentDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'payment/remove',
+		pathOption.searchParams
+	)
 
 	if (
 		!rootAuthRouter.includes(path) &&
@@ -163,9 +222,24 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href !== isPathUsersAllHref &&
 		parserURL.href !== isPathUserOneHref &&
 		parserURL.href !== isPathUserEditHref &&
-		parserURL.href !== isPathUserDeleteHref
+		parserURL.href !== isPathUserDeleteHref &&
+		// Order
+		parserURL.href !== `${pathOrigin}${ORDER_ADD}` &&
+		parserURL.href !== isPathOrderGetAllHref &&
+		parserURL.href !== isPathOrderGetOneHref &&
+		parserURL.href !== isPathOrderEditHref &&
+		parserURL.href !== isPathOrderDeleteHref &&
+		// Payment
+		parserURL.href !== `${pathOrigin}${CREATE_PAYMENT}` &&
+		parserURL.href !== isPathPaymentGetAllHref &&
+		parserURL.href !== isPathPaymentGetOneHref &&
+		parserURL.href !== isPathPaymentGetFreshHref &&
+		parserURL.href !== isPathPaymentGetOneFreshHref &&
+		parserURL.href !== isPathPaymentConfirmHref &&
+		parserURL.href !== isPathPaymentCancelHref &&
+		parserURL.href !== isPathPaymentDeleteHref
 	) {
-		await responseNotFoundApi('Not founded auth api', res)
+		await responseNotFoundApi('Not founded api', res)
 	}
 
 	if (
@@ -209,7 +283,7 @@ export const routerApp: Middleware<unknown> = async (
 	}
 
 	if (rootProfileRouter.includes(path)) {
-		await profileRouter(authMiddleware, path, req, res, body, file, next)
+		await profileRouter(authMiddleware, path, req, res, body, file)
 	}
 
 	if (
@@ -230,6 +304,29 @@ export const routerApp: Middleware<unknown> = async (
 			body,
 			file
 		)
+	}
+
+	if (
+		rootOrderRouter.includes(path) ||
+		parserURL.href === isPathOrderGetAllHref ||
+		parserURL.href === isPathOrderGetOneHref ||
+		parserURL.href === isPathOrderEditHref ||
+		parserURL.href === isPathOrderDeleteHref
+	) {
+		await orderRouter(authMiddleware, path, pathOption, req, res, body)
+	}
+
+	if (
+		path === CREATE_PAYMENT ||
+		parserURL.href === isPathPaymentGetAllHref ||
+		parserURL.href === isPathPaymentGetOneHref ||
+		parserURL.href === isPathPaymentGetFreshHref ||
+		parserURL.href === isPathPaymentGetOneFreshHref ||
+		parserURL.href === isPathPaymentConfirmHref ||
+		parserURL.href === isPathPaymentCancelHref ||
+		parserURL.href === isPathPaymentDeleteHref
+	) {
+		await paymentRouter(authMiddleware, path, pathOption, req, res, body)
 	}
 
 	await next()

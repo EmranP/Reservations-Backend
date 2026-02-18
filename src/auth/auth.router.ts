@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http'
+import { isDev } from '../app/app'
 import {
 	AUTH_ACTIVATION_EMAIL_API_URL,
 	AUTH_ACTIVATION_EMAIL_FORGET_API_URL,
@@ -27,6 +28,7 @@ import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { isConfirmNewPassDto } from './dto/forget.dto'
 import { isAuthLoginDto } from './dto/login.dto'
+import { isRecaptchaDto } from './dto/recaptcha.dto'
 import { isAuthRegistrationDto } from './dto/registration.dto'
 import { isRepaidVerifyDto } from './dto/verify.dto'
 import {
@@ -37,6 +39,7 @@ import {
 	oAuthTelegramController,
 	oAuthYandexController,
 } from './index.auth'
+import { verifyRecaptcha } from './middleware/recaptcha.auth'
 import {
 	isAuthVerifyTwoFactory,
 	isEnableTwoFactoryChallengeDto,
@@ -65,6 +68,25 @@ export const authRouter = async (
 ): Promise<void> => {
 	// Login =======================================
 	if (path === AUTH_LOGIN_API_URL && req.method === 'POST') {
+		if (!isDev) {
+			if (!isRecaptchaDto(body)) {
+				await responseBadRequest('Invalid data: Recaptcha-token', res)
+
+				return
+			}
+
+			const isVerifyRecaptcha = await verifyRecaptcha(body.recaptchaToken)
+
+			if (
+				typeof isVerifyRecaptcha === 'object' &&
+				'message' in isVerifyRecaptcha
+			) {
+				await responseBadRequest(isVerifyRecaptcha.message, res)
+
+				return
+			}
+		}
+
 		if (!isAuthLoginDto(body)) {
 			await responseBadRequest('Invalid data: email, phone or password', res)
 
@@ -81,10 +103,29 @@ export const authRouter = async (
 			return
 		}
 
-		await authController.login(req, res, body)
+		await authController.login(res, body)
 	}
 	// Registration =======================================
 	else if (path === AUTH_REGISTRATION_API_URL && req.method === 'POST') {
+		if (!isDev) {
+			if (!isRecaptchaDto(body)) {
+				await responseBadRequest('Invalid data: Recaptcha-token', res)
+
+				return
+			}
+
+			const isVerifyRecaptcha = await verifyRecaptcha(body.recaptchaToken)
+
+			if (
+				typeof isVerifyRecaptcha === 'object' &&
+				'message' in isVerifyRecaptcha
+			) {
+				await responseBadRequest(isVerifyRecaptcha.message, res)
+
+				return
+			}
+		}
+
 		if (!isAuthRegistrationDto(body)) {
 			await responseBadRequest('Invalid data registration!', res)
 
@@ -112,18 +153,16 @@ export const authRouter = async (
 			}
 		}
 
-		// ! Add validate file for avatar
-
-		await authController.registration(req, res, body)
+		await authController.registration(res, body)
 	}
 	// Refresh =======================================
 	else if (path === AUTH_REFRESH_TOKEN_API_URL && req.method === 'POST') {
-		await authController.refresh(req, res, cookie)
+		await authController.refresh(res, cookie)
 	}
 
 	// Logout =======================================
 	else if (path === AUTH_LOGOUT_API_URL && req.method === 'POST') {
-		await authController.logout(req, res, cookie)
+		await authController.logout(res, cookie)
 	}
 	// Verify =======================================
 	else if (
@@ -131,7 +170,7 @@ export const authRouter = async (
 		path === `${AUTH_ACTIVATION_EMAIL_API_URL}/${pathOption.query}` &&
 		req.method === 'GET'
 	) {
-		await authController.verifyAccount(req, res, pathOption.query)
+		await authController.verifyAccount(res, pathOption.query)
 	}
 	// REPAID Email link =======================================
 	else if (
@@ -144,7 +183,7 @@ export const authRouter = async (
 			return
 		}
 
-		await authController.getLink(req, res, body)
+		await authController.getLink(res, body)
 	}
 	// Forget: Get link =======================================
 	else if (
@@ -157,7 +196,7 @@ export const authRouter = async (
 			return
 		}
 
-		await authController.getForgetLink(req, res, body)
+		await authController.getForgetLink(res, body)
 	}
 	// Forget: Verify  =======================================
 	else if (
@@ -165,7 +204,7 @@ export const authRouter = async (
 		path === `${AUTH_ACTIVATION_EMAIL_FORGET_API_URL}/${pathOption.query}` &&
 		req.method === 'GET'
 	) {
-		await authController.verifyForgetPassword(req, res, pathOption.query)
+		await authController.verifyForgetPassword(res, pathOption.query)
 	}
 	// Forget: New password =======================================
 	else if (path === AUTH_FORGET_NEW_PASSWORD_API_URL && req.method === 'POST') {
@@ -192,7 +231,7 @@ export const authRouter = async (
 			return
 		}
 
-		await authController.newPassword(req, res, body)
+		await authController.newPassword(res, body)
 	}
 	// 2FA
 	else if (
@@ -253,7 +292,7 @@ export const authRouter = async (
 			}
 		}
 
-		await authTwoFactoryController.verifyCode(req, res, body)
+		await authTwoFactoryController.verifyCode(res, body)
 	}
 	// Google OAuth 2.0
 	else if (
@@ -261,7 +300,7 @@ export const authRouter = async (
 		(path === `${AUTH_GET_GOOGLE_URL}${pathOption.searchParams}` &&
 			req.method === 'GET')
 	) {
-		await oAuthGoogleController.googleUrl(req, res, pathOption)
+		await oAuthGoogleController.googleUrl(res, pathOption)
 	} else if (path === AUTH_GOOGLE_CALLBACK_URL && req.method === 'POST') {
 		if (!isCodeOAuthCallbackDto(body)) {
 			await responseBadRequest(
@@ -293,11 +332,11 @@ export const authRouter = async (
 			return
 		}
 
-		await oAuthGoogleController.googleCallback(req, res, body)
+		await oAuthGoogleController.googleCallback(res, body)
 	}
 	// OAuth Google Refresh Token
 	else if (path === AUTH_GOOGLE_REFRESH_TOKEN && req.method === 'GET') {
-		await oAuthGoogleController.refreshToken(req, res, cookie)
+		await oAuthGoogleController.refreshToken(res, cookie)
 	}
 	// Github OAuth 2.0
 	else if (
@@ -305,7 +344,7 @@ export const authRouter = async (
 		(path === `${AUTH_GET_GITHUB_URL}${pathOption.searchParams}` &&
 			req.method === 'GET')
 	) {
-		await oAuthGithubController.githubUrl(req, res, pathOption)
+		await oAuthGithubController.githubUrl(res, pathOption)
 	} else if (path === AUTH_GITHUB_CALLBACK_URL && req.method === 'POST') {
 		if (!isCodeOAuthCallbackDto(body)) {
 			await responseBadRequest(
@@ -337,7 +376,7 @@ export const authRouter = async (
 			return
 		}
 
-		await oAuthGithubController.githubCallback(req, res, body)
+		await oAuthGithubController.githubCallback(res, body)
 	}
 	// Yandex OAuth 2.0
 	else if (
@@ -345,7 +384,7 @@ export const authRouter = async (
 		(path === `${AUTH_GET_YANDEX_URL}${pathOption.searchParams}` &&
 			req.method === 'GET')
 	) {
-		await oAuthYandexController.yandexUrl(req, res, pathOption)
+		await oAuthYandexController.yandexUrl(res, pathOption)
 	} else if (path === AUTH_YANDEX_CALLBACK_URL && req.method === 'POST') {
 		if (!isCodeOAuthCallbackDto(body)) {
 			await responseBadRequest(
@@ -377,9 +416,9 @@ export const authRouter = async (
 			return
 		}
 
-		await oAuthYandexController.yandexCallback(req, res, body)
+		await oAuthYandexController.yandexCallback(res, body)
 	} else if (path === AUTH_YANDEX_REFRESH_TOKEN && req.method === 'GET') {
-		await oAuthYandexController.refreshToken(req, res, cookie)
+		await oAuthYandexController.refreshToken(res, cookie)
 	} else if (path === AUTH_TELEGRAM && req.method === 'POST') {
 		if (!isResponseTelegramApi(body)) {
 			await responseBadRequest(
@@ -391,9 +430,9 @@ export const authRouter = async (
 			return
 		}
 
-		await oAuthTelegramController.tgCallback(req, res, body)
+		await oAuthTelegramController.tgCallback(res, body)
 	} else if (path === AUTH_TELEGRAM_REFRESH && req.method === 'POST') {
-		await oAuthTelegramController.tgRefresh(req, res, cookie)
+		await oAuthTelegramController.tgRefresh(res, cookie)
 	} else {
 		const apiError = ApiError.BadRequest('Bad-request from auth router')
 

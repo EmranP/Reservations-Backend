@@ -110,7 +110,7 @@ export class AdminModel {
 				imageUrl,
 				roomId,
 			])
-			console.log(queryResult)
+
 			if (!queryResult.rows[0]) return null
 
 			return queryResult.rows[0]

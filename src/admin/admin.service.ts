@@ -14,7 +14,10 @@ import {
 	setHashRedisClientWithEx,
 	setListRedisClientWIthEx,
 } from '../common/redis/utils/grud-redis.util'
-import type { IAppMessage } from '../common/types/app/app.type'
+import type {
+	IAppMessage,
+	IGetAllDataWithMeta,
+} from '../common/types/app/app.type'
 
 import type { IRooms } from '../app/db/types/rooms.types'
 import type { IContextFiles } from '../common/types/middlewares/app.types-middleware'
@@ -22,8 +25,7 @@ import { setDateUtil } from '../common/utils/app/date.util'
 import { assetsPath } from '../common/utils/format/path.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import type { AdminModel } from './admin.model'
-import { IRoomDto, RoomDto } from './dto/room.dto'
-import type { IGetAllRoomsWithMeta } from './types/admin.interface'
+import { RoomDto, type IRoomDto } from './dto/room.dto'
 
 export class AdminService extends BaseConfig {
 	constructor(
@@ -51,7 +53,13 @@ export class AdminService extends BaseConfig {
 			fileBody.fileBufferData
 		).metadata()
 
-		const isValid = this.validateImageFile(size, format, width, height)
+		const isValid = this.validateImageFile(
+			size,
+			format,
+			width,
+			height,
+			this.logger
+		)
 
 		if (typeof isValid === 'object' && 'message' in isValid)
 			return ApiError.BadRequest(isValid.message)
@@ -59,7 +67,7 @@ export class AdminService extends BaseConfig {
 		let imagePath: string | undefined
 		const filename = `${roomId}.${format}`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			imagePath = assetsPath(
 				__dirname,
 				`${this.pathAssets}/img/rooms/${filename}`
@@ -138,19 +146,20 @@ export class AdminService extends BaseConfig {
 			return ApiError.InternalServer('Error from add new room to database!')
 
 		try {
-			const getAllRoom = await this.model.getAllRooms(10, 0)
+			const allRooms = await this.model.getAllRooms(10, 0)
 
-			if (getAllRoom?.length) {
+			if (allRooms) {
 				const updateCacheListRoom = await setListRedisClientWIthEx(
-					'rooms',
-					getAllRoom
+					this.keysRooms,
+					this.keysRoomsIds,
+					allRooms
 				)
 
 				if (
 					typeof updateCacheListRoom === 'object' &&
 					'message' in updateCacheListRoom
 				) {
-					this.logger.warn('Add new data rooms to cache')
+					this.logger.warn('New data rooms is not success safe to cache')
 				}
 			}
 		} catch (error) {
@@ -161,30 +170,49 @@ export class AdminService extends BaseConfig {
 	}
 
 	async findAllRoom(
-		limit: number = 10,
-		offset: number = 0
-	): Promise<IGetAllRoomsWithMeta | ApiError> {
-		const getListRoomsCache = await getAllListRedisClient('rooms')
+		limit: number,
+		limitCache: number,
+		offset: number
+	): Promise<IGetAllDataWithMeta<IRoomDto> | ApiError> {
+		const getListRoomsCache = await getAllListRedisClient(
+			this.keysRooms,
+			this.keysRoomsIds,
+			limitCache,
+			offset
+		)
 		const allRooms = await checkCacheRedisClient(
 			getListRoomsCache,
 			() => this.model.getAllRooms(limit, offset),
 			'Rooms success get from cache!',
 			'Rooms success get from database!'
 		)
-		const total = await this.getModelCount(DB_TABLE_ROOMS)
+		const total = await this.getModelCount(DB_TABLE_ROOMS, this.logger)
 
 		if (!allRooms?.length || !total)
 			return ApiError.NotFound('Rooms not founded!')
 
-		if (!getListRoomsCache.length) {
-			const addListRooms = await setListRedisClientWIthEx('rooms', allRooms)
+		const allRoomsDto = allRooms.map(room => new RoomDto(room).toPlain())
 
-			if (typeof addListRooms === 'object' && 'message' in addListRooms) {
-				this.logger.error('Error from add new list-rooms to cache!')
+		if (!getListRoomsCache.length) {
+			try {
+				if (allRooms.length) {
+					const updateCacheListRoom = await setListRedisClientWIthEx(
+						this.keysRooms,
+						this.keysRoomsIds,
+						allRooms
+					)
+
+					if (
+						typeof updateCacheListRoom === 'object' &&
+						'message' in updateCacheListRoom
+					) {
+						this.logger.warn('New data rooms is not success safe to cache')
+					}
+				}
+			} catch (error) {
+				this.logger.warn(`Get-all room is not success safe to cache`)
 			}
 		}
-
-		const allRoomsDto = allRooms.map(room => new RoomDto(room).toPlain())
 
 		return {
 			data: allRoomsDto,
@@ -200,8 +228,8 @@ export class AdminService extends BaseConfig {
 		if (!roomId) return ApiError.NotFound('Room ID not fonded!')
 
 		const getRoomByIdCache = await getRedisClientHashKey(
-			'rooms:ids',
-			`room:${roomId}`
+			this.keysRoomsIds,
+			roomId
 		)
 
 		const getOneRoom = await checkCacheRedisClient(
@@ -243,8 +271,8 @@ export class AdminService extends BaseConfig {
 				)
 
 			const updateRoomCache = await setHashRedisClientWithEx(
-				'rooms:ids',
-				`room:${isUpdateRoom.id}`,
+				this.keysRoomsIds,
+				isUpdateRoom.id,
 				isUpdateRoom
 			)
 
@@ -255,8 +283,8 @@ export class AdminService extends BaseConfig {
 
 		if (!getRoomByIdCache) {
 			const addNewRoomById = await setHashRedisClientWithEx(
-				'rooms:ids',
-				`room:${roomId}`,
+				this.keysRoomsIds,
+				roomId,
 				JSON.stringify(isUpdateRoom),
 				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
 			)
@@ -282,8 +310,8 @@ export class AdminService extends BaseConfig {
 		if (!roomId) return ApiError.NotFound('Room-id not founded!')
 
 		const getRoomByIdCache = await getRedisClientHashKey(
-			'rooms:ids',
-			`room:${roomId}`
+			this.keysRoomsIds,
+			roomId
 		)
 
 		const getOneRoom = await checkCacheRedisClient(
@@ -323,19 +351,20 @@ export class AdminService extends BaseConfig {
 			)
 
 		try {
-			const getAllRoom = await this.model.getAllRooms(10, 0)
+			const allRooms = await this.model.getAllRooms(10, 0)
 
-			if (getAllRoom?.length) {
+			if (allRooms) {
 				const updateCacheListRoom = await setListRedisClientWIthEx(
-					'rooms',
-					getAllRoom
+					this.keysRooms,
+					this.keysRoomsIds,
+					allRooms
 				)
 
 				if (
 					typeof updateCacheListRoom === 'object' &&
 					'message' in updateCacheListRoom
 				) {
-					this.logger.warn('Add new data rooms to cache')
+					this.logger.warn('New data rooms is not success safe to cache')
 				}
 			}
 		} catch (error) {
@@ -357,8 +386,8 @@ export class AdminService extends BaseConfig {
 		if (!roomId) return ApiError.NotFound('Room-id not founded!')
 
 		const getOneRoomCache = await getRedisClientHashKey(
-			'rooms:ids',
-			`room:${roomId}`
+			this.keysRoomsIds,
+			roomId
 		)
 
 		const getOneRoom = await checkCacheRedisClient(
@@ -372,7 +401,7 @@ export class AdminService extends BaseConfig {
 
 		const filename = `${roomId}.png`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			const imagePath = assetsPath(
 				__dirname,
 				`../../assets/img/rooms/${filename}`
@@ -420,16 +449,17 @@ export class AdminService extends BaseConfig {
 			)
 
 		try {
-			const getAllRoom = await this.model.getAllRooms(10, 0)
+			const allRooms = await this.model.getAllRooms(10, 0)
 
-			if (getAllRoom?.length) {
+			if (allRooms) {
 				const updateCacheListRoom = await setListRedisClientWIthEx(
-					'rooms',
-					getAllRoom
+					this.keysRooms,
+					this.keysRoomsIds,
+					allRooms
 				)
 				const updateCacheRoomIds = await setHashRedisClientWithEx(
-					'rooms:ids',
-					`room:${getOneRoom.id}`,
+					this.keysRoomsIds,
+					getOneRoom.id,
 					getOneRoom
 				)
 
@@ -458,8 +488,8 @@ export class AdminService extends BaseConfig {
 		if (!roomId) return ApiError.NotFound('Room-ID not founded!')
 
 		const getOneRoomCache = await getRedisClientHashKey(
-			'rooms:ids',
-			`room:${roomId}`
+			this.keysRoomsIds,
+			roomId
 		)
 
 		const getOneRoom = await checkCacheRedisClient(
@@ -473,7 +503,7 @@ export class AdminService extends BaseConfig {
 
 		const filename = `${roomId}.png`
 
-		if (isDev !== this.devMode) {
+		if (isDev === this.devMode) {
 			const imagePath = assetsPath(
 				__dirname,
 				`../../assets/img/rooms/${filename}`
@@ -514,32 +544,31 @@ export class AdminService extends BaseConfig {
 			return ApiError.InternalServer(`Error from remove room: ID-${roomId}`)
 
 		try {
-			const getAllRoom = await this.model.getAllRooms(10, 0)
+			const allRooms = await this.model.getAllRooms(10, 0)
 
-			if (getOneRoom) {
+			if (resultRemoveRoom.id) {
 				const deleteOneRoomCache = await delHashRedisClient(
-					'rooms:ids',
-					`room:${roomId}`
+					this.keysRoomsIds,
+					resultRemoveRoom.id
 				)
 
 				if (!deleteOneRoomCache) {
-					this.logger.error('Error data from cache not success remove!')
-				} else {
-					this.logger.error('Data from cache not success remove!')
+					this.logger.error('Room-data from cache not success remove!')
 				}
 			}
 
-			if (getAllRoom?.length) {
+			if (allRooms) {
 				const updateCacheListRoom = await setListRedisClientWIthEx(
-					'rooms',
-					getAllRoom
+					this.keysRooms,
+					this.keysRoomsIds,
+					allRooms
 				)
 
 				if (
 					typeof updateCacheListRoom === 'object' &&
 					'message' in updateCacheListRoom
 				) {
-					this.logger.warn('Add new data rooms to cache')
+					this.logger.warn('New data rooms is not success safe to cache')
 				}
 			}
 		} catch (error) {
