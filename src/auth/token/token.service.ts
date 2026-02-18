@@ -316,7 +316,7 @@ export class TokenService extends BaseConfig {
 
 		const tokens = await this.generateTokens({
 			id: isVerifyToken.sub,
-			role: isVerifyToken.role,
+			role: Number(isVerifyToken.role),
 		})
 
 		if (!tokens.refresh || typeof tokens.refresh !== 'string')

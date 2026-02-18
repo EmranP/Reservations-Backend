@@ -1,12 +1,7 @@
 import type { IOrders } from '../../app/db/types/orders.types'
+import type { STATUS_ORDER } from '../../app/enums'
 import type { IAppSharedDto } from '../../common/types/app/app.type'
-
-export interface IOrderDto extends IAppSharedDto {
-	userId: string
-	roomId: string
-	totalPrice: number
-	residenceTime: Date
-}
+import type { IOrderDto } from '../types/dto.interface'
 
 export class OrderDto implements IAppSharedDto {
 	id: string
@@ -14,6 +9,7 @@ export class OrderDto implements IAppSharedDto {
 	roomId: string
 	totalPrice: number
 	residenceTime: Date
+	status: typeof STATUS_ORDER
 	createdAt: Date
 	updatedAt: Date
 
@@ -25,6 +21,7 @@ export class OrderDto implements IAppSharedDto {
 		this.residenceTime = data.residence_time
 		this.createdAt = data.created_at
 		this.updatedAt = data.updated_at
+		this.status = data.status
 	}
 
 	public toPlain(): IOrderDto {
@@ -34,6 +31,7 @@ export class OrderDto implements IAppSharedDto {
 			roomId: this.roomId,
 			totalPrice: this.totalPrice,
 			residenceTime: this.residenceTime,
+			status: this.status,
 			createdAt: this.createdAt,
 			updatedAt: this.updatedAt,
 		}

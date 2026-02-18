@@ -4,8 +4,8 @@ import type { IOrders } from '../app/db/types/orders.types'
 import { DB_TABLE_ORDERS } from '../common/constants/table-db.constant'
 import type { TypeAppID } from '../common/types/db/app.interface'
 import { responseErrorDB } from '../common/utils/app/errorResponse.utils'
-import type { CreateOrderDto } from './pipe/create.dto'
-import type { EditOrderDto } from './pipe/edit.dto'
+import type { CreateOrderDto } from './pipe/create.pipe'
+import type { EditOrderDto } from './pipe/edit.pipe'
 
 export class OrderModel {
 	constructor(private pool: Pool, private logger: Logger) {}

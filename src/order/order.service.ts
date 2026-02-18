@@ -1,6 +1,5 @@
 import type { Logger } from 'winston'
 import type { UserModel } from '../admin/users/user.model'
-import { ROLES } from '../app/enums'
 import { BaseConfig } from '../common/abstract/base-config.common'
 import { APP_REDIS_CONFIG } from '../common/config/app.config'
 import { DB_TABLE_ORDERS } from '../common/constants/table-db.constant'
@@ -18,14 +17,13 @@ import type {
 	IGetAllDataWithMeta,
 } from '../common/types/app/app.type'
 import { ApiError } from '../common/utils/log/exists-error.log'
-import { OrderDto, type IOrderDto } from './dto/order.dto'
+import { OrderDto } from './dto/order.dto'
 import type { OrderModel } from './order.model'
-import type { CreateOrderDto } from './pipe/create.dto'
-import type { EditOrderDto } from './pipe/edit.dto'
+import type { CreateOrderDto } from './pipe/create.pipe'
+import type { EditOrderDto } from './pipe/edit.pipe'
+import type { IOrderDto } from './types/dto.interface'
 
 export class OrderService extends BaseConfig {
-	private isAdminHandler = (role: number): boolean => role === ROLES.ADMIN
-
 	constructor(
 		private model: OrderModel,
 		private userModel: UserModel,
@@ -34,24 +32,20 @@ export class OrderService extends BaseConfig {
 		super()
 	}
 
-	private logInfoCache(
-		orderUserId: number | ApiError | undefined,
-		orderAdminId: number | ApiError | undefined
-	): void {
-		if (typeof orderUserId === 'object' && 'status' in orderUserId) {
-			this.logger.warn(orderUserId.message)
-		} else if (typeof orderAdminId === 'object' && 'status' in orderAdminId) {
-			this.logger.warn(orderAdminId.message)
-		}
-	}
-
 	async addOrder(
 		userId: string | undefined,
 		role: number | undefined,
 		dto: CreateOrderDto
 	): Promise<IAppMessage | ApiError> {
+		const now = new Date()
 		if (!userId || typeof role === 'undefined')
 			return ApiError.UnauthorizedError()
+
+		if (
+			dto.residenceTime &&
+			now.getTime() > new Date(dto.residenceTime).getTime()
+		)
+			return ApiError.BadRequest(`You can't book at this time.`)
 
 		const isAdmin = this.isAdminHandler(role)
 		const getUserCache = await getRedisClientHashKey(this.keysUsersIds, userId)
@@ -77,10 +71,16 @@ export class OrderService extends BaseConfig {
 		)
 		const getAllOrders = await this.model.getAllOrders(user.id, isAdmin, 10, 0)
 		if (getAllOrders?.length) {
-			await this.updateOrdersCache(
+			await this.updateCache(
 				ordersCount,
 				isAdmin,
 				getAllOrders,
+				this.keysOrdersUser,
+				this.keysOrderUserId,
+				this.keysOrdersUserCount,
+				this.keysOrdersAdmin,
+				this.keysOrderAdminId,
+				this.keysOrdersAdminCount,
 				this.logger
 			)
 		}
@@ -94,6 +94,7 @@ export class OrderService extends BaseConfig {
 		userId: string | undefined,
 		role: number | undefined,
 		limit: number = 10,
+		limitCache: number,
 		offset: number = 0
 	): Promise<IGetAllDataWithMeta<IOrderDto> | ApiError> {
 		if (!userId || typeof role === 'undefined')
@@ -103,7 +104,7 @@ export class OrderService extends BaseConfig {
 		const getListOrdersCache = await getAllListRedisClient(
 			isAdmin ? this.keysOrdersAdmin : this.keysOrdersUser,
 			isAdmin ? this.keysOrderAdminId : this.keysOrderUserId,
-			limit,
+			limitCache,
 			offset
 		)
 		const getTotalOrdersCache = await getRedisClientKey(
@@ -132,7 +133,18 @@ export class OrderService extends BaseConfig {
 			return ApiError.NotFound('Orders is not founded!')
 
 		if (!getListOrdersCache.length) {
-			await this.updateOrdersCache(totalOrders, isAdmin, allOrders, this.logger)
+			await this.updateCache(
+				totalOrders,
+				isAdmin,
+				allOrders,
+				this.keysOrdersUser,
+				this.keysOrderUserId,
+				this.keysOrdersUserCount,
+				this.keysOrdersAdmin,
+				this.keysOrderAdminId,
+				this.keysOrdersAdminCount,
+				this.logger
+			)
 		}
 
 		const allOrdersDto = allOrders.map(order => new OrderDto(order).toPlain())
@@ -190,7 +202,7 @@ export class OrderService extends BaseConfig {
 				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
 			)
 
-			this.logInfoCache(addNewOrderUserById, addNewOrderAdminById)
+			this.logInfoCache(addNewOrderUserById, addNewOrderAdminById, this.logger)
 
 			this.logger.info(
 				`New room have success added to cache: ID-${getOneOrder.id}`
@@ -257,7 +269,11 @@ export class OrderService extends BaseConfig {
 					getAllOrders
 				)
 
-				this.logInfoCache(updateUserCacheListOrders, updateAdminCacheListOrders)
+				this.logInfoCache(
+					updateUserCacheListOrders,
+					updateAdminCacheListOrders,
+					this.logger
+				)
 			}
 		} catch (error) {
 			this.logger.warn(
@@ -339,10 +355,16 @@ export class OrderService extends BaseConfig {
 			}
 
 			if (getAllOrders && getAllOrders.length) {
-				await this.updateOrdersCache(
+				await this.updateCache(
 					ordersCount,
 					isAdmin,
 					getAllOrders,
+					this.keysOrdersUser,
+					this.keysOrderUserId,
+					this.keysOrdersUserCount,
+					this.keysOrdersAdmin,
+					this.keysOrderAdminId,
+					this.keysOrdersAdminCount,
 					this.logger
 				)
 			}

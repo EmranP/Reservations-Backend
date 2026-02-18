@@ -8,8 +8,8 @@ import {
 	responseInternalServer,
 } from '../common/utils/app/errorResponse.utils'
 import type { OrderService } from './order.service'
-import type { CreateOrderDto } from './pipe/create.dto'
-import type { EditOrderDto } from './pipe/edit.dto'
+import type { CreateOrderDto } from './pipe/create.pipe'
+import type { EditOrderDto } from './pipe/edit.pipe'
 
 export class OrderController extends BaseConfig {
 	constructor(private service: OrderService, private logger: Logger) {
@@ -66,10 +66,12 @@ export class OrderController extends BaseConfig {
 			const page = Number(query.queryParams?.page) || 1
 			const limit = Number(query.queryParams?.limit) || 10
 			const offset = (page - 1) * limit
+			const limitCache = offset + limit - 1
 			const resultGetAllOrders = await this.service.findAllOrders(
 				userId,
 				userRole,
 				limit,
+				limitCache,
 				offset
 			)
 

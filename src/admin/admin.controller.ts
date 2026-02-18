@@ -65,9 +65,13 @@ export class AdminController extends BaseConfig {
 		try {
 			const page = Number(query.queryParams?.page) || 1
 			const limit = Number(query.queryParams?.limit) || 10
-			const start = (page - 1) * limit
-			const stop = start + limit - 1
-			const roomsResult = await this.service.findAllRoom(limit, start, stop)
+			const offset = (page - 1) * limit
+			const limitCache = offset + limit - 1
+			const roomsResult = await this.service.findAllRoom(
+				limit,
+				limitCache,
+				offset
+			)
 
 			if ('message' in roomsResult) {
 				const errorJsonData = JSON.stringify({
