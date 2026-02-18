@@ -1,18 +1,17 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../../common/abstract/base-config.common'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthGithubService } from './oauth.github.service'
 
-export class OAuthGithubController extends AuthBaseConfig {
+export class OAuthGithubController extends BaseConfig {
 	constructor(private service: OAuthGithubService, private logger: Logger) {
 		super()
 	}
 
 	async githubUrl(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		query: IAppQueryParams
 	): Promise<void> {
@@ -45,7 +44,6 @@ export class OAuthGithubController extends AuthBaseConfig {
 	}
 
 	async githubCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthCallback
 	): Promise<void> {

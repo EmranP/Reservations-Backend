@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'http'
+import type { IncomingMessage } from 'http'
 import {
 	isRequestUserApp,
 	isVerifyTokenError,
@@ -8,9 +8,7 @@ import { tokenService } from '../index.auth'
 import type { IRequestUserApp } from '../types/token.type'
 
 export const isAuth = async (
-	req: IRequestUserApp | IncomingMessage,
-	res: ServerResponse<IncomingMessage>,
-	next?: (parm?: ApiError) => Promise<void>
+	req: IRequestUserApp | IncomingMessage
 ): Promise<undefined | ApiError> => {
 	const authHeader = req.headers.authorization
 

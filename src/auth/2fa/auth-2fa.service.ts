@@ -1,13 +1,13 @@
 import type { Logger } from 'winston'
-import { AuthBaseConfig } from '../abstract/auth-config.base'
+import { BaseConfig } from '../../common/abstract/base-config.common'
 import type {
 	EnableTwoFactoryChallenge,
 	VerifyTwoFactoryAuthDto,
 } from '../dto/2fa.dto'
 
+import { UserDto } from '../../admin/users/dto/user.dto'
 import type { IUser } from '../../app/db/types/user.types'
 import { setDateUtil } from '../../common/utils/app/date.util'
-import { UserDto } from '../../user/dto/user.dto'
 import type { AuthModel } from '../auth.model'
 import type { TokenService } from '../token/token.service'
 import type {
@@ -17,7 +17,7 @@ import type {
 } from '../types/types.auth'
 import type { AuthTwoFactoryChallengeModel } from './auth-2fa.model'
 
-export class AuthTwoFactoryChallengeService extends AuthBaseConfig {
+export class AuthTwoFactoryChallengeService extends BaseConfig {
 	constructor(
 		private model: AuthTwoFactoryChallengeModel,
 		private authMode: AuthModel,
@@ -90,7 +90,7 @@ export class AuthTwoFactoryChallengeService extends AuthBaseConfig {
 
 		const userDto = new UserDto(user)
 
-		if (!userDto.id || userDto.role === undefined)
+		if (!userDto.id || userDto.role === undefined || userDto.role === null)
 			return {
 				message: 'User is not founded!',
 				status: 404,

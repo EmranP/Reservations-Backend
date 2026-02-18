@@ -1,17 +1,17 @@
 import { jwtVerify, type JWTVerifyGetKey } from 'jose'
+import { UserDto } from '../../admin/users/dto/user.dto'
 import type { IUser } from '../../app/db/types/user.types'
+import { BaseConfig } from '../../common/abstract/base-config.common'
 import type { IAppEnCrypto } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { setDateUtil } from '../../common/utils/app/date.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
-import { UserDto } from '../../user/dto/user.dto'
-import { AuthBaseConfig } from '../abstract/auth-config.base'
 import type { IUserAccountDto, IUserWithoutAccountDto } from '../dto/oauth.dto'
 import type { TokenService } from '../token/token.service'
 import type { IUserOAuth } from '../types/types.auth'
 import type { OAuthModel } from './oauth.model'
 
-export class OAuthService extends AuthBaseConfig {
+export class OAuthService extends BaseConfig {
 	public async getOauthUrl(
 		state: string | undefined,
 		clientId: string | undefined,
@@ -79,7 +79,11 @@ export class OAuthService extends AuthBaseConfig {
 
 		const userDto = new UserDto(updateUser)
 
-		if (!userDto.id || !userDto.role)
+		if (
+			!userDto.id ||
+			typeof userDto.role === 'undefined' ||
+			userDto.role === null
+		)
 			return ApiError.InternalServer(
 				`Error transform user-${dataDto.provider} dto`
 			)
@@ -146,7 +150,11 @@ export class OAuthService extends AuthBaseConfig {
 
 		const userDto = new UserDto(newUser)
 
-		if (!userDto.id || typeof userDto.role === 'undefined')
+		if (
+			!userDto.id ||
+			typeof userDto.role === 'undefined' ||
+			userDto.role === null
+		)
 			return ApiError.BadRequest('User google dto not found!')
 
 		const tokens = await tokenService.generateTokens({

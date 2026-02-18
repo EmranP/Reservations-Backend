@@ -1,18 +1,17 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../../common/abstract/base-config.common'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthGoogleService } from './oauth.google.service'
 
-export class OAuthGoogleController extends AuthBaseConfig {
+export class OAuthGoogleController extends BaseConfig {
 	constructor(private service: OAuthGoogleService, private logger: Logger) {
 		super()
 	}
 
 	async googleUrl(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		query: IAppQueryParams
 	): Promise<void> {
@@ -45,7 +44,6 @@ export class OAuthGoogleController extends AuthBaseConfig {
 	}
 
 	async googleCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthCallback
 	): Promise<void> {
@@ -92,7 +90,6 @@ export class OAuthGoogleController extends AuthBaseConfig {
 	}
 
 	async refreshToken(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	) {

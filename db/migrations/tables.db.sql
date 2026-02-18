@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 	phone VARCHAR(20) NOT NULL DEFAULT '+993',
 	password TEXT NOT NULL,
 	picture TEXT,
+	expire_picture_url TIMESTAMP DEFAULT NULL,
 	role INTEGER NOT NULL DEFAULT 1 CHECK (role in (0, 1)),
 	activation_link TEXT,
 	reset_pass_link TEXT,
@@ -57,24 +58,44 @@ CREATE TABLE IF NOT EXISTS public.rooms (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	price NUMERIC(10,2) NOT NULL,
 	quality VARCHAR(35) NOT NULL,
-	description VARCHAR(500) NOT NULL,
+	description VARCHAR(500),
 	status status_mood NOT NULL DEFAULT 'FREE',
-	image_url TEXT,
+	picture TEXT,
+	expire_picture_url TIMESTAMP DEFAULT NULL,
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
 
--- Occupied Rooms
-CREATE TABLE IF NOT EXISTS public.occupied_rooms (
+-- Orders
+CREATE TABLE IF NOT EXISTS public.orders (
 	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-	room_id UUID UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
-	status status_mood NOT NULL DEFAULT 'BUYS',
+	user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+	room_id UUID REFERENCES public.rooms(id) ON DELETE CASCADE,
 	total_price NUMERIC(10, 2) NOT NULL,
 	residence_time TIMESTAMP NOT NULL,
+	status payment_status NOT NULL DEFAULT 'waiting_for_capture',
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
+
+-- Payment
+CREATE TABLE IF NOT EXISTS public.payment (
+	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+	order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE,
+	user_id UUID REFERENCES public.users(id) ON DELETE CASCaDE,
+	status payment_status NOT NULL DEFAULT 'waiting_for_capture',
+	paid BOOLEAN NOT NULL DEFAULT TRUE,
+	amount_value DECIMAL(10, 2),
+	amount_currency TEXT,
+	description TEXT,
+	payment_method_type TEXT NOT NULL DEFAULT 'bank_card',
+	payment_method_saved BOOLEAN NOT NULL DEFAULT FALSE,
+	refundable BOOLEAN NOT NULL DEFAULT FALSE,
+	test BOOLEAN NOT NULL DEFAULT FALSE,
+	created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
 
 -- Reviews
 CREATE TABLE IF NOT EXISTS public.reviews (
@@ -85,3 +106,4 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );
+

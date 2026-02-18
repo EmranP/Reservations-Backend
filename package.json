@@ -1,5 +1,5 @@
 {
-	"name": "hotel-reservations-backend",
+	"name": "reservations-backend",
 	"module": "src/index.ts",
 	"type": "module",
 	"private": true,
@@ -31,6 +31,7 @@
 		"helmet": "^8.1.0",
 		"jose": "^6.1.0",
 		"jsonwebtoken": "^9.0.2",
+		"minio": "^8.0.6",
 		"nodemailer": "^7.0.10",
 		"pg": "^8.16.0",
 		"redis": "^5.10.0",

@@ -1,14 +1,19 @@
 import { URL } from 'url'
-import { userRouter } from '../admin/admin.route'
+import { adminRoomRouter } from '../admin/route/admin.route'
+import { userRouter } from '../admin/route/user.route'
 import { authRouter } from '../auth/auth.router'
 import { isAuth } from '../auth/middleware/isAuth.auth'
-import { rootUserRouter } from '../common/constants/admin.constant'
+import { rootRoomRouter } from '../common/constants/admin.constant'
 import { rootAuthRouter } from '../common/constants/auth.constant'
 import { isPathWithQuery } from '../common/constants/global.constant'
+import { ORDER_ADD, rootOrderRouter } from '../common/constants/order.constant'
+import { CREATE_PAYMENT } from '../common/constants/payment.constant'
 import { rootProfileRouter } from '../common/constants/profile.constant'
 import type { IAppQueryParams } from '../common/types/app/app.type'
 import type { Middleware } from '../common/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../common/utils/app/errorResponse.utils'
+import { orderRouter } from '../order/order.route'
+import { paymentRouter } from '../payment/payment.route'
 import { profileRouter } from '../profile/profile.route'
 
 export const routerApp: Middleware<unknown> = async (
@@ -18,12 +23,11 @@ export const routerApp: Middleware<unknown> = async (
 	const { req, res, body, cookies, file } = ctx
 	if (!req.url) return
 
-	const authMiddleware = await isAuth(req, res)
-
+	const authMiddleware = await isAuth(req)
 	const parserURL = new URL(req.url, `http://${req.headers.host}`)
+	const pathOrigin = parserURL.origin
 	const pathWithQuery = `${parserURL.pathname}${parserURL.search}`
 	const path = parserURL.search ? pathWithQuery : parserURL.pathname
-
 	const convertQueryParams = JSON.stringify({
 		queryParams: parserURL.searchParams,
 		path: parserURL.pathname,
@@ -33,7 +37,6 @@ export const routerApp: Middleware<unknown> = async (
 
 	// Search
 	const searchAuthActivateQuery = pathOption.path.search('activate/')
-	const searchAuthActivateRepaidQuery = pathOption.path.search('repaid/')
 	const searchAuthActivateForgetQuery = pathOption.path.search('forget/')
 
 	// Convert
@@ -54,56 +57,189 @@ export const routerApp: Middleware<unknown> = async (
 		pathOption.query = null
 	}
 
-	// Add isPath for rooms && other where need query params
-	const isPathUserHref = isPathWithQuery(
-		parserURL.origin,
-		'user',
-		pathOption.searchParams
-	)
 	const isPathAuthHref = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/activate',
 		`/${pathOption.query}`
 	)
 	const isPathAuthRepaidHref = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/repaid/activate',
 		`/${pathOption.query}`
 	)
 	const isPathAuthForgetHref = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/forget/activate',
 		pathOption.query !== null ? `/${pathOption.query}` : ''
 	)
+	// OAuth
 	const isPathAuthGoogleUrlWithState = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/google/url',
 		pathOption.searchParams
 	)
 	const isPathAuthGithubUrlWithState = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/github/url',
 		pathOption.searchParams
 	)
 	const isPathAuthYandexUrlWithState = isPathWithQuery(
-		parserURL.origin,
+		pathOrigin,
 		'auth/yandex/url',
+		pathOption.searchParams
+	)
+	// Room
+	const isPathGetAllRoom = isPathWithQuery(
+		pathOrigin,
+		'rooms',
+		pathOption.searchParams
+	)
+	const isPathGetOneRoom = isPathWithQuery(
+		pathOrigin,
+		'room',
+		pathOption.searchParams
+	)
+	const isPathEditOneRoom = isPathWithQuery(
+		pathOrigin,
+		'room/edit',
+		pathOption.searchParams
+	)
+	const isPathRemoveRoom = isPathWithQuery(
+		pathOrigin,
+		'room/remove',
+		pathOption.searchParams
+	)
+	// Rooms Image
+	const isPathUploadImageRoom = isPathWithQuery(
+		pathOrigin,
+		'room/upload/image',
+		pathOption.searchParams
+	)
+	const isPathDeleteImageRoom = isPathWithQuery(
+		pathOrigin,
+		'room/delete/image',
+		pathOption.searchParams
+	)
+	// Users
+	const isPathUsersAllHref = isPathWithQuery(
+		pathOrigin,
+		'users',
+		pathOption.searchParams
+	)
+	const isPathUserOneHref = isPathWithQuery(
+		pathOrigin,
+		'user',
+		pathOption.searchParams
+	)
+	const isPathUserEditHref = isPathWithQuery(
+		pathOrigin,
+		'user/edit',
+		pathOption.searchParams
+	)
+	const isPathUserDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'user/remove',
+		pathOption.searchParams
+	)
+	// Order
+	const isPathOrderGetAllHref = isPathWithQuery(
+		pathOrigin,
+		'orders',
+		pathOption.searchParams
+	)
+	const isPathOrderGetOneHref = isPathWithQuery(
+		pathOrigin,
+		'order',
+		pathOption.searchParams
+	)
+	const isPathOrderEditHref = isPathWithQuery(
+		pathOrigin,
+		'order/edit',
+		pathOption.searchParams
+	)
+	const isPathOrderDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'order/remove',
+		pathOption.searchParams
+	)
+	// Payment
+	const isPathPaymentGetAllHref = isPathWithQuery(
+		pathOrigin,
+		'payments',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetOneHref = isPathWithQuery(
+		pathOrigin,
+		'payment',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetFreshHref = isPathWithQuery(
+		pathOrigin,
+		'fresh/payments',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetOneFreshHref = isPathWithQuery(
+		pathOrigin,
+		'fresh/payment',
+		pathOption.searchParams
+	)
+	const isPathPaymentConfirmHref = isPathWithQuery(
+		pathOrigin,
+		'payment/confirm',
+		pathOption.searchParams
+	)
+	const isPathPaymentCancelHref = isPathWithQuery(
+		pathOrigin,
+		'payment/cancel',
+		pathOption.searchParams
+	)
+	const isPathPaymentDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'payment/remove',
 		pathOption.searchParams
 	)
 
 	if (
 		!rootAuthRouter.includes(path) &&
-		!rootUserRouter.includes(path) &&
 		!rootProfileRouter.includes(path) &&
-		parserURL.href !== isPathUserHref &&
+		!rootRoomRouter.includes(path) &&
+		// Auth
 		parserURL.href !== isPathAuthHref &&
 		parserURL.href !== isPathAuthRepaidHref &&
 		parserURL.href !== isPathAuthForgetHref &&
+		// OAuth
 		parserURL.href !== isPathAuthGoogleUrlWithState &&
 		parserURL.href !== isPathAuthGithubUrlWithState &&
-		parserURL.href !== isPathAuthYandexUrlWithState
+		parserURL.href !== isPathAuthYandexUrlWithState &&
+		// Room
+		parserURL.href !== isPathGetAllRoom &&
+		parserURL.href !== isPathGetOneRoom &&
+		parserURL.href !== isPathEditOneRoom &&
+		parserURL.href !== isPathRemoveRoom &&
+		parserURL.href !== isPathUploadImageRoom &&
+		parserURL.href !== isPathDeleteImageRoom &&
+		// Users
+		parserURL.href !== isPathUsersAllHref &&
+		parserURL.href !== isPathUserOneHref &&
+		parserURL.href !== isPathUserEditHref &&
+		parserURL.href !== isPathUserDeleteHref &&
+		// Order
+		parserURL.href !== `${pathOrigin}${ORDER_ADD}` &&
+		parserURL.href !== isPathOrderGetAllHref &&
+		parserURL.href !== isPathOrderGetOneHref &&
+		parserURL.href !== isPathOrderEditHref &&
+		parserURL.href !== isPathOrderDeleteHref &&
+		// Payment
+		parserURL.href !== `${pathOrigin}${CREATE_PAYMENT}` &&
+		parserURL.href !== isPathPaymentGetAllHref &&
+		parserURL.href !== isPathPaymentGetOneHref &&
+		parserURL.href !== isPathPaymentGetFreshHref &&
+		parserURL.href !== isPathPaymentGetOneFreshHref &&
+		parserURL.href !== isPathPaymentConfirmHref &&
+		parserURL.href !== isPathPaymentCancelHref &&
+		parserURL.href !== isPathPaymentDeleteHref
 	) {
-		await responseNotFoundApi('Not founded auth api', res)
+		await responseNotFoundApi('Not founded api', res)
 	}
 
 	if (
@@ -128,12 +264,13 @@ export const routerApp: Middleware<unknown> = async (
 		)
 	}
 
-	if (rootUserRouter.includes(path) || parserURL.href === isPathUserHref) {
-		await userRouter(authMiddleware, path, pathOption, req, res, body, next)
-	}
-
-	if (rootProfileRouter.includes(path)) {
-		await profileRouter(
+	if (
+		parserURL.href === isPathUsersAllHref ||
+		parserURL.href === isPathUserOneHref ||
+		parserURL.href === isPathUserEditHref ||
+		parserURL.href === isPathUserDeleteHref
+	) {
+		await userRouter(
 			authMiddleware,
 			path,
 			pathOption,
@@ -143,6 +280,53 @@ export const routerApp: Middleware<unknown> = async (
 			file,
 			next
 		)
+	}
+
+	if (rootProfileRouter.includes(path)) {
+		await profileRouter(authMiddleware, path, req, res, body, file)
+	}
+
+	if (
+		rootRoomRouter.includes(path) ||
+		parserURL.href === isPathGetAllRoom ||
+		parserURL.href === isPathGetOneRoom ||
+		parserURL.href === isPathEditOneRoom ||
+		parserURL.href === isPathRemoveRoom ||
+		parserURL.href === isPathUploadImageRoom ||
+		parserURL.href === isPathDeleteImageRoom
+	) {
+		await adminRoomRouter(
+			authMiddleware,
+			path,
+			pathOption,
+			req,
+			res,
+			body,
+			file
+		)
+	}
+
+	if (
+		rootOrderRouter.includes(path) ||
+		parserURL.href === isPathOrderGetAllHref ||
+		parserURL.href === isPathOrderGetOneHref ||
+		parserURL.href === isPathOrderEditHref ||
+		parserURL.href === isPathOrderDeleteHref
+	) {
+		await orderRouter(authMiddleware, path, pathOption, req, res, body)
+	}
+
+	if (
+		path === CREATE_PAYMENT ||
+		parserURL.href === isPathPaymentGetAllHref ||
+		parserURL.href === isPathPaymentGetOneHref ||
+		parserURL.href === isPathPaymentGetFreshHref ||
+		parserURL.href === isPathPaymentGetOneFreshHref ||
+		parserURL.href === isPathPaymentConfirmHref ||
+		parserURL.href === isPathPaymentCancelHref ||
+		parserURL.href === isPathPaymentDeleteHref
+	) {
+		await paymentRouter(authMiddleware, path, pathOption, req, res, body)
 	}
 
 	await next()

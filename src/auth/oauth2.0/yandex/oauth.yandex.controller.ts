@@ -1,18 +1,17 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../../common/abstract/base-config.common'
 import type { IAppQueryParams } from '../../../common/types/app/app.type'
 import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthCallback } from '../../dto/oauth.dto'
 import type { OAuthYandexService } from './oauth.yandex.service'
 
-export class OAuthYandexController extends AuthBaseConfig {
+export class OAuthYandexController extends BaseConfig {
 	constructor(private service: OAuthYandexService, private logger: Logger) {
 		super()
 	}
 
 	public async yandexUrl(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		query: IAppQueryParams
 	): Promise<void> {
@@ -45,7 +44,6 @@ export class OAuthYandexController extends AuthBaseConfig {
 	}
 
 	public async yandexCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthCallback
 	): Promise<void> {
@@ -92,7 +90,6 @@ export class OAuthYandexController extends AuthBaseConfig {
 	}
 
 	public async refreshToken(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	): Promise<void> {

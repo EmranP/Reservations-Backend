@@ -1,17 +1,16 @@
 import type { IncomingMessage, ServerResponse } from 'http'
 import type { Logger } from 'winston'
+import { BaseConfig } from '../../../common/abstract/base-config.common'
 import { responseInternalServer } from '../../../common/utils/app/errorResponse.utils'
-import { AuthBaseConfig } from '../../abstract/auth-config.base'
 import type { IOAuthTelegramCallbackDto } from '../../dto/oauth.dto'
 import type { OAuthTelegramService } from './oauth.telegram.service'
 
-export class OAuthTelegramController extends AuthBaseConfig {
+export class OAuthTelegramController extends BaseConfig {
 	constructor(private service: OAuthTelegramService, private logger: Logger) {
 		super()
 	}
 
 	public async tgCallback(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		body: IOAuthTelegramCallbackDto
 	): Promise<void> {
@@ -59,7 +58,6 @@ export class OAuthTelegramController extends AuthBaseConfig {
 	}
 
 	public async tgRefresh(
-		req: IncomingMessage,
 		res: ServerResponse<IncomingMessage>,
 		cookies: Record<string, string> | undefined
 	): Promise<void> {

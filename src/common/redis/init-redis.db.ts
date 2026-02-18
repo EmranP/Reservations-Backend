@@ -1,10 +1,11 @@
+import { createClient } from 'redis'
 import type { Logger } from 'winston'
 import type { IJwksData } from '../../auth/types/jwks.types'
 import { APP_REDIS_CONFIG } from '../config/app.config'
-import type { AppRedisClientType } from './types/redis.types'
+
+export const clientRedis = createClient()
 
 export const initRedisDB = async (
-	clientRedis: AppRedisClientType,
 	logger: Logger,
 	jwks: IJwksData
 ): Promise<void> => {

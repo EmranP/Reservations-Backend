@@ -14,7 +14,6 @@ export function compose<T>(middleware: Middleware<T>[]) {
 
 			index = i
 
-			console.log(middleware[i], i)
 			const fn = middleware[i]
 			if (!fn) return
 			await fn(ctx, () => dispatch(i + 1))
