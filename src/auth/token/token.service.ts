@@ -14,7 +14,6 @@ import {
 } from '../../common/redis/utils/grud-redis.util'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import { isVerifyTokenError } from '../../common/utils/app/checkType.utils'
-import { setDateUtil } from '../../common/utils/app/date.util'
 import { getPrivateKey } from '../../common/utils/app/getKeys.utils'
 import { base64UrlDecodeToString } from '../../common/utils/format/base64.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
@@ -51,7 +50,8 @@ export class TokenService extends BaseConfig {
 			!this.kidJwks ||
 			!this.issuerApp ||
 			!this.audienceApp ||
-			!this.accessExpire
+			!this.accessExpire ||
+			!this.expireAccessJwtUnitCase
 		)
 			return {
 				message: 'Create access-token config is not set',
@@ -68,7 +68,7 @@ export class TokenService extends BaseConfig {
 			.setIssuer(this.issuerApp)
 			.setAudience(this.audienceApp)
 			.setIssuedAt(now)
-			.setExpirationTime(this.accessExpire)
+			.setExpirationTime(`${this.accessExpire}${this.expireAccessJwtUnitCase}`)
 			.sign(privateKey)
 
 		return jwt
@@ -81,7 +81,8 @@ export class TokenService extends BaseConfig {
 			!this.refreshExpire ||
 			!this.kidJwks ||
 			!this.issuerApp ||
-			!this.audienceApp
+			!this.audienceApp ||
+			!this.expireRefreshJwtUnitCase
 		)
 			return {
 				message: 'Create refresh-token config is not set',
@@ -97,7 +98,9 @@ export class TokenService extends BaseConfig {
 			.setIssuer(this.issuerApp)
 			.setAudience(this.audienceApp)
 			.setIssuedAt()
-			.setExpirationTime(this.refreshExpire)
+			.setExpirationTime(
+				`${this.refreshExpire}${this.expireRefreshJwtUnitCase}`
+			)
 			.sign(privateKey)
 
 		return jwt
@@ -322,7 +325,10 @@ export class TokenService extends BaseConfig {
 		if (!tokens.refresh || typeof tokens.refresh !== 'string')
 			return ApiError.BadRequest('Error generate token from new-refresh token')
 
-		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		const expireRefreshTokenAt = this.isExpireUtil(
+			this.maxAgeRefresh,
+			this.expireRefreshJwtUnitCase
+		)
 		await this.saveToken(
 			isVerifyToken.sub,
 			tokens.refresh,

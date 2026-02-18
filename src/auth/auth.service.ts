@@ -9,12 +9,6 @@ import {
 	genLinks,
 } from '../common/constants/link.constant'
 import { isVerifyTokenError } from '../common/utils/app/checkType.utils'
-import {
-	setDateUtil,
-	setHoursUtil,
-	setMinuteUtil,
-	setSecundUtil,
-} from '../common/utils/app/date.util'
 import { renderSendActivationLink } from '../common/utils/format/render.util'
 import { ApiError } from '../common/utils/log/exists-error.log'
 
@@ -27,6 +21,7 @@ import {
 	setHashRedisClientWithEx,
 } from '../common/redis/utils/grud-redis.util'
 
+import type { IUser } from '../app/db/types/user.types'
 import type { AuthTwoFactoryChallengeModel } from './2fa/auth-2fa.model'
 import type { AuthTwoFactoryChallengeService } from './2fa/auth-2fa.service'
 import { AuthModel } from './auth.model'
@@ -40,7 +35,6 @@ import type {
 	TypeAuthServiceMessageWithApiError,
 	TypeAuthUserService,
 } from './types/types.auth'
-import type { IUser } from '../app/db/types/user.types'
 
 export class AuthService extends BaseConfig {
 	constructor(
@@ -56,7 +50,10 @@ export class AuthService extends BaseConfig {
 
 	//! BASE-METHOD-AUTH =================================================
 	async login(dto: LoginDto): TypeAuthUserService {
-		if (!APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS)
+		if (
+			!APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS ||
+			!APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+		)
 			return ApiError.InternalServer('Error not set redis-config default time!')
 
 		const now = new Date()
@@ -71,8 +68,8 @@ export class AuthService extends BaseConfig {
 			user = await checkCacheRedisClient(
 				userEmailRedis,
 				() => this.model.getUserByEmail(dto.email),
-				`user-email cache ${user?.email}`,
-				`user-email no cache ${user?.email}`
+				`user-email cache ${dto.email}`,
+				`user-email no cache ${dto.email}`
 			)
 		} else if (dto.phone) {
 			const userPhoneRedis = await getRedisClientHashKey(
@@ -83,8 +80,8 @@ export class AuthService extends BaseConfig {
 			user = await checkCacheRedisClient(
 				userPhoneRedis,
 				() => this.model.getUserByPhone(dto.phone),
-				`user-phone cache ${user?.phone}`,
-				`user-phone no cache ${user?.phone}`
+				`user-phone cache ${dto.phone}`,
+				`user-phone no cache ${dto.phone}`
 			)
 		}
 
@@ -172,7 +169,10 @@ export class AuthService extends BaseConfig {
 						status: resultSendEmailCode.status,
 					}
 
-				const expiresTwoFactoryCode = setSecundUtil(this.maxAgeTwoFactoryCode)
+				const expiresTwoFactoryCode = this.isExpireUtil(
+					this.maxAgeTwoFactoryCode,
+					this.expireTwoFactoryUnitCase
+				)
 				const updateTwoFactoryCode =
 					await this.authTwoFactoryModel.updateTwoFactoryAuthCode(
 						resultSendEmailCode.code,
@@ -206,7 +206,7 @@ export class AuthService extends BaseConfig {
 				'users:emails',
 				userEmailField,
 				user,
-				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+				Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 			)
 
 			if (
@@ -222,7 +222,7 @@ export class AuthService extends BaseConfig {
 				'users:phones',
 				userPhoneField,
 				user,
-				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+				Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 			)
 
 			if (
@@ -237,13 +237,20 @@ export class AuthService extends BaseConfig {
 			role: userDto.role,
 		})
 
+		console.log(tokens)
+
 		if (!tokens.refresh || typeof tokens.refresh !== 'string')
 			return {
 				message: 'Error refresh-token is not generate',
 				status: 500,
 			}
+		console.log('test')
 
-		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		const expireRefreshTokenAt = this.isExpireUtil(
+			this.maxAgeRefresh,
+			this.expireRefreshJwtUnitCase
+		)
+		console.log(expireRefreshTokenAt)
 		await this.tokenService.saveToken(
 			userDto.id,
 			tokens.refresh,
@@ -410,8 +417,14 @@ export class AuthService extends BaseConfig {
 				status: 500,
 			}
 
-		this.expiresVerify = setMinuteUtil(this.maxAgeVerify)
-		this.expiresRemoveVerify = setHoursUtil(this.maxAgeRemoveVerify)
+		this.expiresVerify = this.isExpireUtil(
+			this.maxAgeVerify,
+			this.expiresVerifyUnitCase
+		)
+		this.expiresRemoveVerify = this.isExpireUtil(
+			this.maxAgeRemoveVerify,
+			this.expiresRemoveVerifyUnitCase
+		)
 
 		if (!newUser.is_verify)
 			return {

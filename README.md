@@ -1,37 +1,5 @@
-# Hotel-Reservations-Backend
+## Environment Variables
 
-Бронирование отелей — это услуга, которая позволяет зарезервировать за потенциальным клиентом номер для будущего проживания в гостинице. Для этого нужно заранее определиться, на какой срок и какое количество человек планирует заселиться в отель, а также указать предпочтительную категорию жилого помещения.
-
----
-
-## 🚀 Main functionality
-
-**1) доступными номерами.**
-
-**2) возможность забронировать.**
-
-**3) возможностью удалить бронь.**
-
-**4) статус всех номеров.**
-
-**5) входа/регистрации.**
-
-**6) 2FA auth**
-
-**7) Добавить платежную систему для покупки номера .**
-
-**8) Add cash req auth with redis**
-
-**9) Work with files system**
-
-**10) Add tg bot where will be push notfi**
-
-## Stack
-
-**Pure Node JS + TS**
-
-**Pure SQL + PostgreSQL**
-
-**Rollup for builder**
-
-##Frontend: **https://github.com/EmranP/Hotel-Reservations-Frontend**
+1. Copy `.env.example` to `.env`
+2. Fill in required values
+3. Do not commit `.env` to repository

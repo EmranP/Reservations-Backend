@@ -159,6 +159,8 @@ export class PaymentService extends BaseConfig {
 		userId: string | undefined,
 		role: number | undefined
 	): Promise<IPaymentDto | ApiError> {
+		if (!APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
+			return ApiError.InternalServer('Redis-config is not set from env')
 		if (!payId) return ApiError.NotFound('Not founded Pay-ID')
 
 		if (!userId || typeof role === 'undefined')
@@ -186,7 +188,7 @@ export class PaymentService extends BaseConfig {
 					this.keysPaymentUserId,
 					getOnePay.id,
 					JSON.stringify(getOnePay),
-					APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+					Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 				)
 			}
 
@@ -194,7 +196,7 @@ export class PaymentService extends BaseConfig {
 				this.keysPaymentAdminId,
 				getOnePay.id,
 				JSON.stringify(getOnePay),
-				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+				Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 			)
 
 			this.logInfoCache(addNewPayUserById, addNewPayAdminById, this.logger)
