@@ -26,9 +26,9 @@ export interface IAppCountShared {
 }
 
 export interface IPaginationConfig {
-	total: number
 	limit: number
-	offset: number
+	offset: number | string | null
+	total?: number
 }
 
 export interface IAppSharedDto extends TypeAppID {

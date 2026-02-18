@@ -7,11 +7,13 @@ import { rootRoomRouter } from '../common/constants/admin.constant'
 import { rootAuthRouter } from '../common/constants/auth.constant'
 import { isPathWithQuery } from '../common/constants/global.constant'
 import { ORDER_ADD, rootOrderRouter } from '../common/constants/order.constant'
+import { CREATE_PAYMENT } from '../common/constants/payment.constant'
 import { rootProfileRouter } from '../common/constants/profile.constant'
 import type { IAppQueryParams } from '../common/types/app/app.type'
 import type { Middleware } from '../common/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../common/utils/app/errorResponse.utils'
 import { orderRouter } from '../order/order.route'
+import { paymentRouter } from '../payment/payment.route'
 import { profileRouter } from '../profile/profile.route'
 
 export const routerApp: Middleware<unknown> = async (
@@ -160,6 +162,42 @@ export const routerApp: Middleware<unknown> = async (
 		'order/remove',
 		pathOption.searchParams
 	)
+	// Payment
+	const isPathPaymentGetAllHref = isPathWithQuery(
+		pathOrigin,
+		'payments',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetOneHref = isPathWithQuery(
+		pathOrigin,
+		'payment',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetFreshHref = isPathWithQuery(
+		pathOrigin,
+		'fresh/payments',
+		pathOption.searchParams
+	)
+	const isPathPaymentGetOneFreshHref = isPathWithQuery(
+		pathOrigin,
+		'fresh/payment',
+		pathOption.searchParams
+	)
+	const isPathPaymentConfirmHref = isPathWithQuery(
+		pathOrigin,
+		'payment/confirm',
+		pathOption.searchParams
+	)
+	const isPathPaymentCancelHref = isPathWithQuery(
+		pathOrigin,
+		'payment/cancel',
+		pathOption.searchParams
+	)
+	const isPathPaymentDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'payment/remove',
+		pathOption.searchParams
+	)
 
 	if (
 		!rootAuthRouter.includes(path) &&
@@ -190,7 +228,16 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href !== isPathOrderGetAllHref &&
 		parserURL.href !== isPathOrderGetOneHref &&
 		parserURL.href !== isPathOrderEditHref &&
-		parserURL.href !== isPathOrderDeleteHref
+		parserURL.href !== isPathOrderDeleteHref &&
+		// Payment
+		parserURL.href !== `${pathOrigin}${CREATE_PAYMENT}` &&
+		parserURL.href !== isPathPaymentGetAllHref &&
+		parserURL.href !== isPathPaymentGetOneHref &&
+		parserURL.href !== isPathPaymentGetFreshHref &&
+		parserURL.href !== isPathPaymentGetOneFreshHref &&
+		parserURL.href !== isPathPaymentConfirmHref &&
+		parserURL.href !== isPathPaymentCancelHref &&
+		parserURL.href !== isPathPaymentDeleteHref
 	) {
 		await responseNotFoundApi('Not founded api', res)
 	}
@@ -267,6 +314,19 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href === isPathOrderDeleteHref
 	) {
 		await orderRouter(authMiddleware, path, pathOption, req, res, body)
+	}
+
+	if (
+		path === CREATE_PAYMENT ||
+		parserURL.href === isPathPaymentGetAllHref ||
+		parserURL.href === isPathPaymentGetOneHref ||
+		parserURL.href === isPathPaymentGetFreshHref ||
+		parserURL.href === isPathPaymentGetOneFreshHref ||
+		parserURL.href === isPathPaymentConfirmHref ||
+		parserURL.href === isPathPaymentCancelHref ||
+		parserURL.href === isPathPaymentDeleteHref
+	) {
+		await paymentRouter(authMiddleware, path, pathOption, req, res, body)
 	}
 
 	await next()

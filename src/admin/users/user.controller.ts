@@ -20,7 +20,12 @@ export class UserController extends BaseConfig {
 			const page = Number(query.queryParams?.page) || 1
 			const limit = Number(query.queryParams?.limit) || 10
 			const offset = (page - 1) * limit
-			const userServiceResult = await this.service.findAllUser(limit, offset)
+			const limitCache = offset + limit - 1
+			const userServiceResult = await this.service.findAllUser(
+				limit,
+				limitCache,
+				offset
+			)
 
 			if ('message' in userServiceResult) {
 				const errorJsonData = JSON.stringify({

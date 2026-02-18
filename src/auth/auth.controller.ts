@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'http'
 
 import type { Logger } from 'winston'
 import { BaseConfig } from '../common/abstract/base-config.common'
+import { APP_CONFIG } from '../common/config/app.config'
 import { responseInternalServer } from '../common/utils/app/errorResponse.utils'
 import { AuthService } from './auth.service'
 import type { ForgetDto } from './dto/forget.dto'
@@ -179,7 +180,7 @@ export class AuthController extends BaseConfig {
 		link: string | null
 	) {
 		try {
-			const clientUrl = process.env.CLIENT_URL
+			const clientUrl = APP_CONFIG.CLIENT_URL
 			const verifyUser = await this.authService.verifyAccount(link)
 			const jsonData = JSON.stringify({ message: verifyUser.message })
 

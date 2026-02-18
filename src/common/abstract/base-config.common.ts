@@ -1,7 +1,7 @@
 import type sharp from 'sharp'
 import type { Logger } from 'winston'
 import { pool } from '../../app/check-db.app'
-import type { IOrders } from '../../app/db/types/orders.types'
+import { ROLES } from '../../app/enums'
 import { APP_CONFIG } from '../config/app.config'
 import { TOKEN_CONFIG } from '../config/token.config'
 import {
@@ -9,6 +9,7 @@ import {
 	setRedisCLient,
 } from '../redis/utils/grud-redis.util'
 import type { IAppCountShared, IAppMessage } from '../types/app/app.type'
+import type { RedisEntityMapType } from '../types/app/redis.types'
 import { responseErrorDB } from '../utils/app/errorResponse.utils'
 import { writeHeadData } from '../utils/app/writeHeadData.utils'
 import type { ApiError } from '../utils/log/exists-error.log'
@@ -22,13 +23,12 @@ export abstract class BaseConfig {
 		APP_CONFIG.EXPIRES_USER_RESET_PASSWORD_VERIFY
 	protected twoFactoryConfig: string | undefined =
 		APP_CONFIG.EXPIRES_USER_TWO_FACTORY_CHALLENGE
-	// Expire
+	// Expire =============================
 	protected expiresVerify: Date | null = null
 	protected expiresRemoveVerify: Date | null = null
 	protected expiresRemoveRefresh = new Date(0).toUTCString()
 	protected expireS3Image = 60 * 60 * 24 * 7
-
-	// Age
+	// Age ================================
 	protected maxAgeVerify: number =
 		this.verifyConfig === '2m' ? 2 : this.verifyConfig === '5m' ? 5 : 0
 	protected maxAgeRemoveVerify: number =
@@ -38,12 +38,12 @@ export abstract class BaseConfig {
 	protected maxAgeRefresh =
 		this.refreshConfig === '7d' ? 7 : this.refreshConfig === '30d' ? 30 : 2
 	protected maxAgeTwoFactoryCode = this.twoFactoryConfig === '60s' ? 60 : 0
-	// Flags
+	// Flags ===============================
 	protected isFirstSendEmailVerifyAccount: boolean = true
 	protected isFirstSendEmailForgetPassword: boolean = true
 	protected isFirstVerifyForgetPassword: boolean = true
 	protected isFirstSendEmailTwoFactoryCode: boolean = true
-	// Message
+	// Message =============================
 	protected expireMessage: string = `Please confirm your account verify the link, you have ${
 		this.verifyConfig === '2m' ? 2 : 1
 	} minutes to do this.`
@@ -56,30 +56,37 @@ export abstract class BaseConfig {
 		'The time for entry has not yet expired.'
 	protected errorExpireTwoFactoryCodeMessage: string =
 		'Your confirmation two factory code time has expired.'
-	// Utils
+	// Utils ================================
 	protected headData = writeHeadData(400)
 	protected clientGrantTypeRefresh = 'refresh_token'
 	protected defaultUserPass = APP_CONFIG.USER_DEFAULT_PASS
 	protected devMode = 'development'
 	protected mode = APP_CONFIG.MODE
 	protected pathAssets = '../../assets'
-	// Validate size
+	protected isAdminHandler = (role: number): boolean => role === ROLES.ADMIN
+	// Validate size =========================
 	protected MAX_FILE_SIZE = 5 * 1024 * 1024
 	protected MIN_SIZE = 200
 	protected MAX_SIZE = 2048
 	protected ASPECT_RATIO = 1
-	// Keys redis
+	// Redis Keys ============================
 	protected keysRooms = 'rooms'
 	protected keysRoomsIds = 'rooms:id'
 	protected keysUsers = 'admin:users'
 	protected keysUsersIds = 'users:id'
-	protected keysOrdersAdmin = 'orders:admin'
 	protected keysOrdersUser = 'orders:user'
-	protected keysOrderAdminId = 'orders:admin:id'
 	protected keysOrderUserId = 'orders:user:id'
-	protected keysOrdersAdminCount = 'orders:admin:count'
 	protected keysOrdersUserCount = 'orders:user:count'
-
+	protected keysOrdersAdmin = 'orders:admin'
+	protected keysOrderAdminId = 'orders:admin:id'
+	protected keysOrdersAdminCount = 'orders:admin:count'
+	protected keysPaymentUser = 'payment:user'
+	protected keysPaymentUserId = 'payment:user:id'
+	protected keysPaymentUserCount = 'payment:user:count'
+	protected keysPaymentAdmin = 'payment:admin'
+	protected keysPaymentAdminId = 'payment:admin:id'
+	protected keysPaymentAdminCount = 'payment:admin:count'
+	// Method ================================
 	protected validateImageFile(
 		size: number | undefined,
 		format: keyof sharp.FormatEnum,
@@ -120,6 +127,18 @@ export abstract class BaseConfig {
 		// }
 	}
 
+	protected logInfoCache(
+		orderUserId: number | ApiError | undefined,
+		orderAdminId: number | ApiError | undefined,
+		logger: Logger
+	): void {
+		if (typeof orderUserId === 'object' && 'status' in orderUserId) {
+			logger.warn(orderUserId.message)
+		} else if (typeof orderAdminId === 'object' && 'status' in orderAdminId) {
+			logger.warn(orderAdminId.message)
+		}
+	}
+
 	protected async getModelCount(
 		table: string,
 		logger: Logger,
@@ -148,62 +167,68 @@ export abstract class BaseConfig {
 		}
 	}
 
-	protected async updateOrdersCache(
-		ordersCount: number | null,
+	protected async updateCache<
+		K extends keyof RedisEntityMapType,
+		T extends RedisEntityMapType[K]
+	>(
+		count: number | null,
 		isAdmin: boolean,
-		getAllOrders: IOrders[],
+		getAllData: T,
+		keysUser: string,
+		keysUserId: string,
+		keysUserCount: string,
+		keysAdmin: string,
+		keysAdminId: string,
+		keysAdminCount: string,
 		logger: Logger
 	) {
-		let addNewOrderUsersListCache: number | ApiError | undefined
-		let updateOrderUserCountCache: undefined | ApiError | string | null
+		let addNewUsersListCache: number | ApiError | undefined
+		let updateUserCountCache: undefined | ApiError | string | null
 
 		if (!isAdmin) {
-			addNewOrderUsersListCache = await setListRedisClientWIthEx(
-				this.keysOrdersUser,
-				this.keysOrderUserId,
-				getAllOrders
+			addNewUsersListCache = await setListRedisClientWIthEx<K>(
+				keysUser,
+				keysUserId,
+				getAllData
 			)
 
-			updateOrderUserCountCache = await setRedisCLient(
-				this.keysOrdersUserCount,
-				String(ordersCount)
-			)
+			updateUserCountCache = await setRedisCLient(keysUserCount, String(count))
 		}
 
-		const addNewOrderAdminListCache = await setListRedisClientWIthEx(
-			this.keysOrdersAdmin,
-			this.keysOrderAdminId,
-			getAllOrders
+		const addNewAdminListCache = await setListRedisClientWIthEx(
+			keysAdmin,
+			keysAdminId,
+			getAllData
 		)
-		const updateOrderAdminCacheListOrders = await setRedisCLient(
-			this.keysOrdersAdminCount,
-			String(ordersCount)
+		const updateAdminCacheListOrders = await setRedisCLient(
+			keysAdminCount,
+			String(count)
 		)
 
 		if (
-			typeof addNewOrderUsersListCache === 'object' &&
-			'message' in addNewOrderUsersListCache
+			typeof addNewUsersListCache === 'object' &&
+			'message' in addNewUsersListCache
 		) {
-			logger.error('Error from add new list-orders to users cache!')
+			logger.error('Error from add new list to users cache!')
 		} else if (
-			typeof addNewOrderAdminListCache === 'object' &&
-			'message' in addNewOrderAdminListCache
+			typeof addNewAdminListCache === 'object' &&
+			'message' in addNewAdminListCache
 		) {
-			logger.error('Error from add new list-orders to admin cache!')
+			logger.error('Error from add new list to admin cache!')
 		}
 
 		if (
-			updateOrderUserCountCache &&
-			typeof updateOrderUserCountCache === 'object' &&
-			'message' in updateOrderUserCountCache
+			updateUserCountCache &&
+			typeof updateUserCountCache === 'object' &&
+			'message' in updateUserCountCache
 		) {
-			logger.warn('Update user-count orders-data to cache')
+			logger.warn('Update user-count data to cache')
 		} else if (
-			updateOrderAdminCacheListOrders &&
-			typeof updateOrderAdminCacheListOrders === 'object' &&
-			'message' in updateOrderAdminCacheListOrders
+			updateAdminCacheListOrders &&
+			typeof updateAdminCacheListOrders === 'object' &&
+			'message' in updateAdminCacheListOrders
 		) {
-			logger.warn('Update admin-count orders-data to cache')
+			logger.warn('Update admin-count data to cache')
 		}
 	}
 }

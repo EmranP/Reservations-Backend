@@ -2,11 +2,6 @@ import type { UserDto } from '../../admin/users/dto/user.dto'
 import type { IAppService } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 
-export interface IAuthResponseError {
-	status: number
-	message: string
-}
-
 export interface IAuthUserService extends IAppService {
 	accessToken: string | { message: string }
 	refreshToken: string | { message: string }
@@ -17,14 +12,14 @@ export interface IAuthUserService extends IAppService {
 export type TypeAuthUserService = Promise<Partial<IAuthUserService>>
 
 export type TypeAuthServiceMessageWithApiError = Promise<
-	IAuthResponseError & {
+	IAppService & {
 		isTimeCheck?: boolean
 		code?: number
 	}
 >
 
 export type TypeAuthTwoFactoryService = Promise<
-	IAuthResponseError | { code: number | null; expireCode: Date | null }
+	IAppService | { code: number | null; expireCode: Date | null }
 >
 
 export type TypeAuthTokenServiceFindOne = Promise<

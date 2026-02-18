@@ -40,10 +40,10 @@ export const adminRoomRouter = async (
 
 			return
 		}
-		const accessAdminRole = await hasRole([ROLES.ADMIN], req, res)
+		const isAdmin = await hasRole([ROLES.ADMIN], req, res)
 
-		if (accessAdminRole) {
-			await responseBadRequest(accessAdminRole, res, 403)
+		if (isAdmin) {
+			await responseBadRequest(isAdmin, res, 403)
 
 			return
 		}

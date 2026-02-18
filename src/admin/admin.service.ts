@@ -171,8 +171,8 @@ export class AdminService extends BaseConfig {
 
 	async findAllRoom(
 		limit: number,
-		offset: number,
-		limitCache: number
+		limitCache: number,
+		offset: number
 	): Promise<IGetAllDataWithMeta<IRoomDto> | ApiError> {
 		const getListRoomsCache = await getAllListRedisClient(
 			this.keysRooms,

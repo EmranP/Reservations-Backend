@@ -9,7 +9,7 @@ export interface IUserDto extends IAppSharedDto {
 	email: string
 	phone: string
 	picture: string | null
-	role: typeof ROLES
+	role: typeof ROLES | number
 	isVerify: boolean
 	resetPassLink: string | undefined
 	enableResetPass: boolean

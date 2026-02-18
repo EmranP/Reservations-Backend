@@ -2,7 +2,6 @@ import fs from 'fs/promises'
 import type { Client } from 'minio'
 import sharp from 'sharp'
 import type { Logger } from 'winston'
-import type { TypeUserClientRes } from '../../app/db/types/user.types'
 import { userBucketName } from '../../app/s3/init-cloud-storage.app'
 import { BaseConfig } from '../../common/abstract/base-config.common'
 import { DB_TABLE_USERS } from '../../common/constants/table-db.constant'
@@ -35,12 +34,13 @@ export class UserService extends BaseConfig {
 
 	async findAllUser(
 		limit: number = 10,
+		limitCache: number,
 		offset: number = 0
 	): Promise<IGetAllDataWithMeta<Partial<IAdminUserDto>> | ApiError> {
 		const allUserCache = await getAllListRedisClient(
 			this.keysUsers,
 			this.keysUsersIds,
-			limit,
+			limitCache,
 			offset
 		)
 		const allUser = await checkCacheRedisClient(
@@ -91,7 +91,7 @@ export class UserService extends BaseConfig {
 
 	async findOneUser(
 		userId: string | undefined
-	): Promise<TypeUserClientRes | ApiError> {
+	): Promise<AdminUsersDto | ApiError> {
 		if (!userId) return ApiError.NotFound('User-id not founded!')
 
 		const getUserCache = await getRedisClientHashKey(this.keysUsersIds, userId)
@@ -104,7 +104,9 @@ export class UserService extends BaseConfig {
 
 		if (!getUser) return ApiError.NotFound('User not founded from db!')
 
-		return getUser
+		const userDto = new AdminUsersDto(getUser)
+
+		return userDto
 	}
 
 	async updateUser(

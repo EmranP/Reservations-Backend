@@ -11,8 +11,8 @@ import { isRequestUserApp } from '../common/utils/app/checkType.utils'
 import { responseBadRequest } from '../common/utils/app/errorResponse.utils'
 import { ApiError } from '../common/utils/log/exists-error.log'
 import { orderController } from './index.order'
-import { isCreateOrderDto } from './pipe/create.dto'
-import { isEditOrderDto } from './pipe/edit.dto'
+import { isCreateOrderDto } from './pipe/create.pipe'
+import { isEditOrderDto } from './pipe/edit.pipe'
 
 export const orderRouter = async (
 	isAuth: ApiError | undefined,
