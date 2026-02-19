@@ -104,8 +104,6 @@ export const profileRouter = async (
 
 		await profileController.removeProfileImage(req, res)
 	} else {
-		const apiError = ApiError.BadRequest('Bad-request from profile router')
-
-		await responseBadRequest(apiError.message, res)
+		await responseBadRequest('Bad-request from profile router', res)
 	}
 }

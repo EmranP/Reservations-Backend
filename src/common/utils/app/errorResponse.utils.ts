@@ -9,12 +9,11 @@ export const responseBadRequest = async (
 	statusCode: number = 400
 ): Promise<void> => {
 	const { status, contentData } = writeHeadData(statusCode)
-	res.writeHead(status, contentData)
 
 	const errorMessage = { message }
-	const jsonData = JSON.stringify(errorMessage)
 
-	res.end(jsonData)
+	res.writeHead(status, contentData)
+	res.end(JSON.stringify(errorMessage))
 }
 
 export const responseNotFoundApi = async (
@@ -23,11 +22,11 @@ export const responseNotFoundApi = async (
 	statusCode: number = 404
 ): Promise<void> => {
 	const { status, contentData } = writeHeadData(statusCode)
-	res.writeHead(status, contentData)
 
 	const errorMessage = { message }
 	const jsonData = JSON.stringify(errorMessage)
 
+	res.writeHead(status, contentData)
 	res.end(jsonData)
 }
 

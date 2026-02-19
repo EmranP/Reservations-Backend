@@ -100,9 +100,10 @@ CREATE TABLE IF NOT EXISTS public.payment (
 -- Reviews
 CREATE TABLE IF NOT EXISTS public.reviews (
 	id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-	user_id UUID UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-	room_id UUID UNIQUE REFERENCES public.rooms(id) ON DELETE CASCADE,
-	review VARCHAR(350),
+	user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+	room_id UUID REFERENCES public.rooms(id) ON DELETE CASCADE,
+	review VARCHAR(1000),
+	rating SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
 	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );

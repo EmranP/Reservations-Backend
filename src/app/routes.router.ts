@@ -6,15 +6,17 @@ import { isAuth } from '../auth/middleware/isAuth.auth'
 import { rootRoomRouter } from '../common/constants/admin.constant'
 import { rootAuthRouter } from '../common/constants/auth.constant'
 import { isPathWithQuery } from '../common/constants/global.constant'
-import { ORDER_ADD, rootOrderRouter } from '../common/constants/order.constant'
-import { CREATE_PAYMENT } from '../common/constants/payment.constant'
+import { rootOrderRouter } from '../common/constants/order.constant'
+import { rootPaymentRouter } from '../common/constants/payment.constant'
 import { rootProfileRouter } from '../common/constants/profile.constant'
+import { rootReviewsRouter } from '../common/constants/reviews.constant'
 import type { IAppQueryParams } from '../common/types/app/app.type'
 import type { Middleware } from '../common/types/middlewares/app.types-middleware'
 import { responseNotFoundApi } from '../common/utils/app/errorResponse.utils'
 import { orderRouter } from '../order/order.route'
 import { paymentRouter } from '../payment/payment.route'
 import { profileRouter } from '../profile/profile.route'
+import { reviewsRouter } from '../reviews/reviews.route'
 
 export const routerApp: Middleware<unknown> = async (
 	ctx,
@@ -198,11 +200,40 @@ export const routerApp: Middleware<unknown> = async (
 		'payment/remove',
 		pathOption.searchParams
 	)
+	// Reviews
+	const isPathReviewsGetAllHref = isPathWithQuery(
+		pathOrigin,
+		'reviews',
+		pathOption.searchParams
+	)
+	const isPathReviewsGetALlMyHref = isPathWithQuery(
+		pathOrigin,
+		'reviews/me',
+		pathOption.searchParams
+	)
+	const isPathReviewsGetOneHref = isPathWithQuery(
+		pathOrigin,
+		'review',
+		pathOption.searchParams
+	)
+	const isPathReviewsEditHref = isPathWithQuery(
+		pathOrigin,
+		'review/edit',
+		pathOption.searchParams
+	)
+	const isPathReviewsDeleteHref = isPathWithQuery(
+		pathOrigin,
+		'review/remove',
+		pathOption.searchParams
+	)
 
 	if (
 		!rootAuthRouter.includes(path) &&
 		!rootProfileRouter.includes(path) &&
 		!rootRoomRouter.includes(path) &&
+		!rootOrderRouter.includes(path) &&
+		!rootPaymentRouter.includes(path) &&
+		!rootReviewsRouter.includes(path) &&
 		// Auth
 		parserURL.href !== isPathAuthHref &&
 		parserURL.href !== isPathAuthRepaidHref &&
@@ -224,20 +255,24 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href !== isPathUserEditHref &&
 		parserURL.href !== isPathUserDeleteHref &&
 		// Order
-		parserURL.href !== `${pathOrigin}${ORDER_ADD}` &&
 		parserURL.href !== isPathOrderGetAllHref &&
 		parserURL.href !== isPathOrderGetOneHref &&
 		parserURL.href !== isPathOrderEditHref &&
 		parserURL.href !== isPathOrderDeleteHref &&
 		// Payment
-		parserURL.href !== `${pathOrigin}${CREATE_PAYMENT}` &&
 		parserURL.href !== isPathPaymentGetAllHref &&
 		parserURL.href !== isPathPaymentGetOneHref &&
 		parserURL.href !== isPathPaymentGetFreshHref &&
 		parserURL.href !== isPathPaymentGetOneFreshHref &&
 		parserURL.href !== isPathPaymentConfirmHref &&
 		parserURL.href !== isPathPaymentCancelHref &&
-		parserURL.href !== isPathPaymentDeleteHref
+		parserURL.href !== isPathPaymentDeleteHref &&
+		// Reviews
+		parserURL.href !== isPathReviewsGetAllHref &&
+		parserURL.href !== isPathReviewsGetALlMyHref &&
+		parserURL.href !== isPathReviewsGetOneHref &&
+		parserURL.href !== isPathReviewsEditHref &&
+		parserURL.href !== isPathReviewsDeleteHref
 	) {
 		await responseNotFoundApi('Not founded api', res)
 	}
@@ -317,7 +352,7 @@ export const routerApp: Middleware<unknown> = async (
 	}
 
 	if (
-		path === CREATE_PAYMENT ||
+		rootPaymentRouter.includes(path) ||
 		parserURL.href === isPathPaymentGetAllHref ||
 		parserURL.href === isPathPaymentGetOneHref ||
 		parserURL.href === isPathPaymentGetFreshHref ||
@@ -327,6 +362,17 @@ export const routerApp: Middleware<unknown> = async (
 		parserURL.href === isPathPaymentDeleteHref
 	) {
 		await paymentRouter(authMiddleware, path, pathOption, req, res, body)
+	}
+
+	if (
+		rootReviewsRouter.includes(path) ||
+		parserURL.href === isPathReviewsGetAllHref ||
+		parserURL.href === isPathReviewsGetALlMyHref ||
+		parserURL.href === isPathReviewsGetOneHref ||
+		parserURL.href === isPathReviewsEditHref ||
+		parserURL.href === isPathReviewsDeleteHref
+	) {
+		await reviewsRouter(authMiddleware, path, pathOption, req, res, body)
 	}
 
 	await next()

@@ -237,20 +237,17 @@ export class AuthService extends BaseConfig {
 			role: userDto.role,
 		})
 
-		console.log(tokens)
-
 		if (!tokens.refresh || typeof tokens.refresh !== 'string')
 			return {
 				message: 'Error refresh-token is not generate',
 				status: 500,
 			}
-		console.log('test')
 
 		const expireRefreshTokenAt = this.isExpireUtil(
 			this.maxAgeRefresh,
 			this.expireRefreshJwtUnitCase
 		)
-		console.log(expireRefreshTokenAt)
+
 		await this.tokenService.saveToken(
 			userDto.id,
 			tokens.refresh,

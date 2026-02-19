@@ -40,7 +40,7 @@ export const paymentRouter = async (
 		}
 
 		if (!isCreatePaymentDto(body)) {
-			await responseBadRequest('Invalid body from create-payment', res, 404)
+			await responseBadRequest('Invalid body from create-payment', res, 400)
 
 			return
 		}
@@ -203,8 +203,6 @@ export const paymentRouter = async (
 
 		await paymentController.deletePay(req, res, query)
 	} else {
-		const apiError = ApiError.BadRequest('Bad-request from payment router')
-
-		await responseBadRequest(apiError.message, res)
+		await responseBadRequest('Bad-request from payment router', res)
 	}
 }

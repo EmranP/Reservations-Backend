@@ -228,7 +228,7 @@ export abstract class BaseConfig {
 			keysAdminId,
 			getAllData
 		)
-		const updateAdminCacheListOrders = await setRedisCLient(
+		const updateAdminCacheCount = await setRedisCLient(
 			keysAdminCount,
 			String(count)
 		)
@@ -252,9 +252,9 @@ export abstract class BaseConfig {
 		) {
 			logger.warn('Update user-count data to cache')
 		} else if (
-			updateAdminCacheListOrders &&
-			typeof updateAdminCacheListOrders === 'object' &&
-			'message' in updateAdminCacheListOrders
+			updateAdminCacheCount &&
+			typeof updateAdminCacheCount === 'object' &&
+			'message' in updateAdminCacheCount
 		) {
 			logger.warn('Update admin-count data to cache')
 		}
