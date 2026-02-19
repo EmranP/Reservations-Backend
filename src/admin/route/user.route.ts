@@ -140,8 +140,6 @@ export const userRouter = async (
 
 		await adminUserController.deleteUser(res, query)
 	} else {
-		const apiError = ApiError.BadRequest('Bad-request from user router')
-
-		await responseBadRequest(apiError.message, res)
+		await responseBadRequest('Bad-request from user router', res)
 	}
 }

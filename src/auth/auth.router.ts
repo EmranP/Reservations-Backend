@@ -434,8 +434,6 @@ export const authRouter = async (
 	} else if (path === AUTH_TELEGRAM_REFRESH && req.method === 'POST') {
 		await oAuthTelegramController.tgRefresh(res, cookie)
 	} else {
-		const apiError = ApiError.BadRequest('Bad-request from auth router')
-
-		await responseBadRequest(apiError.message, res)
+		await responseBadRequest('Bad-request from auth router', res)
 	}
 }

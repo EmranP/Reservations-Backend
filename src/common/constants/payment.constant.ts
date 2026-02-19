@@ -11,5 +11,7 @@ export const DELETE_PAYMENT = `${globalPrefixUrl}/payment/remove`
 export const GET_ALL_FRESH_PAYMENT = `${globalPrefixUrl}/fresh/payments`
 export const GET_ONE_FRESH_PAYMENT = `${globalPrefixUrl}/fresh/payment`
 
+export const rootPaymentRouter = [CREATE_PAYMENT]
+
 // Api-Backend YooKassa
 export const API_PAYMENT_Y_KASSA = 'https://api.yookassa.ru/v3/payments'
