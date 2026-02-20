@@ -20,7 +20,8 @@ import type { IContextFiles } from '../../common/types/middlewares/app.types-mid
 import { assetsPath } from '../../common/utils/format/path.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
 import type { AdminUserEditDto } from './dto/edit.dto'
-import { AdminUsersDto, type IAdminUserDto } from './dto/user.dto'
+import { AdminUsersDto } from './dto/user.dto'
+import type { IAdminUserDto } from './types/dto.interface'
 import type { UserModel } from './user.model'
 
 export class UserService extends BaseConfig {

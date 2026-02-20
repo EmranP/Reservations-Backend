@@ -5,6 +5,10 @@ import { AdminController } from './admin.controller'
 import { AdminModel } from './admin.model'
 import { AdminService } from './admin.service'
 
-const adminModel = new AdminModel(pool, logger)
-const adminService = new AdminService(adminModel, clientS3Storage, logger)
+export const adminModel = new AdminModel(pool, logger)
+export const adminService = new AdminService(
+	adminModel,
+	clientS3Storage,
+	logger
+)
 export const adminController = new AdminController(adminService, logger)

@@ -7,11 +7,10 @@ import type {
 
 import { UserDto } from '../../admin/users/dto/user.dto'
 import type { IUser } from '../../app/db/types/user.types'
-import { setDateUtil } from '../../common/utils/app/date.util'
+import type { IErrorResponseApp } from '../../common/types/db/app.interface'
 import type { AuthModel } from '../auth.model'
 import type { TokenService } from '../token/token.service'
 import type {
-	IAuthResponseError,
 	TypeAuthTwoFactoryService,
 	TypeAuthUserService,
 } from '../types/types.auth'
@@ -30,7 +29,7 @@ export class AuthTwoFactoryChallengeService extends BaseConfig {
 	async enableTwoFactory(
 		userId: string,
 		dto: EnableTwoFactoryChallenge
-	): Promise<IAuthResponseError | boolean> {
+	): Promise<IErrorResponseApp | boolean> {
 		const editEnableTwoFactory = await this.model.enableTwoFactory(
 			userId,
 			dto.isEnableTwoAuthCode
@@ -158,7 +157,11 @@ export class AuthTwoFactoryChallengeService extends BaseConfig {
 				status: 500,
 			}
 
-		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		const expireRefreshTokenAt = this.isExpireUtil(
+			this.maxAgeRefresh,
+			this.expireRefreshJwtUnitCase
+		)
+
 		await this.tokenService.saveToken(
 			userDto.id,
 			tokens.refresh,

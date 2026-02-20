@@ -4,7 +4,6 @@ import type { IUser } from '../../app/db/types/user.types'
 import { BaseConfig } from '../../common/abstract/base-config.common'
 import type { IAppEnCrypto } from '../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../common/types/db/app.interface'
-import { setDateUtil } from '../../common/utils/app/date.util'
 import { ApiError } from '../../common/utils/log/exists-error.log'
 import type { IUserAccountDto, IUserWithoutAccountDto } from '../dto/oauth.dto'
 import type { TokenService } from '../token/token.service'
@@ -100,7 +99,11 @@ export class OAuthService extends BaseConfig {
 		)
 			return ApiError.InternalServer('Error refresh-token is not generate')
 
-		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		const expireRefreshTokenAt = this.isExpireUtil(
+			this.maxAgeRefresh,
+			this.expireRefreshJwtUnitCase
+		)
+
 		const newSession = await tokenService.saveToken(
 			userDto.id,
 			tokens.refresh,
@@ -169,7 +172,10 @@ export class OAuthService extends BaseConfig {
 		)
 			return ApiError.InternalServer('Error refresh-token is not generate')
 
-		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		const expireRefreshTokenAt = this.isExpireUtil(
+			this.maxAgeRefresh,
+			this.expireRefreshJwtUnitCase
+		)
 		const newSession = await tokenService.saveToken(
 			userDto.id,
 			tokens.refresh,

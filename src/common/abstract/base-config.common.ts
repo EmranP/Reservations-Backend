@@ -2,7 +2,7 @@ import type sharp from 'sharp'
 import type { Logger } from 'winston'
 import { pool } from '../../app/check-db.app'
 import { ROLES } from '../../app/enums'
-import { APP_CONFIG } from '../config/app.config'
+import { APP_CONFIG, APP_UNIT_TIME_CONFIG } from '../config/app.config'
 import { TOKEN_CONFIG } from '../config/token.config'
 import {
 	setListRedisClientWIthEx,
@@ -10,11 +10,17 @@ import {
 } from '../redis/utils/grud-redis.util'
 import type { IAppCountShared, IAppMessage } from '../types/app/app.type'
 import type { RedisEntityMapType } from '../types/app/redis.types'
+import {
+	setHoursUtil,
+	setMinuteUtil,
+	setSecundUtil,
+} from '../utils/app/date.util'
 import { responseErrorDB } from '../utils/app/errorResponse.utils'
 import { writeHeadData } from '../utils/app/writeHeadData.utils'
 import type { ApiError } from '../utils/log/exists-error.log'
 
 export abstract class BaseConfig {
+	// Config
 	protected refreshConfig = TOKEN_CONFIG.REFRESH_EXPIRE
 	protected verifyConfig: string | undefined = APP_CONFIG.EXPIRES_USER_VERIFY
 	protected verifyRemoveConfig: string | undefined =
@@ -28,30 +34,40 @@ export abstract class BaseConfig {
 	protected expiresRemoveVerify: Date | null = null
 	protected expiresRemoveRefresh = new Date(0).toUTCString()
 	protected expireS3Image = 60 * 60 * 24 * 7
+	protected expiresVerifyUnitCase =
+		APP_UNIT_TIME_CONFIG.EXPIRES_USER_VERIFY_UNIT_CASE
+	protected expiresRemoveVerifyUnitCase =
+		APP_UNIT_TIME_CONFIG.EXPIRES_USER_REMOVE_VERIFY_UNIT_CASE
+	protected expiresResetPasswordVerifyUnitCase =
+		APP_UNIT_TIME_CONFIG.EXPIRES_USER_RESET_PASSWORD_VERIFY_UNIT_CASE
+	protected expireTwoFactoryUnitCase =
+		APP_UNIT_TIME_CONFIG.EXPIRES_USER_TWO_FACTORY_CHALLENGE_UNIT_CASE
+	protected expireAccessJwtUnitCase =
+		APP_UNIT_TIME_CONFIG.JWT_ACCESS_EXPIRES_UNIT_CASE
+	protected expireRefreshJwtUnitCase =
+		APP_UNIT_TIME_CONFIG.JWT_REFRESH_EXPIRES_UNIT_CASE
 	// Age ================================
-	protected maxAgeVerify: number =
-		this.verifyConfig === '2m' ? 2 : this.verifyConfig === '5m' ? 5 : 0
-	protected maxAgeRemoveVerify: number =
-		this.verifyRemoveConfig === '1h' ? 1 : 0
-	// ? Change time value when completed this feature auth
-	protected maxAgeResetVerify: number = this.forgetConfig === '30m' ? 1 : 5
-	protected maxAgeRefresh =
-		this.refreshConfig === '7d' ? 7 : this.refreshConfig === '30d' ? 30 : 2
-	protected maxAgeTwoFactoryCode = this.twoFactoryConfig === '60s' ? 60 : 0
+	protected maxAgeVerify: number | undefined =
+		Number(this.verifyConfig) || undefined
+	protected maxAgeRemoveVerify: number | undefined =
+		Number(this.verifyRemoveConfig) || undefined
+	protected maxAgeResetVerify: number | undefined =
+		Number(this.forgetConfig) || undefined
+	protected maxAgeRefresh: number | undefined =
+		Number(this.refreshConfig) || undefined
+	protected maxAgeTwoFactoryCode: number | undefined =
+		Number(this.twoFactoryConfig) || undefined
 	// Flags ===============================
 	protected isFirstSendEmailVerifyAccount: boolean = true
 	protected isFirstSendEmailForgetPassword: boolean = true
 	protected isFirstVerifyForgetPassword: boolean = true
 	protected isFirstSendEmailTwoFactoryCode: boolean = true
 	// Message =============================
-	protected expireMessage: string = `Please confirm your account verify the link, you have ${
-		this.verifyConfig === '2m' ? 2 : 1
-	} minutes to do this.`
-	protected errorExpireMessage: string =
-		'Unfortunately, your confirmation time has expired, Do you wants again send email if you not verify time has 1 hour. Please register again.'
+	protected expireMessage: string = `Please confirm your account verify the link, you have ${this.verifyConfig}${this.expiresVerifyUnitCase} to do this.`
+	protected errorExpireMessage: string = `Unfortunately, your confirmation time has expired, Do you wants again send email if you not verify time has ${this.expiresRemoveVerifyUnitCase}${this.expiresRemoveVerifyUnitCase}. Please register again.`
 	protected errorAgainExpireMessage: string =
 		'Unfortunately, your confirmation time has expired, please register again.'
-	protected expireTwoFactoryCodeMessage: string = `Your email send two factory code. Please confirm him you have ${this.maxAgeTwoFactoryCode} secund`
+	protected expireTwoFactoryCodeMessage: string = `Your email send two factory code. Please confirm him you have ${this.maxAgeTwoFactoryCode}${this.expireTwoFactoryUnitCase}`
 	protected expireTwoFactoryNotCompleted: string =
 		'The time for entry has not yet expired.'
 	protected errorExpireTwoFactoryCodeMessage: string =
@@ -127,6 +143,18 @@ export abstract class BaseConfig {
 		// }
 	}
 
+	protected isExpireUtil(
+		maxAge: number | undefined,
+		unitCase: string | undefined,
+		hourTime: number = 1
+	) {
+		return maxAge && unitCase === 's'
+			? setSecundUtil(maxAge)
+			: maxAge && unitCase === 'm'
+			? setMinuteUtil(maxAge)
+			: setHoursUtil(maxAge ?? hourTime)
+	}
+
 	protected logInfoCache(
 		orderUserId: number | ApiError | undefined,
 		orderAdminId: number | ApiError | undefined,
@@ -200,7 +228,7 @@ export abstract class BaseConfig {
 			keysAdminId,
 			getAllData
 		)
-		const updateAdminCacheListOrders = await setRedisCLient(
+		const updateAdminCacheCount = await setRedisCLient(
 			keysAdminCount,
 			String(count)
 		)
@@ -224,9 +252,9 @@ export abstract class BaseConfig {
 		) {
 			logger.warn('Update user-count data to cache')
 		} else if (
-			updateAdminCacheListOrders &&
-			typeof updateAdminCacheListOrders === 'object' &&
-			'message' in updateAdminCacheListOrders
+			updateAdminCacheCount &&
+			typeof updateAdminCacheCount === 'object' &&
+			'message' in updateAdminCacheCount
 		) {
 			logger.warn('Update admin-count data to cache')
 		}

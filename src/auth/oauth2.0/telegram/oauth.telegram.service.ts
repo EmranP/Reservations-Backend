@@ -7,7 +7,6 @@ import { APP_OAUTH_TELEGRAM_CONFIG } from '../../../common/config/app.config'
 import { AUTH_METHOD } from '../../../common/constants/enum.constant'
 import { genLinks } from '../../../common/constants/link.constant'
 import { isVerifyTokenError } from '../../../common/utils/app/checkType.utils'
-import { setDateUtil } from '../../../common/utils/app/date.util'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 import type { AuthModel } from '../../auth.model'
 import type {
@@ -120,7 +119,10 @@ export class OAuthTelegramService extends OAuthService {
 			const hashAccess = await bcrypt.hash(tokens.access, 10)
 			const hashRefresh = await bcrypt.hash(tokens.refresh, 10)
 
-			const expiresTokenAt = setDateUtil(this.maxAgeRefresh)
+			const expiresTokenAt = this.isExpireUtil(
+				this.maxAgeRefresh,
+				this.expireRefreshJwtUnitCase
+			)
 
 			const dataUpdateTgDto: IUserAccountDto & IUserWithoutAccountDto = {
 				provider: 'telegram',
@@ -237,7 +239,10 @@ export class OAuthTelegramService extends OAuthService {
 
 		const hashRefresh = await bcrypt.hash(tokens.refresh, 10)
 
-		const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+		const expireRefreshTokenAt = this.isExpireUtil(
+			this.maxAgeRefresh,
+			this.expireRefreshJwtUnitCase
+		)
 		const newSession = await this.tokenService.saveToken(
 			user.id,
 			hashRefresh,

@@ -1,4 +1,4 @@
-import type { IUserDto } from '../../admin/users/dto/user.dto'
+import type { IUserDto } from '../../admin/users/types/dto.interface'
 import type { IResponseTelegramApi } from '../types/api.types'
 
 // Google

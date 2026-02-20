@@ -14,7 +14,6 @@ import type { IAppEnCrypto } from '../../../common/types/app/app.type'
 import type { IErrorResponseApp } from '../../../common/types/db/app.interface'
 import { isVerifyTokenError } from '../../../common/utils/app/checkType.utils'
 import { decrypt, encrypt } from '../../../common/utils/app/crypto.util'
-import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGoogleLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 import type { AuthModel } from '../../auth.model'
@@ -384,7 +383,10 @@ export class OAuthGoogleService extends OAuthService {
 			)
 				return ApiError.InternalServer('Error refresh-token is not generate')
 
-			const expireRefreshTokenAt = setDateUtil(this.maxAgeRefresh)
+			const expireRefreshTokenAt = this.isExpireUtil(
+				this.maxAgeRefresh,
+				this.expireRefreshJwtUnitCase
+			)
 			await this.tokenService.saveToken(
 				user.id,
 				tokens.refresh,
