@@ -164,6 +164,8 @@ export class OrderService extends BaseConfig {
 		userId: string | undefined,
 		role: number | undefined
 	): Promise<IOrderDto | ApiError> {
+		if (!APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
+			return ApiError.InternalServer('Redis-config is not set from env')
 		if (!orderId) return ApiError.NotFound('Order not founded')
 
 		if (!userId || typeof role === 'undefined')
@@ -191,7 +193,7 @@ export class OrderService extends BaseConfig {
 					this.keysOrderUserId,
 					getOneOrder.id,
 					JSON.stringify(getOneOrder),
-					APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+					Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 				)
 			}
 
@@ -199,7 +201,7 @@ export class OrderService extends BaseConfig {
 				this.keysOrderAdminId,
 				getOneOrder.id,
 				JSON.stringify(getOneOrder),
-				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+				Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 			)
 
 			this.logInfoCache(addNewOrderUserById, addNewOrderAdminById, this.logger)

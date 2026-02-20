@@ -6,7 +6,6 @@ import {
 	activationLinkHandler,
 	resetPassLinkHandler,
 } from '../../common/constants/link.constant'
-import { setMinuteUtil } from '../../common/utils/app/date.util'
 import { generateTwoFactoryCode } from '../../common/utils/app/generate.utils'
 import {
 	renderSendActivationLink,
@@ -83,7 +82,7 @@ export class EmailService extends BaseConfig {
 
 		const now = new Date()
 		const errorEmailMessage = `A user with email ${dto.email} already exists.`
-		const repaidExpireMessage = `Please confirm your account verify the link, you have 2 minutes to do this.`
+		const repaidExpireMessage = `Please confirm your account verify the link, you have ${this.expiresVerify}${this.expiresVerifyUnitCase} to do this.`
 
 		const isTimeCheck =
 			this.expiresVerify !== null &&
@@ -124,7 +123,10 @@ export class EmailService extends BaseConfig {
 			return ApiError.BadRequest('Error sending email')
 
 		if (this.expiresVerify === null) {
-			this.expiresVerify = setMinuteUtil(this.maxAgeVerify)
+			this.expiresVerify = this.isExpireUtil(
+				this.maxAgeVerify,
+				this.expiresVerifyUnitCase
+			)
 		}
 
 		this.isFirstSendEmailVerifyAccount = false
@@ -199,7 +201,10 @@ export class EmailService extends BaseConfig {
 			return ApiError.BadRequest('Error sending email')
 
 		if (expireUserForgetVerify.expires_forget_pass === null) {
-			const newExpireForgetVerify = setMinuteUtil(this.maxAgeResetVerify)
+			const newExpireForgetVerify = this.isExpireUtil(
+				this.maxAgeResetVerify,
+				this.expiresResetPasswordVerifyUnitCase
+			)
 
 			const updateExpireForget = await this.authModel.updateExpireForgetVerify(
 				user.id,

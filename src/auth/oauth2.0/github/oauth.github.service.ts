@@ -9,7 +9,6 @@ import {
 import { AUTH_METHOD } from '../../../common/constants/enum.constant'
 import { genLinks } from '../../../common/constants/link.constant'
 import type { IErrorResponseApp } from '../../../common/types/db/app.interface'
-import { setDateUtil } from '../../../common/utils/app/date.util'
 import { generateOAuthGithubLink } from '../../../common/utils/app/generate.utils'
 import { ApiError } from '../../../common/utils/log/exists-error.log'
 import type { AuthModel } from '../../auth.model'
@@ -210,7 +209,10 @@ export class OAuthGithubService extends OAuthService {
 		const { resetPassLink } = genLinks(uuidV4)
 		const newHashPass = await bcrypt.hash(this.defaultUserPass, 10)
 		const accessHash = await bcrypt.hash(githubTokenData.access_token, 10)
-		const expireTokensAt = setDateUtil(this.maxAgeRefresh)
+		const expireTokensAt = this.isExpireUtil(
+			this.maxAgeRefresh,
+			this.expireRefreshJwtUnitCase
+		)
 
 		if (user?.email === userPrimaryGithubEmail.email) {
 			if (!userPrimaryGithubEmail.verified)

@@ -281,12 +281,12 @@ export class AdminService extends BaseConfig {
 			}
 		}
 
-		if (!getRoomByIdCache) {
+		if (!getRoomByIdCache && APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS) {
 			const addNewRoomById = await setHashRedisClientWithEx(
 				this.keysRoomsIds,
 				roomId,
 				JSON.stringify(isUpdateRoom),
-				APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS
+				Number(APP_REDIS_CONFIG.ONE_DAY_EXPIRES_TIME_REDIS)
 			)
 
 			if (typeof addNewRoomById === 'object' && 'status' in addNewRoomById) {

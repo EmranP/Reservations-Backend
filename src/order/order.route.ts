@@ -117,8 +117,6 @@ export const orderRouter = async (
 
 		await orderController.deleteOrderById(req, res, query)
 	} else {
-		const apiError = ApiError.BadRequest('Bad-request from order router')
-
-		await responseBadRequest(apiError.message, res)
+		await responseBadRequest('Bad-request from order router', res)
 	}
 }

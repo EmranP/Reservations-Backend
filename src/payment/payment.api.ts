@@ -58,7 +58,7 @@ export class PaymentApi {
 			if (!res.ok) return ApiError.BadRequest('Bad-fetching to yoo-kassa api!')
 
 			const data = await res.json()
-			console.log(data)
+
 			return data
 		} catch (error) {
 			return ApiError.InternalServer(
