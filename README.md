@@ -50,6 +50,7 @@
 - Role-based access
 - JWT authentication
 - Refresh token через HttpOnly cookie
+- Google Recaptcha
 
 ---
 
@@ -165,7 +166,9 @@
 
 ## 10. 📁 Структура проекта
 
-```src/
+```text
+src/
+│
 ├── app/
 │ ├── config/
 │ ├── db/
