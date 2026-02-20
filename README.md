@@ -118,7 +118,7 @@
 
 ---
 
-## 7. 💳 Payment Module
+## 7. 💳 Payment Module from YooKassa
 
 ### Client
 
