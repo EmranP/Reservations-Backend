@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.users (
 	reset_pass_link TEXT,
 	is_verify BOOLEAN NOT NULL DEFAULT FALSE,
 	enable_reset_pass BOOLEAN NOT NULL DEFAULT FALSE,
-	enable_two_auth_code BOOLEAN NOT NULL DEFAULT FALSE,
+	enable_two_factory_challenge BOOLEAN NOT NULL DEFAULT FALSE,
 	method auth_method NOT NULL DEFAULT 'CREDENTIALS',
  	created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
