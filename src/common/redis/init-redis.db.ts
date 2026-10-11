@@ -3,15 +3,22 @@ import type { Logger } from 'winston'
 import type { IJwksData } from '../../auth/types/jwks.types'
 import { APP_REDIS_CONFIG } from '../config/app.config'
 
-export const clientRedis = createClient()
+export const clientRedis = createClient({
+	url: APP_REDIS_CONFIG.REDIS_URL,
+})
+
+clientRedis.on('error', err => {
+	console.error('Redis Client Error:', err)
+})
 
 export const initRedisDB = async (
 	logger: Logger,
 	jwks: IJwksData
 ): Promise<void> => {
 	try {
-		if (!APP_REDIS_CONFIG || !APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS)
+		if (!APP_REDIS_CONFIG || !APP_REDIS_CONFIG.DEFAULT_EXPIRES_TIME_REDIS) {
 			return
+		}
 
 		const existJwksRedis = await clientRedis.hExists('jsonBin', 'keys')
 

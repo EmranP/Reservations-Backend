@@ -17,6 +17,16 @@
 
 ---
 
+## 2. Init projects
+
+### 1. Создать `.env`
+
+```bash
+cp .env.example .env
+```
+
+---
+
 ## 2. 🏗 Архитектурный подход
 
 - Чистый Node.js (без фреймворков)
@@ -268,13 +278,3 @@ src/
 | ----------- | --------------- |
 | development | local jwks.json |
 | production  | JSON-BIN        |
-
----
-
-## 13. ⚙ Environment Setup
-
-### 1. Создать `.env`
-
-```bash
-cp .env.example .env
-```

@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import type { Pool, QueryResult } from 'pg'
 import { DB_TABLE_TOKENS } from '../../common/constants/table-db.constant'
 import type { ExistTokenType, IResponseTokens } from '../types/token.type'

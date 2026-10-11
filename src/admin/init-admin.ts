@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { v4 as uuidV4 } from 'uuid'
 import type { TypeUserID } from '../app/db/types/user.types'
 import { ROLES } from '../app/enums'
