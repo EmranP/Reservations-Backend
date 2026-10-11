@@ -68,6 +68,10 @@ export const APP_OAUTH_TELEGRAM_CONFIG = {
 
 // Redis
 export const APP_REDIS_CONFIG = {
+	REDIS_HOST: process.env.REDIS_HOST,
+	REDIS_PORT: process.env.REDIS_PORT,
+	REDIS_PASS: process.env.REDIS_PASS,
+	REDIS_URL: process.env.REDIS_URL,
 	DEFAULT_EXPIRES_TIME_REDIS: process.env.DEFAULT_EXPIRES_TIME_REDIS,
 	ONE_DAY_EXPIRES_TIME_REDIS: process.env.ONE_DAY_EXPIRES_TIME_REDIS,
 } as const
@@ -75,7 +79,7 @@ export const APP_REDIS_CONFIG = {
 // S3 Storage
 export const APP_MINIO_S3_CONFIG = {
 	MINIO_END_POINT: process.env.MINIO_END_POINT,
-	MINIO_PORT: process.env.MINIO_PORT,
+	MINIO_PORT: process.env.MINIO_PORT_API,
 	MINIO_USE_SSL: process.env.MINIO_USE_SSL,
 	MINIO_ACCESS_KEY: process.env.MINIO_ACCESS_KEY,
 	MINIO_SECRET_KEY: process.env.MINIO_SECRET_KEY,

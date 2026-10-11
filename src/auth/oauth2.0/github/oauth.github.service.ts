@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
 import { APP_OAUTH_GITHUB_CONFIG } from '../../../common/config/app.config'

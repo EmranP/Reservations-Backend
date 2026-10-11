@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import type { Pool } from 'pg'
 import type { Logger } from 'winston'
 import type { IAccounts } from '../../app/db/types/accounts.types'

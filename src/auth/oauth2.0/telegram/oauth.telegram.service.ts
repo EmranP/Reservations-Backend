@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { v4 as uuidV4 } from 'uuid'
 import type { Logger } from 'winston'
