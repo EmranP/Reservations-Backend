@@ -17,13 +17,66 @@
 
 ---
 
-## 2. Init projects
+## Инициализация проекта
 
-### 1. Создать `.env`
+### Docker + Makefile
+
+#### Шаг 1
+
+Установите зависимости:
+
+```bash
+bun install # или npm install
+```
+
+#### Шаг 2
+
+Скопируйте пример файла окружения и настройте переменные (при необходимости):
 
 ```bash
 cp .env.example .env
 ```
+
+##### Шаг 3
+
+Запустите сервисы в Docker:
+
+```bash
+make up # или make up-d (в фоновом режиме)
+```
+
+---
+
+### Работа с базой данных (pgAdmin и GUI)
+
+### 1. Веб-интерфейс pgAdmin (Docker)
+
+Для удобного управления базой данных в Docker развёрнут сервис **pgAdmin**.
+
+1. Откройте браузер и перейдите по адресу: [http://localhost:**port-pgadmin**](http://localhost:port-pgadmin)
+2. Авторизуйтесь с помощью данных из файла `.env`:
+   - **Email:** `PGADMIN_EMAIL` (`pgadmin@admin.com`)
+   - **Password:** `PGADMIN_PASS` (`12345`)
+3. Для добавления базы данных нажмите **Add New Server**:
+   - **Вкладка General:**
+     - **Name:** `Reservations-DB` (любое имя)
+   - **Вкладка Connection:**
+     - **Host name/address:** `db` (имя сервиса PostgreSQL в docker-network)
+     - **Port:** `5432`
+     - **Maintenance database:** `reservations-db` (значение `POSTGRES_DB`)
+     - **Username:** `emran_developer` (значение `POSTGRES_USER`)
+     - **Password:** `123456` (значение `POSTGRES_PASSWORD`)
+4. Нажмите **Save**.
+
+### 2. Подключение через сторонний GUI (DBeaver, DataGrip, Postico)
+
+Если вы хотите подключиться к базе данных напрямую со своей локальной машины через сторонний клиент, используйте проброшенный через `port-forwarder` порт:
+
+- **Host:** `localhost` или `127.0.0.1`, (если db запущена в docker + local `host.docker.internal`)
+- **Port:** `5433` (проброшен через socat port-forwarder)
+- **Database:** `reservations-db`
+- **Username:** `emran_developer`
+- **Password:** `qwert`
 
 ---
 
