@@ -20,7 +20,7 @@ services:
       start_period: '7s'
 
   redis:
-    image: redis:7.4-alpine
+    image: redis:8.0-alpine
     container_name: redis-reservations
     restart: always
     command:
