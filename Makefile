@@ -38,4 +38,4 @@ port:
 close-port:
 	@docker compose -f docker-compose.yml down port-forwarder
 
-.PHONY: up up-d up-nc up-d-nc stop port close-port clear
+.PHONY: up up-d up-nc up-d-nc stop port close-port clear recreate
