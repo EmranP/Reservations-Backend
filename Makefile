@@ -17,9 +17,12 @@ up-nc:
 	@docker compose -f docker-compose.yml up -d --force-recreate
 
 recreate:
-	docker compose -f docker-compose.yml up -d --no-deps --force-recreate $(service)
+	@docker compose -f docker-compose.yml up -d --no-deps --force-recreate $(service)
 
 stop:
+	@docker compose -f docker-compose.yml down $(service)
+
+stops:
 	@docker compose -f docker-compose.yml down
 
 clear:
@@ -32,10 +35,4 @@ clear:
 		echo "Operation cancelled."; \
 	fi;
 
-port:
-	@docker compose -f docker-compose.yml up -d port-forwarder
-
-close-port:
-	@docker compose -f docker-compose.yml down port-forwarder
-
-.PHONY: up up-d up-nc up-d-nc stop port close-port clear recreate
+.PHONY: up up-d up-nc up-d-nc stop stops clear recreate
